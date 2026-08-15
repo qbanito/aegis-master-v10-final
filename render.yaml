@@ -1,6 +1,7 @@
 services:
   - type: web
     name: aegis-finance-brain
+    plan: free
     runtime: node
     rootDir: apps/finance-brain/server
     buildCommand: npm install --omit=dev
@@ -26,6 +27,7 @@ services:
 
   - type: web
     name: aegis-commerce-brain
+    plan: free
     runtime: node
     rootDir: apps/commerce-brain
     buildCommand: npm install --omit=dev
@@ -63,6 +65,7 @@ services:
 
   - type: web
     name: aegis-saas-brain
+    plan: free
     runtime: node
     rootDir: apps/saas-brain
     buildCommand: npm install --omit=dev
@@ -78,6 +81,7 @@ services:
 
   - type: web
     name: aegis-media-brain
+    plan: free
     runtime: node
     rootDir: apps/media-brain
     buildCommand: npm install --omit=dev
@@ -105,6 +109,7 @@ services:
 
   - type: web
     name: aegis-services-brain
+    plan: free
     runtime: node
     rootDir: apps/services-brain
     buildCommand: npm install --omit=dev
@@ -168,6 +173,7 @@ services:
 
   - type: web
     name: aegis-manager-brain
+    plan: free
     runtime: node
     rootDir: apps/manager-brain
     buildCommand: npm install --omit=dev
@@ -210,6 +216,7 @@ services:
 
   - type: web
     name: aegis-ceo-brain
+    plan: free
     runtime: node
     rootDir: apps/ceo-brain
     buildCommand: npm install --omit=dev
