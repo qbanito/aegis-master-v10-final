@@ -1,0 +1,19 @@
+{
+  "name": "aegis-command-center-client",
+  "version": "11.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "ethers": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "socket.io-client": "latest",
+    "three": "^0.185.1",
+    "vite": "latest"
+  }
+}

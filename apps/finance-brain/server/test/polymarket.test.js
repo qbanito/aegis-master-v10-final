@@ -1,0 +1,4 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {PolymarketScanner} from '../src/bots/polymarket/polymarketScanner.js';
+test('polymarket scanner reads mock Gamma/CLOB and emits read-only opportunity',async()=>{const emitted=[];const scans=[];const data={activeMarkets:async()=>[{id:'m1',question:'Test?',slug:'test',clobTokenIds:['yes','no'],outcomePrices:[.40,.60],volume24hr:500000,liquidityNum:100000}],book:async()=>({bids:[{price:'.35'}],asks:[{price:'.36'}]})};const bus={emit:(name,payload)=>{if(name==='raw-opportunity')emitted.push(payload)}};const s=new PolymarketScanner({data,bus,onScan:x=>scans.push(x)});await s.scanOnce();assert.equal(scans.length,1);assert.equal(scans[0].marketCount,1);assert.equal(emitted.length,1);assert.equal(emitted[0].source,'POLYMARKET_GAMMA_CLOB_REAL');assert.equal(emitted[0].synthetic,false);});

@@ -1,0 +1,13 @@
+{
+  "name": "amazon-affiliate-product-scout",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "apify": "^3.4.0"
+  }
+}

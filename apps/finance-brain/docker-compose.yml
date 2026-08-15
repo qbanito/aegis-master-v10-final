@@ -1,0 +1,23 @@
+services:
+  aegis-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    env_file:
+      - ./server/.env
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./server/data:/app/data
+    restart: unless-stopped
+  aegis-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        VITE_CORE_URL: http://localhost:8787
+    ports:
+      - "5173:80"
+    depends_on:
+      - aegis-core
+    restart: unless-stopped

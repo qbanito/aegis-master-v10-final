@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {parseTokenConfig} from '../src/bots/smartMoney/erc20WhaleScanner.js';
+test('parseTokenConfig accepts safe ERC20 config',()=>{const x=parseTokenConfig('[{"address":"0x0000000000000000000000000000000000000001","symbol":"USDC","decimals":6,"priceUsd":1,"minUsd":250000}]');assert.equal(x.length,1);assert.equal(x[0].symbol,'USDC');assert.equal(x[0].decimals,6);});

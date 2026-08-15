@@ -1,0 +1,16 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Amazon Affiliate Product Scout output",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "Scored affiliate candidates",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    },
+    "summary": {
+      "type": "string",
+      "title": "Run summary",
+      "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/RUN_SUMMARY"
+    }
+  }
+}

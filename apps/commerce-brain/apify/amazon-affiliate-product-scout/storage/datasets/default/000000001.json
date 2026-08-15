@@ -1,0 +1,18 @@
+{
+	"recordType": "run_status",
+	"status": "BLOCKED",
+	"source": "amazon",
+	"monetizationModel": "AMAZON_AFFILIATE",
+	"marketplace": "www.amazon.com",
+	"keywords": [
+		"test product"
+	],
+	"startedAt": "2026-08-15T16:52:25.223Z",
+	"products": 0,
+	"requests": 0,
+	"errors": [],
+	"blocked": [
+		"AMAZON_CREATORS_CREDENTIALS_MISSING"
+	],
+	"message": "Configure Creators API client ID, client secret and Associates partner tag. No synthetic products are emitted."
+}

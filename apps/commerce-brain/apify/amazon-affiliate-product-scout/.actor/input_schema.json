@@ -1,0 +1,127 @@
+{
+  "title": "Amazon Affiliate Product Scout input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "keywords": {
+      "title": "Search keywords",
+      "type": "array",
+      "description": "Amazon product searches. The actor uses official Amazon Creators API SearchItems; it does not scrape Amazon pages.",
+      "editor": "stringList",
+      "default": ["home organization", "travel gadgets", "wellness accessories"],
+      "minItems": 1,
+      "maxItems": 25
+    },
+    "marketplace": {
+      "title": "Amazon marketplace",
+      "type": "string",
+      "description": "Target marketplace domain.",
+      "editor": "select",
+      "enum": ["www.amazon.com", "www.amazon.ca", "www.amazon.com.mx", "www.amazon.com.br", "www.amazon.co.uk", "www.amazon.de", "www.amazon.es", "www.amazon.fr", "www.amazon.it", "www.amazon.co.jp", "www.amazon.com.au"],
+      "enumTitles": ["US", "Canada", "Mexico", "Brazil", "UK", "Germany", "Spain", "France", "Italy", "Japan", "Australia"],
+      "default": "www.amazon.com"
+    },
+    "partnerTag": {
+      "title": "Amazon Associates partner tag",
+      "type": "string",
+      "description": "Your approved Associates tag for the selected marketplace.",
+      "editor": "textfield"
+    },
+    "clientId": {
+      "title": "Creators API client ID",
+      "type": "string",
+      "description": "Use an Apify secret input or environment variable; never expose this in a public Actor.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "clientSecret": {
+      "title": "Creators API client secret",
+      "type": "string",
+      "description": "Use an Apify secret input or environment variable; never expose this in a public Actor.",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "credentialVersion": {
+      "title": "Creators API credential version",
+      "type": "string",
+      "description": "Amazon v3.x uses Login with Amazon; v2.x uses the regional Cognito endpoint.",
+      "editor": "select",
+      "enum": ["3.1", "3.2", "3.3", "2.1", "2.2", "2.3"],
+      "enumTitles": ["v3 North America", "v3 Europe", "v3 Far East", "v2 North America", "v2 Europe", "v2 Far East"],
+      "default": "3.1"
+    },
+    "searchIndex": {
+      "title": "Amazon category",
+      "type": "string",
+      "description": "SearchIndex accepted by the selected Amazon marketplace.",
+      "editor": "textfield",
+      "default": "All"
+    },
+    "maxItemsPerKeyword": {
+      "title": "Items per keyword",
+      "type": "integer",
+      "description": "Maximum is 10 per Amazon SearchItems request.",
+      "editor": "number",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 10
+    },
+    "maxPagesPerKeyword": {
+      "title": "Pages per keyword",
+      "type": "integer",
+      "description": "Keep this low to respect Amazon rate limits and affiliate API quotas.",
+      "editor": "number",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 10
+    },
+    "minPrice": {
+      "title": "Minimum product price",
+      "type": "number",
+      "editor": "number",
+      "default": 15,
+      "minimum": 0
+    },
+    "maxPrice": {
+      "title": "Maximum product price",
+      "type": "number",
+      "editor": "number",
+      "default": 150,
+      "minimum": 0
+    },
+    "commissionRate": {
+      "title": "Planning commission rate",
+      "type": "number",
+      "description": "Configurable planning assumption only; verify the actual Associates rate before using it in a forecast.",
+      "editor": "number",
+      "default": 0.04,
+      "minimum": 0,
+      "maximum": 1
+    },
+    "contentCostPerProduct": {
+      "title": "Content cost reserve per product",
+      "type": "number",
+      "description": "Internal planning reserve used to rank affiliate content opportunities.",
+      "editor": "number",
+      "default": 1.5,
+      "minimum": 0
+    },
+    "minScore": {
+      "title": "Minimum scout score",
+      "type": "integer",
+      "editor": "number",
+      "default": 55,
+      "minimum": 0,
+      "maximum": 100
+    },
+    "maxRequests": {
+      "title": "Maximum API requests",
+      "type": "integer",
+      "description": "Hard ceiling for one run.",
+      "editor": "number",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 50
+    }
+  }
+}

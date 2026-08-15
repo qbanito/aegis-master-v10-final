@@ -1,0 +1,490 @@
+{
+  "files": [
+    {
+      "path": ".env.example",
+      "size": 749,
+      "sha256": "3a9d3ff254fdd0757afc3fac52d2839a1f299cd0022bc84c2557af17b2dda537"
+    },
+    {
+      "path": "README.md",
+      "size": 2091,
+      "sha256": "5b761f4deb15b855b77b5045d8a2ecec9e74fa908bf3a441a52775db0fd0d6bc"
+    },
+    {
+      "path": "REARM.md",
+      "size": 766,
+      "sha256": "a673ffb0e274f59546443d56a6ad1b44d2ef963bd84de01266d88a1d51f2f5a8"
+    },
+    {
+      "path": "apps/ceo-brain/package.json",
+      "size": 155,
+      "sha256": "378138fdfa44844c73fdfb784b4277a5121fe4eaf8538719dd8f26885bc5f22f"
+    },
+    {
+      "path": "apps/ceo-brain/src/index.js",
+      "size": 3555,
+      "sha256": "9ae2b4aaf161ac9e7de93fc202a614088f915558563accf64c092964a39de9e1"
+    },
+    {
+      "path": "apps/commerce-brain/package.json",
+      "size": 155,
+      "sha256": "378138fdfa44844c73fdfb784b4277a5121fe4eaf8538719dd8f26885bc5f22f"
+    },
+    {
+      "path": "apps/commerce-brain/src/index.js",
+      "size": 3074,
+      "sha256": "91fa8e47867c35053cfb6d2721adb3cb0304152c0e821f0851a574723f26cc51"
+    },
+    {
+      "path": "apps/finance-brain/.dockerignore",
+      "size": 54,
+      "sha256": "a502a15747da85ed42241e6ffc53745693646664f62b0fb71a3c4e61e8f479fb"
+    },
+    {
+      "path": "apps/finance-brain/Dockerfile.client",
+      "size": 271,
+      "sha256": "340fc0b8a4e8471151661e52d3e497795777608d41553275e82abe81856ba3e8"
+    },
+    {
+      "path": "apps/finance-brain/Dockerfile.server",
+      "size": 136,
+      "sha256": "b58add1575a26dad13e3da734220ba43d67a7d07b27df567ca647ac1e102c422"
+    },
+    {
+      "path": "apps/finance-brain/README.md",
+      "size": 5880,
+      "sha256": "4314e7cb01a96748d01bf85460e6d0d76e81e22cb763917efbba21716389723a"
+    },
+    {
+      "path": "apps/finance-brain/client/index.html",
+      "size": 300,
+      "sha256": "6b040fd356eabeaf46387d03a7d772189e5c929df0c959c18513bab05c288137"
+    },
+    {
+      "path": "apps/finance-brain/client/package.json",
+      "size": 399,
+      "sha256": "d59197e0ac95e7b797a7cef99fbe8258ff49277eb8ffd253bda1cf7c124ac4da"
+    },
+    {
+      "path": "apps/finance-brain/client/src/api.js",
+      "size": 2919,
+      "sha256": "95e32fdecfa073e5c8952ba6afa9298f453973c9d25cbe368e95c5aaa0b9c35a"
+    },
+    {
+      "path": "apps/finance-brain/client/src/main.jsx",
+      "size": 23126,
+      "sha256": "c6ef3f5d61921c2e6b92c16a6196787de18010866aa6e284ad455b6d3ff7bffe"
+    },
+    {
+      "path": "apps/finance-brain/client/src/style.css",
+      "size": 17906,
+      "sha256": "80c4fc58a393190f545e9627b2a21a251fc6f6d21059e435a71158887bc47712"
+    },
+    {
+      "path": "apps/finance-brain/docker-compose.yml",
+      "size": 453,
+      "sha256": "1a0f3364e438508090b6cf37708db57e1df796fa6047e30d643b2099d840f1af"
+    },
+    {
+      "path": "apps/finance-brain/docs/interface-reference.png",
+      "size": 1938485,
+      "sha256": "5c14515fe822bd1bf856d8d77f157e601829591b699c1ccba66b430ade7eb973"
+    },
+    {
+      "path": "apps/finance-brain/docs/ui-reference.jpeg",
+      "size": 522850,
+      "sha256": "98e3d3f0587cc6e3d0d06bd0fb547b6e7ae48646758fb04b28cf91aa5910efc6"
+    },
+    {
+      "path": "apps/finance-brain/docs/ui-target.png",
+      "size": 1938485,
+      "sha256": "5c14515fe822bd1bf856d8d77f157e601829591b699c1ccba66b430ade7eb973"
+    },
+    {
+      "path": "apps/finance-brain/package.json",
+      "size": 566,
+      "sha256": "4aca6eddea930aeab6ed4626e5d51ea0c6b286691f883bcf09fd0de13988cc8c"
+    },
+    {
+      "path": "apps/finance-brain/server/.env.example",
+      "size": 4169,
+      "sha256": "9d02fed86675d22a5d1243a01c56a35d7b8e3b4a33b595a62b740910a771bca1"
+    },
+    {
+      "path": "apps/finance-brain/server/package.json",
+      "size": 353,
+      "sha256": "3d269edc563c144c1d41b6adcfb8a952555efd48f8be2fbbf21683ae455b9f1a"
+    },
+    {
+      "path": "apps/finance-brain/server/src/agent/agentOrchestrator.js",
+      "size": 3207,
+      "sha256": "b17494293dc70f478ab856983fe76e1a61fb5cb7c25fd057841c30702bc2fbec"
+    },
+    {
+      "path": "apps/finance-brain/server/src/agent/providerAdapter.js",
+      "size": 4232,
+      "sha256": "e84777f1e3b4c7ccfe6b7bd2f4b1e6970df41fb879f457f22db178c900455215"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/agentRuntime.js",
+      "size": 1562,
+      "sha256": "211c191619c4cbf6989b441b0630cf06f96b291c0c3ceb4eb6aaeead8cd604de"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/arbitrage/dexArbitrageScanner.js",
+      "size": 5760,
+      "sha256": "c014cbf98f6cb8bd999346912ccf3529e8169a923611b57ec3e7d514074574ae"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/liquidation/aaveV3Scanner.js",
+      "size": 6155,
+      "sha256": "885de870e3416a9c05ae6f4edb91f2c9a2ae316a67cfe5316f9170ac288cf44a"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/momentum/momentumScanner.js",
+      "size": 3409,
+      "sha256": "4f62ca440c4b22ca21b882a70a7aec9ff3dd313f0198525cb3b189e5cd5975c9"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/perpetuals/fundingScanner.js",
+      "size": 3839,
+      "sha256": "3646ae2913db81efec579b602a61255402d580f3c417b3c6483f95d572f60151"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/polymarket/polymarketScanner.js",
+      "size": 3309,
+      "sha256": "60fcd7884bda370420184f3d45560fd77febe45b3e2ee5105913aa52f78480db"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/smartMoney/erc20WhaleScanner.js",
+      "size": 4425,
+      "sha256": "d79034dc9936ed9d76b047ffe164dd79ddcdf2470fe59909bb377930a59bb714"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/solana/earlyTokenScanner.js",
+      "size": 3760,
+      "sha256": "7ea0d722e192a702ff0156e8bf69895f8ddc7827776a4f068905574d7ab929e8"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/volatility/volatilityScanner.js",
+      "size": 4127,
+      "sha256": "0d5d50247c78a7009656a76d4f7fff25dc9e8a366a4a45ee92c741d200128b5a"
+    },
+    {
+      "path": "apps/finance-brain/server/src/bots/yield/yieldScanner.js",
+      "size": 2949,
+      "sha256": "5c833df013e6cd65ee03db6608f16c8e319eb9f500a8ff894073ffbea29fea95"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/brain.js",
+      "size": 1649,
+      "sha256": "e968d1ce5363cb9fc5ec5e3f09e30b53e4b492ac63fe8d08bcf61c829f2bd314"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/capitalAllocator.js",
+      "size": 2851,
+      "sha256": "2b81986b891f53a401a67ecf1e215ea80a61e1007ab12a9e9aec953b947fbe53"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/circuitBreaker.js",
+      "size": 1419,
+      "sha256": "e2bd9da17f6c259364c7fa0d9d48e47d69206f0825814da61ea40fac52dfeb94"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/config.js",
+      "size": 1825,
+      "sha256": "cdbb90ddd3a09ee8dfcaafb423daf46ba9b9f88dd1fda7c0a6ca8011318bd2a2"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/executionAdapter.js",
+      "size": 565,
+      "sha256": "583ece136a924eab4a8591277bd9aa0c341606a8a082b39e81632aaa87e326aa"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/intelligenceLayer.js",
+      "size": 2327,
+      "sha256": "4c85f5e745aba14b016cb9be05b777cd2ae4d99b6d9edbf46ccbf1f7d7d93a72"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/opportunityBus.js",
+      "size": 130,
+      "sha256": "7fd41d91068dd650ceb887338ed72c892eea6e39138a519652fcc86e6e51bef9"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/paperExecutor.js",
+      "size": 1087,
+      "sha256": "12d0bdd8d8583d15d5af6d7ce7f1b21456708ccff8eb44187c5ec4c339995df6"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/replayEngine.js",
+      "size": 1902,
+      "sha256": "4044467994b1624a0e383de1296eb4b9023bae37f19adc211793d43d85fc675e"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/riskEngine.js",
+      "size": 870,
+      "sha256": "968c57548d2d3ba690175538331fb4e1dfd95bd9ca882bc144b7aa36b3f88325"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/signalFusion.js",
+      "size": 1321,
+      "sha256": "b2a2d5513b5b409c22b1b7575a3e434a1a135d03617ccb00c9825e5c396085b3"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/simulationEngine.js",
+      "size": 2577,
+      "sha256": "2af3fa114535e21ed4c4441b298a652254201e4bab13a6f7105fae814a29d96f"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/store.js",
+      "size": 5795,
+      "sha256": "c21aa7b3fa7d7219ed646781f01ec13688887f32076b2b786fa8c7fc7d72b65c"
+    },
+    {
+      "path": "apps/finance-brain/server/src/core/strategyConfigService.js",
+      "size": 1069,
+      "sha256": "9b80d423459d641d334de9b0367717f31bca0701d89df46e1aad56d79898500f"
+    },
+    {
+      "path": "apps/finance-brain/server/src/index.js",
+      "size": 23509,
+      "sha256": "9855a35bdcddb5aa6d7fa0497204c433c1a6460f1a5728aa5e7c5035b51d65a0"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/defi/defiLlamaYields.js",
+      "size": 774,
+      "sha256": "a36de323960d10e91c865a8b49dd9f5e6a43ae4632ebbc94c5c0f51b0828ce4b"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/healthSupervisor.js",
+      "size": 923,
+      "sha256": "a2d706938c38a14cf136def9cb2e6c06c7fb57410b13c989e7ca1883045eeb7e"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/marketData/binanceFuturesMarketData.js",
+      "size": 1080,
+      "sha256": "2755355dc225b36e482dc977d57b948d6234ae7aad7ae868001599515be551a8"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/marketData/binanceMarketData.js",
+      "size": 1238,
+      "sha256": "f76e4ef40ab5d884bfc884a7e8fbffe088f9bac6eb15a0ac7d1ee55e12284998"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/polymarket/polymarketData.js",
+      "size": 1674,
+      "sha256": "b9c1d2d56eef65a6cde88be8ba85a05b2b93322c1b029e6c96aa05ff19827224"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/rpcLatencyRouter.js",
+      "size": 2411,
+      "sha256": "7eb9ee0e1f52451a200bbb98587b98b9365aebe9edb7c1116ca255d47811fb05"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/rpcManager.js",
+      "size": 1835,
+      "sha256": "bb8da4a683330c8de3a1b602c8b19ad8a00b7cc7810c99c74f2d2772a0f113c2"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/secretsVault.js",
+      "size": 424,
+      "sha256": "7a55af3f851b158adb12a2deaba3b90b63e4a39cb9ec5b6f46830ccc30d40272"
+    },
+    {
+      "path": "apps/finance-brain/server/src/infrastructure/solana/solanaRpc.js",
+      "size": 1530,
+      "sha256": "6187a7f8db67b04443d28182e3d55293544bed3e6281a4d37eff929de5cc1881"
+    },
+    {
+      "path": "apps/finance-brain/server/src/storage/journal.js",
+      "size": 1555,
+      "sha256": "44b7ead12d822e8a79dd5f4dd8648937081fe8f9ecd51eba8e9ef4c8df657f36"
+    },
+    {
+      "path": "apps/finance-brain/server/src/storage/performanceDatabase.js",
+      "size": 2467,
+      "sha256": "15993a4e9f8424083266a13bee4e199a61a8e742f779065160aabf0a9b9dfbcc"
+    },
+    {
+      "path": "apps/finance-brain/server/test/allocator.test.js",
+      "size": 652,
+      "sha256": "60056b37d4a86c3c1adebe893fe09937a218c449e4f429df6b9d853fffb1db7a"
+    },
+    {
+      "path": "apps/finance-brain/server/test/brain.test.js",
+      "size": 1062,
+      "sha256": "905f78287e261b3edd0f272ea2a254b41c21c4757dd165dd6800fa36755f6588"
+    },
+    {
+      "path": "apps/finance-brain/server/test/circuitBreaker.test.js",
+      "size": 410,
+      "sha256": "b56842f6e9a5aab7e8a08a8aec5e45d5233f9a8bafd206d4f04e609deb71ed39"
+    },
+    {
+      "path": "apps/finance-brain/server/test/funding.test.js",
+      "size": 618,
+      "sha256": "e26de7c3ab0ea4087c71de2c05c95599b013ec1ca77f5cfba4c1d8f443915fb5"
+    },
+    {
+      "path": "apps/finance-brain/server/test/fusion.test.js",
+      "size": 630,
+      "sha256": "fc154e8288670f3af43e3241f0c572b6a7a06472eb73651b91e32ddb3d3cd047"
+    },
+    {
+      "path": "apps/finance-brain/server/test/intelligence.test.js",
+      "size": 859,
+      "sha256": "1b4ab3c45bc727acd286a2743d4352e047d9a1a66541de30334d7dfd87b814a9"
+    },
+    {
+      "path": "apps/finance-brain/server/test/polymarket.test.js",
+      "size": 870,
+      "sha256": "0b647dd119542bce06f7f883170418b4c685271870c47d71e2394c1992f69362"
+    },
+    {
+      "path": "apps/finance-brain/server/test/replay.test.js",
+      "size": 570,
+      "sha256": "0e36fa6360d0168cd1768a8a815d9dd12547e64032c327e5ee13eb402941d7f7"
+    },
+    {
+      "path": "apps/finance-brain/server/test/simulation.test.js",
+      "size": 618,
+      "sha256": "bde063f938c09e6769088ad87cf6b7bb7878cd4c4f5eec1afa5d43f5cb3c51fd"
+    },
+    {
+      "path": "apps/finance-brain/server/test/smartMoney.test.js",
+      "size": 439,
+      "sha256": "36f07807d2266dd2ddd46845c3a6a97f42b0d27770c0d31778ad3fd3e6a05873"
+    },
+    {
+      "path": "apps/finance-brain/server/test/solanaRadar.test.js",
+      "size": 420,
+      "sha256": "378de4410ab5280f625cfa4f0b318c5eaa0cc09724e959a701a4051ee449aa4d"
+    },
+    {
+      "path": "apps/finance-brain/server/test/volatility.test.js",
+      "size": 724,
+      "sha256": "f010b494d4b32b8f795a718a1058dbd23a381e989d9af3f4a68675e5bc219c45"
+    },
+    {
+      "path": "apps/finance-brain/start.sh",
+      "size": 114,
+      "sha256": "b8c3ed60cb033ae53b837badead9908e9e5b94c6f7aa89e0f06fd9fccd75843e"
+    },
+    {
+      "path": "apps/manager-brain/package.json",
+      "size": 155,
+      "sha256": "378138fdfa44844c73fdfb784b4277a5121fe4eaf8538719dd8f26885bc5f22f"
+    },
+    {
+      "path": "apps/manager-brain/src/index.js",
+      "size": 4014,
+      "sha256": "3277fceaf8f9b8dc8bdb90f05ee75d634e59ffad9e5b7f42aa0855efe3dc4bed"
+    },
+    {
+      "path": "apps/master-ui/index.html",
+      "size": 72,
+      "sha256": "000a20adb7940490b933d2dba5df0ccf4d13686f507e044bb70bab30e4546072"
+    },
+    {
+      "path": "apps/master-ui/package.json",
+      "size": 382,
+      "sha256": "fe9fd2f3b5931677173adaa8bcb5fb98f60d0d54c33d89666caa24211e8d00ff"
+    },
+    {
+      "path": "apps/master-ui/src/main.jsx",
+      "size": 4861,
+      "sha256": "48c56abfbe37760e1cc63dbb04f798fa7b254eefee17f24407bc3743d8a26554"
+    },
+    {
+      "path": "apps/master-ui/src/style.css",
+      "size": 5414,
+      "sha256": "6219c944b67628394478740843ed77cabf56cfe49dc6b65ab585b590a95c4f3a"
+    },
+    {
+      "path": "apps/media-brain/package.json",
+      "size": 155,
+      "sha256": "378138fdfa44844c73fdfb784b4277a5121fe4eaf8538719dd8f26885bc5f22f"
+    },
+    {
+      "path": "apps/media-brain/src/index.js",
+      "size": 3299,
+      "sha256": "f9688bbc5b160aecd921a1840193ee066abdb05864fa439aa46b67f504f08ad5"
+    },
+    {
+      "path": "apps/saas-brain/Dockerfile.server",
+      "size": 124,
+      "sha256": "ff779fbb2a87caa9a44661b055537c5def86afad0b2d6336c02c3cd8534e76fe"
+    },
+    {
+      "path": "apps/saas-brain/README.md",
+      "size": 2523,
+      "sha256": "066cfe2ec9b7037a1b8e2d55bb5861d1f2780d6b7179a4663cf58c9a8d8fa01f"
+    },
+    {
+      "path": "docker-compose.yml",
+      "size": 1625,
+      "sha256": "ce5c2523f1922178885d97cb08b611869eda946b1e2228c6fa44d86eb79cef0f"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "size": 296,
+      "sha256": "1b9c33b64ae6ebe9d62127ff3f298addd2039198213f51b6e9b7674b1aeb12bd"
+    },
+    {
+      "path": "docs/INTEGRATIONS.md",
+      "size": 643,
+      "sha256": "4a3accc3c2e00c2c229b754f1a74387332d8ebd30e45a032f649160d4fd8f643"
+    },
+    {
+      "path": "infrastructure/docker/Dockerfile.node",
+      "size": 100,
+      "sha256": "3223ebd1715faf76fa541a88a4d7ee4d40961ffd762110f80c32c9c09b2919d0"
+    },
+    {
+      "path": "infrastructure/docker/Dockerfile.ui",
+      "size": 137,
+      "sha256": "68fea79731d587c705483fa757720920dcbf9a14ac46d276ed8daca5bf656680"
+    },
+    {
+      "path": "manifest.json",
+      "size": 1230,
+      "sha256": "3ae4f7a000108f1c7e36e158bc0a348ea0412b27b326567d1a342e6a4a5210ab"
+    },
+    {
+      "path": "package.json",
+      "size": 453,
+      "sha256": "9eb8f959699e0616a9dee4711ccad035e44227bfd4ec595e1b0c5ab78c994bb4"
+    },
+    {
+      "path": "packages/inter-brain-protocol/package.json",
+      "size": 112,
+      "sha256": "4fbd5b57aa8ffb17bea3be451ce224f80b482b96161d5467ef9dfd377cbcc259"
+    },
+    {
+      "path": "packages/inter-brain-protocol/src/index.js",
+      "size": 789,
+      "sha256": "06b70cdc5484bfb595019d09b0195aa61b91d66d0baf1a05f07ce5af6999c7cb"
+    },
+    {
+      "path": "scripts/dev.mjs",
+      "size": 438,
+      "sha256": "73272b07b3a9e6385760d3efff86a1e23ad2022b05c604ebac91a936ca5ff2f2"
+    },
+    {
+      "path": "scripts/healthcheck.mjs",
+      "size": 644,
+      "sha256": "58be3452becceafe6f30294c972d019d4c9141adb383fb77349f4dcab64eef79"
+    },
+    {
+      "path": "scripts/integrity-check.mjs",
+      "size": 608,
+      "sha256": "24660d55841cfd586a2404dd41d5f2c67ece4efa8675865f4f0b3aad8de98ba5"
+    },
+    {
+      "path": "scripts/rearm.mjs",
+      "size": 215,
+      "sha256": "3d47b6c2764f16796acbd1afefb4970d7983715273aabe498b9cbb6380b49ac0"
+    }
+  ],
+  "count": 97
+}

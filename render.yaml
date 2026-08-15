@@ -1,0 +1,256 @@
+services:
+  - type: web
+    name: aegis-finance-brain
+    runtime: node
+    rootDir: apps/finance-brain/server
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: AEGIS_AI_PROVIDER
+        value: mock
+      - key: PAPER_MODEL_FALLBACK
+        value: "true"
+      - key: PAPER_EXECUTE_WATCH
+        value: "true"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MUAPI_API_KEY
+        sync: false
+
+  - type: web
+    name: aegis-commerce-brain
+    runtime: node
+    rootDir: apps/commerce-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: MEDIA_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-media-brain
+          property: hostport
+      - key: MANAGER_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-manager-brain
+          property: hostport
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: APIFY_AMAZON_ACTOR_ID
+        sync: false
+      - key: AMAZON_CREATORS_CLIENT_ID
+        sync: false
+      - key: AMAZON_CREATORS_CLIENT_SECRET
+        sync: false
+      - key: AMAZON_PARTNER_TAG
+        sync: false
+      - key: SHOPIFY_ADMIN_ACCESS_TOKEN
+        sync: false
+      - key: SHOPIFY_STORE_DOMAIN
+        sync: false
+
+  - type: web
+    name: aegis-saas-brain
+    runtime: node
+    rootDir: apps/saas-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+  - type: web
+    name: aegis-media-brain
+    runtime: node
+    rootDir: apps/media-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: COMMERCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-commerce-brain
+          property: hostport
+      - key: SAAS_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-saas-brain
+          property: hostport
+      - key: MUAPI_API_KEY
+        sync: false
+      - key: MUAPI_BASE_URL
+        value: https://api.muapi.ai
+
+  - type: web
+    name: aegis-services-brain
+    runtime: node
+    rootDir: apps/services-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: SERVICES_MODE
+        value: PAPER
+      - key: SERVICES_AUTOMATION_ENABLED
+        value: "false"
+      - key: SERVICES_REQUIRE_APPROVAL
+        value: "true"
+      - key: SERVICES_ALLOWED_ORIGINS
+        value: "*"
+      - key: FINANCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-finance-brain
+          property: hostport
+      - key: COMMERCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-commerce-brain
+          property: hostport
+      - key: SAAS_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-saas-brain
+          property: hostport
+      - key: MEDIA_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-media-brain
+          property: hostport
+      - key: MANAGER_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-manager-brain
+          property: hostport
+      - key: CEO_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-ceo-brain
+          property: hostport
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_DOMAIN
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: RESEND_REPLY_TO_EMAIL
+        sync: false
+      - key: MUAPI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+  - type: web
+    name: aegis-manager-brain
+    runtime: node
+    rootDir: apps/manager-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: FINANCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-finance-brain
+          property: hostport
+      - key: COMMERCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-commerce-brain
+          property: hostport
+      - key: SAAS_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-saas-brain
+          property: hostport
+      - key: MEDIA_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-media-brain
+          property: hostport
+      - key: SERVICES_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-services-brain
+          property: hostport
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AEGIS_AI_PROVIDER
+        value: mock
+
+  - type: web
+    name: aegis-ceo-brain
+    runtime: node
+    rootDir: apps/ceo-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: MANAGER_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-manager-brain
+          property: hostport
+      - key: FINANCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-finance-brain
+          property: hostport
+      - key: COMMERCE_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-commerce-brain
+          property: hostport
+      - key: SAAS_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-saas-brain
+          property: hostport
+      - key: MEDIA_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-media-brain
+          property: hostport
+      - key: SERVICES_BRAIN_URL
+        fromService:
+          type: web
+          name: aegis-services-brain
+          property: hostport
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false

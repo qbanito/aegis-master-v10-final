@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {SolanaEarlyTokenScanner} from '../src/bots/solana/earlyTokenScanner.js';
+test('solana radar extracts newly introduced token mint',()=>{const s=new SolanaEarlyTokenScanner({rpc:null,bus:{emit(){}}});const tx={meta:{preTokenBalances:[{mint:'OLD'}],postTokenBalances:[{mint:'OLD'},{mint:'NEW'}]}};assert.deepEqual(s.extractMints(tx),['NEW']);});

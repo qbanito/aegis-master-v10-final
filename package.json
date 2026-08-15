@@ -1,0 +1,22 @@
+{
+  "name": "aegis-master-v10-final",
+  "private": true,
+  "version": "10.0.0",
+  "workspaces": [
+    "apps/master-ui",
+    "apps/brain-ui",
+    "apps/commerce-brain",
+    "apps/media-brain",
+    "apps/services-brain",
+    "apps/saas-brain",
+    "apps/manager-brain",
+    "apps/ceo-brain",
+    "packages/inter-brain-protocol"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "integrity": "node scripts/integrity-check.mjs",
+    "health": "node scripts/healthcheck.mjs",
+    "rearm": "node scripts/rearm.mjs"
+  }
+}

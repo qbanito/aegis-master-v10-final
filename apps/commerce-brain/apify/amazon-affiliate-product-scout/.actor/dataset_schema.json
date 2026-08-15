@@ -1,0 +1,26 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "type": "object",
+    "properties": {
+      "recordType": {"type": "string", "description": "product or run_status"},
+      "status": {"type": "string"},
+      "asin": {"type": "string"},
+      "title": {"type": "string"},
+      "price": {"type": "number"},
+      "currency": {"type": "string"},
+      "affiliateUrl": {"type": "string"},
+      "scoutScore": {"type": "number"},
+      "tier": {"type": "string"},
+      "estimatedCommission": {"type": "number"},
+      "dataFreshAt": {"type": "string"}
+    }
+  },
+  "views": {
+    "overview": {
+      "title": "Affiliate product candidates",
+      "transformation": {"fields": ["recordType", "status", "asin", "title", "price", "currency", "scoutScore", "tier", "estimatedCommission", "affiliateUrl"]},
+      "display": {"component": "table", "properties": {"freezeFirstColumns": 2}}
+    }
+  }
+}

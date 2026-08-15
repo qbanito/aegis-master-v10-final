@@ -1,0 +1,124 @@
+services:
+  finance:
+    build:
+      context: ./apps/finance-brain
+      dockerfile: Dockerfile.server
+    ports: ["8787:8787"]
+    env_file: ./.env
+  saas:
+    build:
+      context: ./apps/saas-brain
+      dockerfile: Dockerfile.server
+    ports: ["8790:8790"]
+    env_file: ./.env
+  commerce:
+    build:
+      context: ./apps/commerce-brain
+      dockerfile: ../../infrastructure/docker/Dockerfile.node
+    ports: ["8802:8802"]
+    environment: ["PORT=8802"]
+    env_file: ./.env
+  media:
+    build:
+      context: ./apps/media-brain
+      dockerfile: ../../infrastructure/docker/Dockerfile.node
+    ports: ["8804:8804"]
+    environment: ["PORT=8804"]
+    env_file: ./.env
+  services:
+    build:
+      context: ./apps/services-brain
+      dockerfile: ../../infrastructure/docker/Dockerfile.node
+    ports: ["8808:8808"]
+    environment:
+      - PORT=8808
+      - FINANCE_BRAIN_URL=http://finance:8787
+      - COMMERCE_BRAIN_URL=http://commerce:8802
+      - SAAS_BRAIN_URL=http://saas:8790
+      - MEDIA_BRAIN_URL=http://media:8804
+      - MANAGER_BRAIN_URL=http://manager:8805
+      - CEO_BRAIN_URL=http://ceo:8806
+    env_file: ./.env
+    depends_on: [finance,commerce,saas,media]
+  manager:
+    build:
+      context: ./apps/manager-brain
+      dockerfile: ../../infrastructure/docker/Dockerfile.node
+    ports: ["8805:8805"]
+    environment:
+      - PORT=8805
+      - FINANCE_BRAIN_URL=http://finance:8787
+      - COMMERCE_BRAIN_URL=http://commerce:8802
+      - SAAS_BRAIN_URL=http://saas:8790
+      - MEDIA_BRAIN_URL=http://media:8804
+      - SERVICES_BRAIN_URL=http://services:8808
+    depends_on: [finance,commerce,saas,media,services]
+  ceo:
+    build:
+      context: ./apps/ceo-brain
+      dockerfile: ../../infrastructure/docker/Dockerfile.node
+    ports: ["8806:8806"]
+    environment:
+      - PORT=8806
+      - MANAGER_BRAIN_URL=http://manager:8805
+      - FINANCE_BRAIN_URL=http://finance:8787
+      - COMMERCE_BRAIN_URL=http://commerce:8802
+      - SAAS_BRAIN_URL=http://saas:8790
+      - MEDIA_BRAIN_URL=http://media:8804
+      - SERVICES_BRAIN_URL=http://services:8808
+    env_file: ./.env
+    depends_on: [manager,finance,commerce,saas,media,services]
+  master-ui:
+    build:
+      context: ./apps/master-ui
+      dockerfile: ../../infrastructure/docker/Dockerfile.ui
+    ports: ["8810:8810"]
+    environment:
+      - VITE_CEO_BRAIN_URL=http://localhost:8806
+      - VITE_MANAGER_BRAIN_URL=http://localhost:8805
+    depends_on: [ceo]
+  finance-ui:
+    build:
+      context: ./apps/brain-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_BRAIN_KIND: finance
+        VITE_BRAIN_API_URL: http://localhost:8787
+    ports: ["8811:80"]
+    depends_on: [finance]
+  commerce-ui:
+    build:
+      context: ./apps/brain-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_BRAIN_KIND: commerce
+        VITE_BRAIN_API_URL: http://localhost:8802
+    ports: ["8812:80"]
+    depends_on: [commerce]
+  saas-ui:
+    build:
+      context: ./apps/brain-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_BRAIN_KIND: saas
+        VITE_BRAIN_API_URL: http://localhost:8790
+    ports: ["8813:80"]
+    depends_on: [saas]
+  media-ui:
+    build:
+      context: ./apps/brain-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_BRAIN_KIND: media
+        VITE_BRAIN_API_URL: http://localhost:8804
+    ports: ["8814:80"]
+    depends_on: [media]
+  services-ui:
+    build:
+      context: ./apps/brain-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_BRAIN_KIND: services
+        VITE_BRAIN_API_URL: http://localhost:8808
+    ports: ["8815:80"]
+    depends_on: [services]

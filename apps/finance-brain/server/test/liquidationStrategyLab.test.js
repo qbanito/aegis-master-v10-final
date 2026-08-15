@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {LiquidationStrategyLab,classifyHealthFactor} from '../src/bots/liquidation/liquidationStrategyLab.js';
+test('classifies liquidation bands',()=>{assert.equal(classifyHealthFactor(.99),'LIQUIDATABLE');assert.equal(classifyHealthFactor(1.01),'CRITICAL');assert.equal(classifyHealthFactor(1.02),'NEAR');assert.equal(classifyHealthFactor(1.05),'WATCH');assert.equal(classifyHealthFactor(1.2),'SAFE');});
+test('ranks dangerous borrower above safe borrower',()=>{const lab=new LiquidationStrategyLab();const a=lab.ingest({address:'0x0000000000000000000000000000000000000001',healthFactor:.99,totalDebtUsd:100000,totalCollateralUsd:120000});const b=lab.ingest({address:'0x0000000000000000000000000000000000000002',healthFactor:1.07,totalDebtUsd:1000,totalCollateralUsd:1300});assert.ok(a.priorityScore>b.priorityScore);assert.equal(lab.leaderboard(1)[0].address,a.address);});

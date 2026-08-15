@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {replayEngine} from '../src/core/replayEngine.js';
+test('replay engine returns stable summary',()=>{const s={risk:{globalKillSwitch:false,minConfidence:.5,maxSlippageBps:200,minExpectedProfitUsd:0,maxOpportunityAgeMs:999999,maxLossPerTradeUsd:1000,maxDailyLossUsd:10000,maxStrategyExposurePct:50},executions:[],treasury:{paperBalanceUsd:10000},bots:[]};const r=replayEngine.run({limit:10,riskState:s});assert.equal(typeof r.accepted,'number');assert.equal(Array.isArray(r.byStrategy),true);});

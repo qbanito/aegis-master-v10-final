@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {StrategyCircuitBreaker} from '../src/core/circuitBreaker.js';
+test('circuit breaker trips after loss streak',()=>{const cb=new StrategyCircuitBreaker({maxConsecutiveLosses:2,maxDrawdownUsd:999,cooldownMs:999999});cb.record('x',-1);const r=cb.record('x',-1);assert.equal(r.tripped,true);assert.equal(cb.canRun('x').allowed,false);});

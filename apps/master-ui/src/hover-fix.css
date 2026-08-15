@@ -1,0 +1,11 @@
+/* Keep Brain hover reports above the card geometry instead of clipping their content. */
+.brainStation:has(.stationBrain:hover),.brainStation:has(.brainHoverPanel:hover){overflow:visible;clip-path:none;z-index:40}
+.brainCard:has(.cardBrain:hover),.brainCard:has(.brainHoverPanel:hover){overflow:visible;clip-path:none;z-index:50}
+.brainStation .brainHoverPanel.wide{max-height:none;min-height:210px;overflow:visible}
+.brainStation .brainHoverPanel.wide .hoverReport{max-height:90px;overflow:auto}
+.brainCard .brainHoverPanel{max-height:none;min-height:150px;overflow:visible}
+.brainCard .brainHoverPanel{background:#030a16;border:1px solid color-mix(in srgb,var(--brain,#4fd1ff) 58%,#1c3750);box-shadow:0 0 28px rgba(0,0,0,.72)}
+.brainCard .brainHoverPanel .hoverReport{max-height:58px;overflow:auto}
+.brainHoverZone{z-index:3}
+.brainHoverPanel{z-index:80}
+@media(max-width:620px){.brainStation .brainHoverPanel.wide{min-height:190px;max-height:calc(100vh - 24px);overflow:auto}.brainCard .brainHoverPanel{min-height:142px;max-height:calc(100vh - 24px);overflow:auto}}
