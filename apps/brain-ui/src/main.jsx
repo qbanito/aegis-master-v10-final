@@ -10,12 +10,13 @@ import {
 import "./style.css";
 
 const ports = {finance: 8811, commerce: 8812, saas: 8813, media: 8814, services: 8815};
+const runtimeApi = (local, production) => import.meta.env.DEV ? local : production;
 const config = {
-  finance: {name: "Finance Brain", kicker: "CAPITAL INTELLIGENCE", desc: "Execution, risk and liquidity intelligence in one high-signal cockpit.", accent: "#9c7bff", accent2: "#49d9ff", icon: CircleDollarSign, page: "finance", api: "http://localhost:8787", metric: "PAPER EQUITY"},
-  commerce: {name: "Commerce Brain", kicker: "REVENUE ORCHESTRATION", desc: "Find, test and compound the next distribution opportunity before the market notices.", accent: "#4ee8d2", accent2: "#63a7ff", icon: Rocket, page: "commerce", api: "http://localhost:8802", metric: "ACTIVE TESTS"},
-  saas: {name: "SaaS Brain", kicker: "REVENUE INTELLIGENCE", desc: "Turn product telemetry into durable MRR, retention and portfolio clarity.", accent: "#ff77c8", accent2: "#a77dff", icon: Orbit, page: "saas", api: "http://localhost:8790", metric: "PORTFOLIO MRR"},
-  media: {name: "Media Brain", kicker: "CONTENT DISTRIBUTION", desc: "Convert signals into a living editorial system that ships, learns and compounds.", accent: "#ffb86b", accent2: "#ff6f9d", icon: Radar, page: "media", api: "http://localhost:8804", metric: "CONTENT QUEUE"},
-  services: {name: "Services Brain", kicker: "SERVICE REVENUE SYSTEM", desc: "Vende, cotiza y entrega videos, páginas web, SEO y servicios digitales desde un solo cockpit.", accent: "#ff8b5b", accent2: "#25e8ff", icon: Briefcase, page: "services", api: "http://localhost:8808", metric: "ACTIVE SERVICES"}
+  finance: {name: "Finance Brain", kicker: "CAPITAL INTELLIGENCE", desc: "Execution, risk and liquidity intelligence in one high-signal cockpit.", accent: "#9c7bff", accent2: "#49d9ff", icon: CircleDollarSign, page: "finance", api: runtimeApi("http://localhost:8787", "/brain-api/finance"), metric: "PAPER EQUITY"},
+  commerce: {name: "Commerce Brain", kicker: "REVENUE ORCHESTRATION", desc: "Find, test and compound the next distribution opportunity before the market notices.", accent: "#4ee8d2", accent2: "#63a7ff", icon: Rocket, page: "commerce", api: runtimeApi("http://localhost:8802", "/brain-api/commerce"), metric: "ACTIVE TESTS"},
+  saas: {name: "SaaS Brain", kicker: "REVENUE INTELLIGENCE", desc: "Turn product telemetry into durable MRR, retention and portfolio clarity.", accent: "#ff77c8", accent2: "#a77dff", icon: Orbit, page: "saas", api: runtimeApi("http://localhost:8790", "/brain-api/saas"), metric: "PORTFOLIO MRR"},
+  media: {name: "Media Brain", kicker: "CONTENT DISTRIBUTION", desc: "Convert signals into a living editorial system that ships, learns and compounds.", accent: "#ffb86b", accent2: "#ff6f9d", icon: Radar, page: "media", api: runtimeApi("http://localhost:8804", "/brain-api/media"), metric: "CONTENT QUEUE"},
+  services: {name: "Services Brain", kicker: "SERVICE REVENUE SYSTEM", desc: "Vende, cotiza y entrega videos, páginas web, SEO y servicios digitales desde un solo cockpit.", accent: "#ff8b5b", accent2: "#25e8ff", icon: Briefcase, page: "services", api: runtimeApi("http://localhost:8808", "/brain-api/services"), metric: "ACTIVE SERVICES"}
 };
 
 const kind = import.meta.env.VITE_BRAIN_KIND || new URLSearchParams(location.search).get("brain") || "finance";
@@ -41,7 +42,7 @@ const brainBase = String(import.meta.env.BASE_URL || "/").endsWith("/") ? import
 const brainAsset = asset => `${brainBase}${String(asset).replace(/^\/+/, "")}`;
 const brainCoreUrl = brainAsset(brainTheme.core);
 const API = import.meta.env.VITE_BRAIN_API_URL || current.api;
-const VOICE_API = import.meta.env.VITE_VOICE_API_URL || "http://localhost:8806";
+const VOICE_API = import.meta.env.VITE_VOICE_API_URL || runtimeApi("http://localhost:8806", "/brain-api/ceo");
 const chainLabel = value => { const raw=String(value||"").toLowerCase(); const id=raw.startsWith("0x")?Number.parseInt(raw,16):Number(raw); return ({1:"Ethereum",137:"Polygon",42161:"Arbitrum",8453:"Base"}[id]||`Chain ${raw}`); };
 const shortAddress = value => value ? `${value.slice(0,6)}…${value.slice(-4)}` : "";
 
@@ -172,7 +173,7 @@ function App() {
       conversationRef.current = [...conversationRef.current, {role: "user", content: text}, {role: "assistant", content: answer}].slice(-12);
       setVoiceAgentReply(answer);
       // Reproduce saludo y respuesta en un solo audio para evitar la pausa artificial entre dos TTS.
-      await speakBrainReply(answer, {brain: kind, mediaApi: "http://localhost:8804", voiceApi: VOICE_API, onSpeakingChange: setBrainSpeaking});
+      await speakBrainReply(answer, {brain: kind, mediaApi: import.meta.env.VITE_MEDIA_BRAIN_URL || runtimeApi("http://localhost:8804", "/brain-api/media"), voiceApi: VOICE_API, onSpeakingChange: setBrainSpeaking});
     } catch (e) { setError(`${current.name}: ${e.message}`); }
     finally { setVoiceAgentBusy(false); }
   }

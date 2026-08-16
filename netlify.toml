@@ -3,6 +3,48 @@ command = "npm install --omit=dev && node scripts/build-master.mjs"
   publish = "apps/master-ui/dist"
 
 [[redirects]]
+  from = "/brain-api/finance/*"
+  to = "https://aegis-finance-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/brain-api/commerce/*"
+  to = "https://aegis-commerce-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/brain-api/saas/*"
+  to = "https://aegis-saas-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/brain-api/media/*"
+  to = "https://aegis-media-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/brain-api/services/*"
+  to = "https://aegis-services-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/brain-api/manager/*"
+  to = "https://aegis-manager-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/brain-api/ceo/*"
+  to = "https://aegis-ceo-brain.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

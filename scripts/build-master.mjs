@@ -39,9 +39,9 @@ for (const [brain, api] of Object.entries(brains)) {
       env: {
         ...process.env,
         VITE_BRAIN_KIND: brain,
-        VITE_BRAIN_API_URL: api,
-        VITE_VOICE_API_URL: "https://aegis-ceo-brain.onrender.com",
-        VITE_MEDIA_BRAIN_URL: "https://aegis-media-brain.onrender.com",
+        VITE_BRAIN_API_URL: `/brain-api/${brain}`,
+        VITE_VOICE_API_URL: "/brain-api/ceo",
+        VITE_MEDIA_BRAIN_URL: "/brain-api/media",
       },
       stdio: "inherit",
     },

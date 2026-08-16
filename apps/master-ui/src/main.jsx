@@ -49,15 +49,14 @@ import "./satellite.css";
 import "./hover-fix.css";
 import "./electricity.css";
 
-const CEO = import.meta.env.VITE_CEO_BRAIN_URL || "http://localhost:8806";
-const MANAGER =
-  import.meta.env.VITE_MANAGER_BRAIN_URL || "http://localhost:8805";
-const FINANCE =
-  import.meta.env.VITE_FINANCE_BRAIN_URL || "http://localhost:8787";
-const COMMERCE = import.meta.env.VITE_COMMERCE_BRAIN_URL || "http://localhost:8802";
-const SAAS = import.meta.env.VITE_SAAS_BRAIN_URL || "http://localhost:8790";
-const MEDIA = import.meta.env.VITE_MEDIA_BRAIN_URL || "http://localhost:8804";
-const SERVICES = import.meta.env.VITE_SERVICES_BRAIN_URL || "http://localhost:8808";
+const runtimeApi = (local, production) => import.meta.env.DEV ? local : production;
+const CEO = import.meta.env.VITE_CEO_BRAIN_URL || runtimeApi("http://localhost:8806", "/brain-api/ceo");
+const MANAGER = import.meta.env.VITE_MANAGER_BRAIN_URL || runtimeApi("http://localhost:8805", "/brain-api/manager");
+const FINANCE = import.meta.env.VITE_FINANCE_BRAIN_URL || runtimeApi("http://localhost:8787", "/brain-api/finance");
+const COMMERCE = import.meta.env.VITE_COMMERCE_BRAIN_URL || runtimeApi("http://localhost:8802", "/brain-api/commerce");
+const SAAS = import.meta.env.VITE_SAAS_BRAIN_URL || runtimeApi("http://localhost:8790", "/brain-api/saas");
+const MEDIA = import.meta.env.VITE_MEDIA_BRAIN_URL || runtimeApi("http://localhost:8804", "/brain-api/media");
+const SERVICES = import.meta.env.VITE_SERVICES_BRAIN_URL || runtimeApi("http://localhost:8808", "/brain-api/services");
 const BRAIN_APIS = {ceo: CEO, manager: MANAGER, finance: FINANCE, commerce: COMMERCE, saas: SAAS, media: MEDIA, services: SERVICES, banking: MANAGER, account: MANAGER};
 function brainChatRequest(brain, message, conversation) {
   return {url: `${String(BRAIN_APIS[brain] || CEO).replace(/\/$/, "")}${brain === "finance" ? "/api/agent/chat" : "/api/chat"}`, body: {message, brain, conversation}};
