@@ -13,3 +13,5 @@ apps/kronos-service/vendor/Kronos/
 apps/finance-brain/server/data/history/
 apps/finance-brain/server/data/*.json
 apps/services-brain/data/*.json
+apps/master-ui/public/brain-ui/
+apps/brain-ui/.build/

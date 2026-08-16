@@ -1400,20 +1400,9 @@ function OperationalBrainPage({ brainId, onTalk, onBack }) {
     <section className="brainPage operationalPage" style={{ "--page-accent": color }}>
       <PageHeader eyebrow={`${meta.label} · OPERATIONAL CONTROL`} title={meta.name} description={`${meta.subtitle}. ${meta.detail}. Esta superficie concentra telemetría, módulos operativos y controles conectados del Brain.`} color={color} image={meta.image} onBack={onBack} onTalk={onTalk} />
       <div className="pageNotice"><CheckCircle2 size={14} /> {notice}</div>
-      <SatelliteCommandChamber brain={meta.name} color={color} subtitle={`${meta.name.replace(" BRAIN", "")} command chamber`} modules={modules} />
-      <div className="financeMetrics" id="operational-metrics">
-        <MetricTile icon={Activity} label="STATUS" value={health?.status?.toUpperCase() || "SYNCING"} sub="public health endpoint" color={color} />
-        <MetricTile icon={Users} label="AGENTS ONLINE" value={`${health?.agentsOnline ?? "—"}/${health?.agentsTotal ?? "—"}`} sub="agent mesh" color="#57ef75" />
-        <MetricTile icon={ReceiptText} label="PROCESSED" value={health?.processed ?? health?.eventsProcessed ?? "—"} sub="events observed" color="#25e8ff" />
-        <MetricTile icon={ShieldCheck} label="MODE" value={health?.mode || "SAFE"} sub="approval boundary" color="#ffc531" />
+      <div className="brainEmbedShell" style={{ "--page-accent": color }}>
+        <iframe title={`${meta.name} full cockpit`} src={`/brain-ui/${brainId}/`} />
       </div>
-      <section className="financePanel booksPanel" id="operational-controls">
-        <div className="financePanelTitle"><div><span>{meta.name} · CONNECTED TOOLING</span><h2>Operational controls</h2></div><i className="liveLabel"><em /> ONLINE</i></div>
-        <div className="bookCards operationalToolCards">
-          {modules.map((module) => { const Icon = module.icon || Brain; return <div key={module.id}><Icon size={16} style={{ color }} /><b>{module.label}</b><small>{module.detail}</small><strong>CONNECTED</strong></div>; })}
-        </div>
-      </section>
-      <div className="pageSafety"><ShieldCheck size={15} /><span><b>PAPER-SAFE BOUNDARY</b> · La navegación abre la superficie operativa de {meta.name}. Las acciones sensibles permanecen sujetas a aprobación y no ejecutan capital real desde esta vista.</span></div>
     </section>
   );
 }
