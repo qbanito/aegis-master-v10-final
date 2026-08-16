@@ -197,7 +197,7 @@ function withAssistantGreeting(id, value) {
   return body ? `${greeting} ${body}` : greeting;
 }
 
-function App() {
+function CommandCenter() {
   const [report, setReport] = useState(null),
     [state, setState] = useState(null),
     [command, setCommand] = useState(""),
@@ -958,6 +958,80 @@ function App() {
       )}
     </div>
   );
+}
+
+function AccessGate() {
+  const [screen, setScreen] = useState("loading");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setScreen(window.sessionStorage.getItem("aegis-master-access") === "granted" ? "granted" : "login");
+    }, 1100);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function unlock(event) {
+    event.preventDefault();
+    if (password !== "boostify") {
+      setError("ACCESS DENIED · CHECK PASSWORD");
+      setPassword("");
+      return;
+    }
+    window.sessionStorage.setItem("aegis-master-access", "granted");
+    setError("");
+    setScreen("granted");
+  }
+
+  if (screen === "granted") return <CommandCenter />;
+
+  return (
+    <main className={`accessGate ${screen === "loading" ? "accessLoading" : "accessLogin"}`}>
+      <div className="accessGrid" />
+      <div className="accessGlow accessGlowOne" />
+      <div className="accessGlow accessGlowTwo" />
+      <section className="accessPanel" aria-label="AEGIS Master access">
+        <div className="accessOrb"><Brain size={30} /></div>
+        <span className="accessEyebrow">AEGIS · MASTER ARCHITECTURE</span>
+        {screen === "loading" ? (
+          <>
+            <h1>INITIALIZING</h1>
+            <p>Preparing the inter-brain command surface</p>
+            <div className="accessProgress"><i /></div>
+            <small className="accessStatus"><span /> SECURE BOOT SEQUENCE</small>
+          </>
+        ) : (
+          <>
+            <h1>WELCOME, NEIVER</h1>
+            <p>Introduce la contraseña para acceder al Command Center.</p>
+            <form className="accessForm" onSubmit={unlock}>
+              <label htmlFor="aegis-access-password">COMMAND PASSWORD</label>
+              <div className="accessInputWrap">
+                <LockKeyhole size={15} />
+                <input
+                  id="aegis-access-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => { setPassword(event.target.value); setError(""); }}
+                  placeholder="Enter password"
+                  autoComplete="current-password"
+                  autoFocus
+                />
+              </div>
+              <button type="submit"><ShieldCheck size={15} /> UNLOCK COMMAND CENTER</button>
+              <small className={`accessError ${error ? "visible" : ""}`}>{error || "ACCESS CONTROL ACTIVE"}</small>
+            </form>
+          </>
+        )}
+      </section>
+      <footer className="accessFooter"><span><i /> PRIVATE CONTROL SURFACE</span><b>V10 · PAPER-SAFE</b></footer>
+    </main>
+  );
+}
+
+function App() {
+  return <AccessGate />;
 }
 
 function money(value) {
