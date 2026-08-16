@@ -1,7 +1,12 @@
 import express from "express";
 import cors from "cors";
 import crypto from "node:crypto";
+import path from "node:path";
+import {fileURLToPath} from "node:url";
 import {completeBrainConversation} from "../../../packages/inter-brain-protocol/src/chat.js";
+import {aegisData} from "../../../packages/aegis-data/src/index.js";
+
+try { process.loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.env")); } catch {}
 
 const app=express(); app.use(cors()); app.use(express.json());
 const PORT=Number(process.env.PORT||8805);
@@ -15,7 +20,11 @@ const targets=[
   ,{id:"services",name:"Services Brain",url:serviceUrl(process.env.SERVICES_BRAIN_URL,"http://localhost:8808")}
 ];
 
-const proposals=[], incidents=[], snapshots=[], goals=[];
+const neonSnapshot = (await aegisData.readState("manager")) || {};
+const proposals=Array.isArray(neonSnapshot.proposals) ? neonSnapshot.proposals : [];
+const incidents=Array.isArray(neonSnapshot.incidents) ? neonSnapshot.incidents : [];
+const snapshots=Array.isArray(neonSnapshot.snapshots) ? neonSnapshot.snapshots : [];
+const goals=Array.isArray(neonSnapshot.goals) ? neonSnapshot.goals : [];
 const lastHealthy=new Map();
 const agents=[
 "Portfolio Observer","Performance Auditor","Opportunity Analyst","Problem Detector",
@@ -35,7 +44,16 @@ const functionCatalog=[
   {id:"cross-brain-coordination",symbol:"◇",label:"Cross-Brain Coordination",agent:"Portfolio Observer"},
   {id:"executive-summary",symbol:"▣",label:"Executive Summary",agent:"Executive Agent"}
 ];
-const functionRuns=new Map();
+const functionRuns=new Map(Object.entries(neonSnapshot.functionRuns || {}));
+
+function persist() {
+  void aegisData.writeState("manager", {
+    state: {status: "online", updatedAt: new Date().toISOString()},
+    proposals: proposals.slice(0, 200), incidents: incidents.slice(0, 200),
+    snapshots: snapshots.slice(0, 100), goals: goals.slice(0, 100),
+    functionRuns: Object.fromEntries(functionRuns.entries())
+  });
+}
 
 async function targetJson(url,path){
   let lastError;
@@ -141,7 +159,8 @@ async function advanceGoal(goal){
   goal.cursor+=1;
   goal.cycles+=1;
 }
-setInterval(()=>{goals.forEach(goal=>{advanceGoal(goal).catch(()=>{});});},75000);
+setInterval(()=>{goals.forEach(goal=>{advanceGoal(goal).catch(()=>{});});persist();},75000);
+setInterval(persist, 30000);
 
 async function probe(t){
   let lastError;
@@ -174,6 +193,7 @@ async function inspect(){
       incidents.unshift({id:crypto.randomUUID(),brain:b.id,severity:"high",status:"open",createdAt:snap.at,reason:b.error||"offline"});
     }
   }
+  persist();
   return snap;
 }
 
@@ -183,8 +203,8 @@ app.get("/api/functions",(req,res)=>res.json(functionCatalog.map(fn=>({...fn,sta
 app.post("/api/functions/:id/run",async(req,res)=>{
   const fn=functionCatalog.find(item=>item.id===req.params.id);if(!fn)return res.status(404).json({error:"FUNCTION_NOT_FOUND"});
   const startedAt=new Date().toISOString();
-  try{const result=await executeFunction(fn.id);if(result?.error)throw new Error(result.error);const run={id:fn.id,status:"completed",startedAt,finishedAt:new Date().toISOString()};functionRuns.set(fn.id,run);res.json({ok:true,function:{...fn,...run},result});}
-  catch(error){const run={id:fn.id,status:"failed",startedAt,finishedAt:new Date().toISOString(),error:error?.message||"FUNCTION_FAILED"};functionRuns.set(fn.id,run);res.status(502).json({ok:false,function:{...fn,...run},error:run.error});}
+  try{const result=await executeFunction(fn.id);if(result?.error)throw new Error(result.error);const run={id:fn.id,status:"completed",startedAt,finishedAt:new Date().toISOString()};functionRuns.set(fn.id,run);persist();res.json({ok:true,function:{...fn,...run},result});}
+  catch(error){const run={id:fn.id,status:"failed",startedAt,finishedAt:new Date().toISOString(),error:error?.message||"FUNCTION_FAILED"};functionRuns.set(fn.id,run);persist();res.status(502).json({ok:false,function:{...fn,...run},error:run.error});}
 });
 app.get("/api/inspect",async(req,res)=>res.json(await inspect()));
 app.get("/api/state",async(req,res)=>{
@@ -201,16 +221,16 @@ app.post("/api/commerce/command",async(req,res)=>{
 app.get("/api/incidents",(req,res)=>res.json(incidents));
 app.post("/api/incidents/:id/resolve",(req,res)=>{
   const i=incidents.find(x=>x.id===req.params.id); if(!i)return res.status(404).json({error:"not found"});
-  i.status="resolved"; i.resolvedAt=new Date().toISOString(); res.json({ok:true,incident:i});
+  i.status="resolved"; i.resolvedAt=new Date().toISOString(); persist(); res.json({ok:true,incident:i});
 });
 app.get("/api/proposals",(req,res)=>res.json(proposals));
 app.post("/api/proposals",(req,res)=>{
   const p={id:crypto.randomUUID(),status:"proposed",risk:req.body.risk||"low",impact:Number(req.body.impact||.5),confidence:Number(req.body.confidence||.5),createdAt:new Date().toISOString(),...req.body};
-  proposals.unshift(p); res.json({ok:true,proposal:p});
+  proposals.unshift(p); persist(); res.json({ok:true,proposal:p});
 });
 app.post("/api/proposals/:id/decision",(req,res)=>{
   const p=proposals.find(x=>x.id===req.params.id); if(!p)return res.status(404).json({error:"not found"});
-  p.status=req.body.status||p.status; p.updatedAt=new Date().toISOString(); res.json({ok:true,proposal:p});
+  p.status=req.body.status||p.status; p.updatedAt=new Date().toISOString(); persist(); res.json({ok:true,proposal:p});
 });
 app.get("/api/goals",(req,res)=>res.json(goals));
 app.get("/api/goals/:id",(req,res)=>{
@@ -228,21 +248,22 @@ app.post("/api/goals",async(req,res)=>{
       setBy:req.body?.setBy||"ceo",log:[{at:new Date().toISOString(),message:`Objetivo recibido. Plan: ${plan.steps.join(" → ")}.`}]
     };
     goals.unshift(goal);
+    persist();
     advanceGoal(goal).catch(()=>{});
     res.json({ok:true,goal});
   }catch(error){res.status(502).json({error:"GOAL_PLANNING_ERROR",message:error.message});}
 });
 app.post("/api/goals/:id/pause",(req,res)=>{
   const goal=goals.find(g=>g.id===req.params.id); if(!goal)return res.status(404).json({error:"not found"});
-  goal.status="paused"; res.json({ok:true,goal});
+  goal.status="paused"; persist(); res.json({ok:true,goal});
 });
 app.post("/api/goals/:id/resume",(req,res)=>{
   const goal=goals.find(g=>g.id===req.params.id); if(!goal)return res.status(404).json({error:"not found"});
-  goal.status="active"; res.json({ok:true,goal});
+  goal.status="active"; persist(); res.json({ok:true,goal});
 });
 app.post("/api/goals/:id/cancel",(req,res)=>{
   const goal=goals.find(g=>g.id===req.params.id); if(!goal)return res.status(404).json({error:"not found"});
-  goal.status="cancelled"; res.json({ok:true,goal});
+  goal.status="cancelled"; persist(); res.json({ok:true,goal});
 });
 app.get("/api/executive-report",async(req,res)=>{
   const snap=await inspect();

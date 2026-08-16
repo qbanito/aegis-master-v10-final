@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {BOT_DEFINITIONS,DEFAULT_RISK} from './config.js';
+import {aegisData} from '../../../../packages/aegis-data/src/index.js';
 const here=path.dirname(fileURLToPath(import.meta.url));
 const file=path.resolve(here,'../../data/state.json');
 const infra=()=>({
@@ -70,7 +71,17 @@ function load(){
   }catch{const s=initial();fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(s,null,2));return s;}
 }
 export const state=load();
-export function persist(){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(state,null,2));}
+export async function hydrateStateFromNeon(){
+  const snapshot=await aegisData.readState('finance');
+  if(!snapshot||typeof snapshot!=='object')return false;
+  Object.assign(state,snapshot);
+  return true;
+}
+export function persist(){
+  fs.mkdirSync(path.dirname(file),{recursive:true});
+  fs.writeFileSync(file,JSON.stringify(state,null,2));
+  void aegisData.writeState('finance',state);
+}
 const publicMarketBotResult=result=>{
   if(!result?.data)return result;
   const data={...result.data};

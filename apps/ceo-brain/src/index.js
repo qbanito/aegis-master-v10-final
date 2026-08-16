@@ -3,6 +3,7 @@ import cors from "cors";
 import crypto from "node:crypto";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
+import {aegisData} from "../../../packages/aegis-data/src/index.js";
 
 try{process.loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../../../.env"));}catch{}
 
@@ -21,11 +22,16 @@ const brainUrls={
 };
 const chatRoutes={finance:brainUrls.finance[0],commerce:brainUrls.commerce[0],saas:brainUrls.saas[0],media:brainUrls.media[0],services:brainUrls.services[0],manager:MANAGER,banking:MANAGER,account:MANAGER};
 
-const reports=[], audit=[];
+const neonSnapshot = (await aegisData.readState("ceo")) || {};
+const reports=Array.isArray(neonSnapshot.reports) ? neonSnapshot.reports : [], audit=Array.isArray(neonSnapshot.audit) ? neonSnapshot.audit : [];
 const agents=[
 "Executive Intake","Report Filter","Priority/Severity","Executive Summarizer","KPI/Goal Tracker",
 "Incident Liaison","Report Composer","Delivery Router","Schedule/Briefing Manager","CEO Governance/Audit"
 ];
+
+function persist() {
+  void aegisData.writeState("ceo", {state: {status: "online"}, reports: reports.slice(0, 100), audit: audit.slice(0, 300)});
+}
 
 async function manager(path="/api/executive-report",timeoutMs=3000){
   const r=await fetch(MANAGER+path,{signal:AbortSignal.timeout(timeoutMs)});
@@ -55,6 +61,7 @@ app.get("/api/report",async(req,res)=>{
     const raw=await manager("/api/executive-report",1500);
     const report=clean(raw); reports.unshift(report); if(reports.length>100)reports.pop();
     audit.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),action:"report_generated"});
+    persist();
     res.json(report);
   }catch(e){
     res.status(503).json({headline:"MANAGER UNAVAILABLE",summary:e.message,generatedAt:new Date().toISOString()});
@@ -74,6 +81,7 @@ app.post("/api/goals",async(req,res)=>{
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data?.message||data?.error||`Manager ${r.status}`);
     audit.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),action:"goal_delegated",objective,goalId:data?.goal?.id});
+    persist();
     res.json(data);
   }catch(e){res.status(502).json({error:"GOAL_DELEGATION_ERROR",message:e.message});}
 });
@@ -180,6 +188,7 @@ app.post("/api/chat",async(req,res)=>{
       const routed=await routeBrainChat({brain,message,conversation:req.body?.conversation});
       if(routed){
         audit.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),action:"command_routed",brain,message});
+        persist();
         return res.json({...routed,routedBy:"CEO Brain"});
       }
     }
@@ -195,6 +204,7 @@ app.post("/api/chat",async(req,res)=>{
     if(!reply)reply=legacyReply(message,brain,raw);
     reply=normalizeReply(brain,reply);
     audit.unshift({id:crypto.randomUUID(),at:new Date().toISOString(),action:"command_processed",message});
+    persist();
     res.json({ok:true,reply,speak:true,provider,brain,generatedAt:new Date().toISOString(),report:clean(raw)});
   }catch(e){res.status(503).json({error:"CEO_COMMAND_ERROR",message:e.message});}
 });

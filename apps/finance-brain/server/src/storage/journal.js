@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {aegisData} from '../../../../packages/aegis-data/src/index.js';
 const here=path.dirname(fileURLToPath(import.meta.url));const historyDir=path.resolve(here,'../../data/history');fs.mkdirSync(historyDir,{recursive:true});
-function append(name,payload){const line=JSON.stringify({recordedAt:new Date().toISOString(),...payload})+'\n';fs.appendFile(path.join(historyDir,`${name}.jsonl`),line,()=>{});}
+function append(name,payload){const record={recordedAt:new Date().toISOString(),...payload};const line=JSON.stringify(record)+'\n';fs.appendFile(path.join(historyDir,`${name}.jsonl`),line,()=>{});void aegisData.appendEvent('finance',name,record,{id:record.id,correlationId:record.correlation_id});}
 export const journal={
   opportunity:o=>append('opportunities',o),execution:e=>append('executions',e),rpc:r=>append('rpc-health',{rpc:r}),
   liquidation:l=>append('liquidation-scans',l),discovery:d=>append('borrower-discovery',d),arbitrage:a=>append('arbitrage-scans',a),

@@ -6,6 +6,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {MODULE_PARAMETER_DEFAULTS, buildDigitalProductOpportunity, normalizeDropshipCandidate, priceOffer, sanitizeModuleParameters, scoreDropshipCandidate} from "./module-engine.js";
 import {completeBrainConversation} from "../../../packages/inter-brain-protocol/src/chat.js";
+import {aegisData} from "../../../packages/aegis-data/src/index.js";
 
 try { process.loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.env")); } catch {}
 
@@ -54,7 +55,7 @@ const commerceBots = agents.map((agent, index) => ({
 function loadPersistence() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); } catch { return {}; }
 }
-const persisted = loadPersistence();
+const persisted = (await aegisData.readState("commerce")) || loadPersistence();
 const savedBots = Array.isArray(persisted.bots) ? persisted.bots : [];
 savedBots.forEach(saved => { const bot = commerceBots.find(item => item.id === saved.id); if (bot) Object.assign(bot, saved, {description: bot.description, strategy: bot.strategy}); });
 const events = Array.isArray(persisted.events) ? persisted.events : [];
@@ -75,7 +76,9 @@ const state = {...(persisted.state || {}), startedAt: new Date().toISOString(), 
 function persist() {
   try {
     fs.mkdirSync(DATA_DIR, {recursive: true});
-    fs.writeFileSync(DATA_FILE, JSON.stringify({state, bots: commerceBots, moduleConfigs, masterControl, events: events.slice(0, 300), opportunities: opportunities.slice(0, 300), products: products.slice(0, 500), digitalProducts: digitalProducts.slice(0, 200), landingPages: landingPages.slice(0, 200), storeDrafts: storeDrafts.slice(0, 200), leads: leads.slice(0, 500), orders: orders.slice(0, 500), funnelEvents: funnelEvents.slice(0, 1000), campaigns: campaigns.slice(0, 200), workflows: workflows.slice(0, 300)}, null, 2));
+    const snapshot = {state, bots: commerceBots, moduleConfigs, masterControl, events: events.slice(0, 300), opportunities: opportunities.slice(0, 300), products: products.slice(0, 500), digitalProducts: digitalProducts.slice(0, 200), landingPages: landingPages.slice(0, 200), storeDrafts: storeDrafts.slice(0, 200), leads: leads.slice(0, 500), orders: orders.slice(0, 500), funnelEvents: funnelEvents.slice(0, 1000), campaigns: campaigns.slice(0, 200), workflows: workflows.slice(0, 300)};
+    fs.writeFileSync(DATA_FILE, JSON.stringify(snapshot, null, 2));
+    void aegisData.writeState("commerce", snapshot);
   } catch (error) { state.alerts = [{id: crypto.randomUUID(), code: "PERSISTENCE_ERROR", message: error.message, at: new Date().toISOString()}, ...state.alerts].slice(0, 20); }
 }
 

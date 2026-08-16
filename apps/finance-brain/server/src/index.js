@@ -9,7 +9,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'node:http';
 import {Server} from 'socket.io';
-import {state,persist,publicState} from './core/store.js';
+import {state,persist,publicState,hydrateStateFromNeon} from './core/store.js';
 import {opportunityBus} from './core/opportunityBus.js';
 import {normalizeOpportunity,brainDecision} from './core/brain.js';
 import {evaluateRisk} from './core/riskEngine.js';
@@ -60,6 +60,8 @@ import {alpacaPaper} from './infrastructure/brokers/demoBrokers.js';
 import {kronosForecast,kronosStatus} from './infrastructure/models/kronosForecast.js';
 import {AgentGovernance} from './core/agentGovernance.js';
 
+await hydrateStateFromNeon();
+persist();
 const PORT=Number(process.env.PORT||8787),CLIENT_ORIGIN=process.env.CLIENT_ORIGIN||process.env.CORS_ORIGIN||'*';
 const PAPER_EXECUTE_WATCH=String(process.env.PAPER_EXECUTE_WATCH||'true').toLowerCase()!=='false';
 const allowedOrigins=CLIENT_ORIGIN==='*'?null:new Set(CLIENT_ORIGIN.split(',').map(origin=>origin.trim()).filter(Boolean));

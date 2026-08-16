@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {completeBrainConversation} from "../../../packages/inter-brain-protocol/src/chat.js";
+import {aegisData} from "../../../packages/aegis-data/src/index.js";
 
 try { process.loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.env")); } catch {}
 
@@ -14,7 +15,8 @@ app.use(express.json());
 const PORT = Number(process.env.PORT || 8790);
 const NAME = "AEGIS SaaS Brain";
 const startedAt = new Date().toISOString();
-const events = [];
+const neonSnapshot = (await aegisData.readState("saas")) || {};
+const events = Array.isArray(neonSnapshot.events) ? neonSnapshot.events : [];
 const agents = [
   ["revenue-intelligence", "Revenue Intelligence"],
   ["churn-radar", "Churn & Retention Radar"],
@@ -39,12 +41,16 @@ async function probeStripe() {
   } catch (error) { return {...status, online: false, readiness: "DEGRADED", error: error.message, checkedAt: new Date().toISOString()}; }
 }
 
-const subscriptions = [
+const subscriptions = Array.isArray(neonSnapshot.subscriptions) ? neonSnapshot.subscriptions : [
   {id: "atlas", name: "Atlas Workspace", plan: "Scale", mrr: 2490, health: 92, trend: 12.4},
   {id: "orbit", name: "Orbit Analytics", plan: "Growth", mrr: 1380, health: 84, trend: 6.8},
   {id: "nova", name: "Nova Ops", plan: "Starter", mrr: 690, health: 71, trend: -3.2},
   {id: "lumen", name: "Lumen Studio", plan: "Scale", mrr: 3210, health: 96, trend: 18.1}
 ];
+
+function persist() {
+  void aegisData.writeState("saas", {state: {status: "online", processed: events.length}, subscriptions, events: events.slice(0, 200)});
+}
 
 function emit(type, payload = {}, priority = 0.5) {
   const event = {
@@ -54,6 +60,8 @@ function emit(type, payload = {}, priority = 0.5) {
   };
   events.unshift(event);
   if (events.length > 200) events.pop();
+  void aegisData.appendEvent("saas", type, event, {id: event.id, correlationId: event.correlation_id});
+  persist();
   return event;
 }
 

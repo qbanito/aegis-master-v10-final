@@ -8,6 +8,7 @@ try{process.loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)
 import {listPromptPresets} from "./promptLibrary.js";
 import {getJob,listJobs,mediaProviderStatus,modelCatalog,submitGeneration,submitSpeech} from "./generationGateway.js";
 import {completeBrainConversation} from "../../../packages/inter-brain-protocol/src/chat.js";
+import {aegisData} from "../../../packages/aegis-data/src/index.js";
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,7 @@ const NAME = "AEGIS Media Brain";
 const KIND = "media";
 const PORT = Number(process.env.PORT || 8804);
 const serviceUrl = (value, fallback) => { const url = String(value || fallback).trim().replace(/\/$/, ""); return /^https?:\/\//i.test(url) ? url : `http://${url}`; };
+const neonSnapshot = (await aegisData.readState("media")) || {};
 
 const agents = [
   {
@@ -70,8 +72,9 @@ const agents = [
     "enabled": true
   }
 ];
-const events = [];
+const events = Array.isArray(neonSnapshot.events) ? neonSnapshot.events : [];
 const state = {
+  ...(neonSnapshot.state || {}),
   startedAt: new Date().toISOString(),
   status: "online",
   processed: 0,
@@ -83,8 +86,8 @@ const sourceUrls={
   commerce:[serviceUrl(process.env.COMMERCE_BRAIN_URL,"http://localhost:8802")],
   saas:[serviceUrl(process.env.SAAS_BRAIN_URL,"http://localhost:8790")]
 };
-const catalog=[];
-const catalogSync={lastSyncAt:null,lastError:null,commerceCount:0,saasCount:0};
+const catalog=Array.isArray(neonSnapshot.catalog) ? neonSnapshot.catalog : [];
+const catalogSync={lastSyncAt:null,lastError:null,commerceCount:0,saasCount:0,...(neonSnapshot.catalogSync || {})};
 const automation={
   enabled:String(process.env.MEDIA_AUTOMATION_ENABLED||"true").toLowerCase()!=="false",
   cron:String(process.env.MEDIA_AUTOMATION_CRON||"0 */6 * * *"),
@@ -111,6 +114,8 @@ function emit(type, payload={}, priority=.5) {
   events.unshift(e);
   if(events.length>300) events.pop();
   state.processed++;
+  void aegisData.appendEvent("media", type, e, {id: e.id, correlationId: e.correlation_id});
+  persistNeon();
   return e;
 }
 
@@ -272,7 +277,7 @@ app.post("/api/event",(req,res)=>{
 const contentFile=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../data/content.json");
 function loadContent(){try{const value=JSON.parse(fs.readFileSync(contentFile,"utf8"));return Array.isArray(value)?value:[];}catch{return [];}}
 function persistContent(){fs.mkdirSync(path.dirname(contentFile),{recursive:true});fs.writeFileSync(contentFile,JSON.stringify(content.slice(0,500),null,2));}
-const content = loadContent();
+const content = Array.isArray(neonSnapshot.content) ? neonSnapshot.content : loadContent();
 app.get("/api/content",(req,res)=>res.json(content));
 app.post("/api/content",(req,res)=>{
   const c={id:crypto.randomUUID(),createdAt:new Date().toISOString(),status:"draft",score:Number(req.body.score||0.5),...req.body};
@@ -303,7 +308,10 @@ app.post("/api/content/automation/config",(req,res)=>{
 const avatarFile=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../data/avatars.json");
 function loadAvatars(){try{return JSON.parse(fs.readFileSync(avatarFile,"utf8"));}catch{return [];}}
 function persistAvatars(){fs.mkdirSync(path.dirname(avatarFile),{recursive:true});fs.writeFileSync(avatarFile,JSON.stringify(avatars,null,2));}
-const avatars=loadAvatars();
+const avatars=Array.isArray(neonSnapshot.avatars) ? neonSnapshot.avatars : loadAvatars();
+function persistNeon(){
+  void aegisData.writeState("media", {state, events: events.slice(0, 300), catalog: catalog.slice(0, 500), catalogSync, automation, content: content.slice(0, 500), avatars: avatars.slice(0, 200)});
+}
 app.get("/api/media/status",(req,res)=>res.json({ok:true,provider:mediaProviderStatus(),models:modelCatalog().total,avatars:avatars.length,jobs:listJobs().length}));
 app.get("/api/models",(req,res)=>res.json(modelCatalog()));
 app.get("/api/prompts",(req,res)=>res.json({presets:listPromptPresets()}));

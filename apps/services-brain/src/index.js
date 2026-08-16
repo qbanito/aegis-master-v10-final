@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {completeBrainConversation} from "../../../packages/inter-brain-protocol/src/chat.js";
+import {aegisData} from "../../../packages/aegis-data/src/index.js";
 
 try { process.loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.env")); } catch {}
 
@@ -90,7 +91,7 @@ const agents = [
 ].map(([id, name, description], index) => ({id, name, description, order: index + 1, status: "online", enabled: true}));
 
 function loadPersistence() { try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); } catch { return {}; } }
-const persisted = loadPersistence();
+const persisted = (await aegisData.readState("services")) || loadPersistence();
 const events = Array.isArray(persisted.events) ? persisted.events : [];
 const leads = Array.isArray(persisted.leads) ? persisted.leads : [];
 const proposals = Array.isArray(persisted.proposals) ? persisted.proposals : [];
@@ -115,6 +116,7 @@ function persist() {
   const temporary = `${DATA_FILE}.tmp`;
   fs.writeFileSync(temporary, JSON.stringify(snapshot, null, 2));
   fs.renameSync(temporary, DATA_FILE);
+  void aegisData.writeState("services", snapshot);
 }
 let legacyLeadMigration = false;
 leads.forEach(lead => { if (!lead.tier || !lead.nextAction) { Object.assign(lead, scoreLead(lead)); legacyLeadMigration = true; } });

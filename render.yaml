@@ -12,6 +12,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: AEGIS_AI_PROVIDER
         value: mock
       - key: PAPER_MODEL_FALLBACK
@@ -38,6 +40,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: MEDIA_BRAIN_URL
         value: https://aegis-media-brain.onrender.com
       - key: MANAGER_BRAIN_URL
@@ -70,6 +74,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
 
@@ -86,6 +92,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: COMMERCE_BRAIN_URL
         value: https://aegis-commerce-brain.onrender.com
       - key: SAAS_BRAIN_URL
@@ -108,6 +116,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: SERVICES_MODE
         value: PAPER
       - key: SERVICES_AUTOMATION_ENABLED
@@ -154,6 +164,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: FINANCE_BRAIN_URL
         value: https://aegis-finance-brain.onrender.com
       - key: COMMERCE_BRAIN_URL
@@ -182,6 +194,8 @@ services:
         value: "22"
       - key: PORT
         value: "10000"
+      - key: DATABASE_URL
+        sync: false
       - key: MANAGER_BRAIN_URL
         value: https://aegis-manager-brain.onrender.com
       - key: FINANCE_BRAIN_URL
