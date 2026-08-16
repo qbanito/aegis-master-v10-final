@@ -16,6 +16,7 @@ const targets=[
 ];
 
 const proposals=[], incidents=[], snapshots=[], goals=[];
+const lastHealthy=new Map();
 const agents=[
 "Portfolio Observer","Performance Auditor","Opportunity Analyst","Problem Detector",
 "Optimization Agent","Resource Allocator","Experiment Manager","Risk & Governance Agent",
@@ -150,12 +151,16 @@ async function probe(t){
       const probeUrl=`${t.url}/health?probe=${Date.now()}-${attempt}`;
       const r=await fetch(probeUrl,{signal:controller.signal,headers:{"cache-control":"no-cache"}}); clearTimeout(timer);
       if(!r.ok) throw new Error("HTTP "+r.status);
-      return {id:t.id,name:t.name,url:t.url,status:"online",health:await r.json()};
+      const health=await r.json();
+      lastHealthy.set(t.id,{at:Date.now(),health});
+      return {id:t.id,name:t.name,url:t.url,status:"online",health};
     }catch(e){
       lastError=e;
       if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350));
     }
   }
+  const cached=lastHealthy.get(t.id);
+  if(cached&&Date.now()-cached.at<300000)return {id:t.id,name:t.name,url:t.url,status:"online",health:{...cached.health,stale:true},degraded:true};
   return {id:t.id,name:t.name,url:t.url,status:"offline",error:lastError?.message||"TARGET_UNAVAILABLE"};
 }
 
