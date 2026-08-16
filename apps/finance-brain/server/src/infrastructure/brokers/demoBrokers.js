@@ -52,12 +52,12 @@ export class AlpacaPaperConnector{
   }
   async stockBars({symbols=csv(process.env.OIL_SYMBOL||'USO'),limit=100}={}){
     if(!this.configured())throw new Error('ALPACA_PAPER_CREDENTIALS_MISSING');
-    const query=new URLSearchParams({symbols:symbols.join(','),timeframe:'1Day',limit:String(Math.min(1000,Math.max(10,limit))),feed:'iex',sort:'desc'});
+    const end=new Date(),start=new Date(end.getTime()-370*86400000);const query=new URLSearchParams({symbols:symbols.join(','),timeframe:'1Day',start:start.toISOString(),end:end.toISOString(),limit:String(Math.min(1000,Math.max(10,limit))),feed:'iex',sort:'asc'});
     return fetchJson(`${this.dataBase}/v2/stocks/bars?${query}`,{headers:this.headers(),timeoutMs:8000,retries:1,errorPrefix:'ALPACA_STOCK_BARS'});
   }
   async optionContracts({underlying=process.env.OPTIONS_UNDERLYINGS?.split(',')[0]||'SPY',limit=50}={}){
     if(!this.configured())throw new Error('ALPACA_PAPER_CREDENTIALS_MISSING');
-    const query=new URLSearchParams({underlying_symbols:underlying,status:'active',limit:String(Math.min(100,Math.max(1,limit))),type:'all'});
+    const query=new URLSearchParams({underlying_symbols:underlying,status:'active',limit:String(Math.min(100,Math.max(1,limit)))});
     return fetchJson(`${this.tradingBase}/v2/options/contracts?${query}`,{headers:this.headers(),timeoutMs:8000,retries:1,errorPrefix:'ALPACA_OPTIONS'});
   }
   async optionQuotes({symbols=[]}={}){

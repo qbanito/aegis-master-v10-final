@@ -53,8 +53,8 @@ export class MarketBotRegistry{
     if(!definition)return {status:'NOT_FOUND',blockers:['BOT_NOT_FOUND'],warnings:[]};
     if(id==='solana-meme-momentum'&&!connectors.solanaDiscovery?.online)warnings.push('Solana public RPC no respondió en el último chequeo.');
     if(id==='polygon-meme-momentum'&&!connectors.polygonDiscovery?.online)warnings.push('Polygon public RPC no respondió en el último chequeo.');
-    if(['fx-macro-momentum'].includes(id)&&!oandaPractice.configured()&&!connectors.publicTradFi?.online)blockers.push('Faltan OANDA practice y la fuente pública FX no está disponible.');
-    if(['fx-macro-momentum'].includes(id)&&!oandaPractice.configured()&&connectors.publicTradFi?.online)warnings.push('Usando tasas FX públicas de referencia; OANDA practice dará precios y ejecución de demo más precisos.');
+    if(['fx-macro-momentum'].includes(id)&&!oandaPractice.configured()&&!connectors.publicFx?.online)blockers.push('Faltan OANDA practice y la fuente pública FX no está disponible.');
+    if(['fx-macro-momentum'].includes(id)&&!oandaPractice.configured()&&connectors.publicFx?.online)warnings.push('Usando tasas FX públicas de referencia; OANDA practice dará precios y ejecución de demo más precisos.');
     if(['options-defined-risk','crude-oil-regime','nyse-news-impact'].includes(id)&&!alpacaPaper.configured()&&!ibkrPaper.configured()&&!connectors.publicTradFi?.online)blockers.push('Falta Alpaca/IBKR y la fuente pública TradFi no está disponible.');
     if(['options-defined-risk','crude-oil-regime','nyse-news-impact'].includes(id)&&!alpacaPaper.configured()&&!ibkrPaper.configured()&&connectors.publicTradFi?.online)warnings.push('Usando datos públicos TradFi en modo lectura; Alpaca o IBKR paper aportarán quotes/news/options de broker.');
     if(['solana-meme-momentum','polygon-meme-momentum'].includes(id)&&!connectors.goPlus?.configured)blockers.push('Falta GoPlus Token Security para el filtro anti-rug.');
@@ -70,8 +70,8 @@ export class MarketBotRegistry{
     return warnings;
   }
   async refreshConnectors(){
-    const [solana,polygon,alpaca,oanda,ibkr,publicTradFiStatus,heliusStatus,goplusStatus,okxStatus]=await Promise.all([this.solanaDiscovery.health(),this.polygonDiscovery.health(),alpacaPaper.probe(),oandaPractice.probe(),ibkrPaper.probe(),publicTradFi.probe(),helius.probe(),goPlus.probe(),okxDerivativesMarketData.ping().catch(error=>({...okxDerivativesMarketData.status(),online:false,readiness:'DEGRADED',error:error?.message||'OKX_PUBLIC_UNAVAILABLE',checkedAt:now()}))]);
-    const connectors={alpaca,oanda,ibkr,publicTradFi:publicTradFiStatus,solanaDiscovery:solana,polygonDiscovery:polygon,polygonPaperQuotes:polygonPaperQuotes.status(),helius:heliusStatus,goPlus:goplusStatus,okxDerivatives:okxStatus};this.state.infrastructure.marketBots.connectors=connectors;this.persist?.();return connectors;
+    const [solana,polygon,alpaca,oanda,ibkr,publicTradFiStatus,publicFx,heliusStatus,goplusStatus,okxStatus]=await Promise.all([this.solanaDiscovery.health(),this.polygonDiscovery.health(),alpacaPaper.probe(),oandaPractice.probe(),ibkrPaper.probe(),publicTradFi.probe(),publicTradFi.fxPrices(['EUR_USD']).then(payload=>({provider:'ExchangeRate API public reference',online:Boolean(payload?.prices?.length),mode:'READ_ONLY',checkedAt:now()})).catch(error=>({provider:'ExchangeRate API public reference',online:false,mode:'READ_ONLY',error:error?.message||'PUBLIC_FX_UNAVAILABLE',checkedAt:now()})),helius.probe(),goPlus.probe(),okxDerivativesMarketData.ping().catch(error=>({...okxDerivativesMarketData.status(),online:false,readiness:'DEGRADED',error:error?.message||'OKX_PUBLIC_UNAVAILABLE',checkedAt:now()}))]);
+    const connectors={alpaca,oanda,ibkr,publicTradFi:publicTradFiStatus,publicFx,solanaDiscovery:solana,polygonDiscovery:polygon,polygonPaperQuotes:polygonPaperQuotes.status(),helius:heliusStatus,goPlus:goplusStatus,okxDerivatives:okxStatus};this.state.infrastructure.marketBots.connectors=connectors;this.persist?.();return connectors;
   }
   async scan(id){
     const definition=DEFINITIONS.find(item=>item.id===id);if(!definition)throw new Error('MARKET_BOT_NOT_FOUND');
