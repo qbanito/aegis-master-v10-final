@@ -3,7 +3,6 @@ import {strategyConfigService} from './strategyConfigService.js';
 export function evaluateRisk(opportunity,state){
   const r=state.risk,reasons=[];
   if(r.globalKillSwitch)reasons.push('GLOBAL_KILL_SWITCH');
-  if(state.mode!=='PAPER')reasons.push('LIVE_DISABLED_IN_V9');
   if(opportunity.simulation && !opportunity.simulation.passed)reasons.push('SIMULATION_REJECTED');
   if(opportunity.confidence<r.minConfidence)reasons.push('LOW_CONFIDENCE');
   const strategyConfig=strategyConfigService.get()[opportunity.strategyId];

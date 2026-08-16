@@ -5,7 +5,7 @@ import {BOT_DEFINITIONS} from './config.js';
 const here=path.dirname(fileURLToPath(import.meta.url));
 const file=path.resolve(here,'../../data/strategy-config.json');
 const numeric=(value,min,max,label,{nullable=false}={})=>{if(nullable&&(value===null||value===''))return null;const number=Number(value);if(!Number.isFinite(number)||number<min||number>max)throw new Error(`${label}_OUT_OF_RANGE`);return number;};
-export const defaultStrategyConfig=bot=>({enabled:true,maxAllocationPct:20,minConfidence:null,maxRiskScore:.65,minExpectedProfitUsd:5,maxSlippageBps:75,notes:'',wallet:bot?.wallet||null,activePresetId:null,updatedAt:null});
+export const defaultStrategyConfig=bot=>({enabled:true,maxAllocationPct:20,minConfidence:null,maxRiskScore:.65,minExpectedProfitUsd:5,maxSlippageBps:75,riskLevel:'MEDIUM',notes:'',wallet:bot?.wallet||null,activePresetId:null,updatedAt:null});
 const defaults=()=>Object.fromEntries(BOT_DEFINITIONS.map(bot=>[bot.id,defaultStrategyConfig(bot)]));
 export class StrategyConfigService{
   constructor({storageFile=file}={}){this.storageFile=storageFile;this.config=this.load();}
@@ -21,6 +21,7 @@ export class StrategyConfigService{
     if('maxRiskScore'in changes)next.maxRiskScore=numeric(changes.maxRiskScore,.05,.9,'MAX_RISK_SCORE');
     if('minExpectedProfitUsd'in changes)next.minExpectedProfitUsd=numeric(changes.minExpectedProfitUsd,0,1000000,'MIN_EXPECTED_PROFIT_USD');
     if('maxSlippageBps'in changes)next.maxSlippageBps=numeric(changes.maxSlippageBps,1,500,'MAX_SLIPPAGE_BPS');
+    if('riskLevel'in changes){const level=String(changes.riskLevel||'').toUpperCase();if(!['LOW','MEDIUM','HIGH'].includes(level))throw new Error('INVALID_RISK_LEVEL');next.riskLevel=level;}
     if('notes'in changes)next.notes=String(changes.notes||'').slice(0,2000);
     if('activePresetId'in changes)next.activePresetId=changes.activePresetId?String(changes.activePresetId):null;
     next.updatedAt=new Date().toISOString();this.config[id]=next;this.save();return next;

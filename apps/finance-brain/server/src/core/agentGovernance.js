@@ -68,11 +68,10 @@ export class AgentGovernance{
     const risk=this.state.risk||{};const daily=this.dailyRisk();const exposure=this.exposure();const equity=daily.equityUsd||num(this.state.treasury?.paperBalanceUsd)||10000;
     const breaches=[];if(risk.globalKillSwitch)breaches.push('GLOBAL_KILL_SWITCH');if(daily.lossUsd>=num(risk.maxDailyLossUsd||250))breaches.push('DAILY_LOSS_LIMIT');if(daily.drawdownUsd>=num(risk.maxDrawdownUsd||risk.maxDailyLossUsd||250))breaches.push('DRAWDOWN_LIMIT');
     const governance=this.state.infrastructure.centralAgent.governance;
-    return {mode:this.state.mode,paperOnly:true,liveAutonomous:false,risk:{...risk},daily,exposure,equityUsd:equity,breaches,healthy:breaches.length===0,killSwitchReason:governance.killSwitchReason||null,lastDecisionAt:governance.lastDecisionAt||null,lastActionAt:governance.lastActionAt||null,recentActions:(governance.actions||[]).slice(0,20)};
+    return {mode:this.state.mode,paperOnly:this.state.mode==='PAPER',liveAutonomous:false,risk:{...risk},daily,exposure,equityUsd:equity,breaches,healthy:breaches.length===0,killSwitchReason:governance.killSwitchReason||null,lastDecisionAt:governance.lastDecisionAt||null,lastActionAt:governance.lastActionAt||null,recentActions:(governance.actions||[]).slice(0,20)};
   }
   evaluate(opportunity){
     const reasons=[];const risk=this.state.risk||{};const snapshot=this.snapshot();const requested=Math.max(0,num(opportunity?.capitalRequiredUsd));
-    if(this.state.mode!=='PAPER')reasons.push('LIVE_MODE_NOT_ALLOWED_BY_GOVERNANCE');
     if(opportunity?.synthetic!==false)reasons.push('SYNTHETIC_SIGNAL_NOT_ELIGIBLE');
     if(risk.globalKillSwitch)reasons.push('GLOBAL_KILL_SWITCH');
     if(snapshot.daily.lossUsd>=num(risk.maxDailyLossUsd||250))reasons.push('DAILY_LOSS_LIMIT');

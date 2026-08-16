@@ -1,3 +1,8 @@
+import {getExecutionControl} from './executionControlService.js';
+import {binanceTrading} from '../infrastructure/binance/binanceTrading.js';
+import {solanaTrading} from '../infrastructure/solana/solanaTrading.js';
+import {polygonPaperQuotes} from '../infrastructure/brokers/demoBrokers.js';
+
 export class ExecutionAdapter {
   constructor(){
     this.liveEnabled=String(process.env.AEGIS_LIVE_EXECUTION_ENABLED||'false').toLowerCase()==='true';
@@ -6,22 +11,36 @@ export class ExecutionAdapter {
   }
   capabilities(){return {
     paper:true,
-    live:this.liveEnabled&&this.signerProvider!=='none',
+    live:this.liveEnabled,
     autonomous:false,
-    signer:this.signerProvider==='none'?'NONE':this.signerProvider.toUpperCase(),
-    metamask:'BROWSER_MANUAL_APPROVAL',
+    signer:'ROUTE_SPECIFIC',
+    metamask:'EVM_AND_SOLANA_BROWSER_MANUAL_APPROVAL',
+    cex:'SERVER_ENV_WITH_EXPLICIT_ARMING',
     storesPrivateKeys:false,
     allowedNetworks:this.allowedNetworks,
-    message:this.signerProvider==='none'
-      ?'PAPER activo. MetaMask solo puede aprobar transacciones desde el navegador; no firma procesos 24/7.'
-      :'Firmante externo declarado; requiere adaptador específico, límites y pruebas antes de habilitar LIVE.'
+    message:'PAPER es el valor inicial. DEX requiere aprobación visible en MetaMask; CEX requiere claves server-side, allowlist, límite y doble armado.'
   };}
   async execute(opportunity,state,{paperExecutor}){
-    if(state.mode!=='LIVE')return paperExecutor(opportunity,state);
-    if(!this.liveEnabled)throw new Error('LIVE_EXECUTION_LOCKED');
-    if(this.signerProvider==='none')throw new Error('LIVE_SIGNER_NOT_CONFIGURED');
-    if(!this.allowedNetworks.includes(String(opportunity.network||'').toLowerCase()))throw new Error('NETWORK_NOT_ALLOWED');
-    throw new Error('LIVE_EXECUTOR_NOT_IMPLEMENTED_FOR_STRATEGY');
+    const service=getExecutionControl(),control=service.bot(opportunity.strategyId);
+    if(!control||control.effectiveMode!=='REAL')return paperExecutor(opportunity,state);
+    const createdAt=new Date().toISOString(),base={id:crypto.randomUUID(),opportunityId:opportunity.id,strategyId:opportunity.strategyId,asset:opportunity.asset,mode:'REAL',createdAt};
+    if(control.route.executionKind==='INTELLIGENCE')return{...base,status:'REAL_DATA_ONLY',reason:'This bot observes real data but does not place orders.'};
+    if(!control.readiness.ready)throw new Error(control.readiness.blockers.join('|')||'REAL_EXECUTION_NOT_READY');
+    if(control.route.executionKind==='DEX'){
+      const metadata=opportunity.metadata||{};let prepared=null;
+      if(control.route.ecosystem==='SOLANA'&&metadata.inputMint&&metadata.outputMint&&control.wallet?.address){const inputDecimals=Math.max(0,Number(metadata.inputDecimals||6)),amount=String(Math.round(Number(opportunity.capitalRequiredUsd||metadata.paperPlan?.notionalUsd||0)*(10**inputDecimals)));const quoteResponse=await solanaTrading.quote({inputMint:metadata.inputMint,outputMint:metadata.outputMint,amount,slippageBps:Math.round(Number(opportunity.estimatedSlippageBps||metadata.slippageBps||100))});const swap=await solanaTrading.prepareSwap({quoteResponse,userPublicKey:control.wallet.address});prepared={kind:'SOLANA',transactionBase64:swap.swapTransaction,lastValidBlockHeight:swap.lastValidBlockHeight,quote:{inputMint:metadata.inputMint,outputMint:metadata.outputMint,amount,outAmount:quoteResponse.outAmount,priceImpactPct:quoteResponse.priceImpactPct}};}
+      if(opportunity.strategyId==='polygon-meme-momentum'&&metadata.inputToken&&metadata.outputToken&&control.wallet?.address){const inputDecimals=Math.max(0,Number(metadata.inputDecimals||6)),amount=String(Math.round(Number(opportunity.capitalRequiredUsd||metadata.paperPlan?.notionalUsd||0)*(10**inputDecimals)));prepared={kind:'EVM',...await polygonPaperQuotes.prepareSwap({inputToken:metadata.inputToken,outputToken:metadata.outputToken,amount,taker:control.wallet.address,slippageBps:Math.round(Number(opportunity.estimatedSlippageBps||metadata.slippageBps||100))})};}
+      const request=service.queueWalletSignature(opportunity,prepared);
+      return{...base,status:'AWAITING_WALLET_SIGNATURE',signingRequestId:request.id,route:control.route,reason:'MetaMask must review and sign the prepared transaction in the browser.'};
+    }
+    if(control.route.executionKind==='CEX'){
+      const order=opportunity.metadata?.cexOrder;
+      if(!order)return{...base,status:'AWAITING_ORDER_PAYLOAD',route:control.route,reason:'Scanner must provide a normalized CEX order payload before submission.'};
+      if(String(process.env.AEGIS_CEX_AUTO_EXECUTION_ENABLED||'false').toLowerCase()!=='true')return{...base,status:'READY_FOR_OPERATOR',route:control.route,orderPreview:{...order,credentials:'SERVER_ENV'},reason:'CEX auto execution is disabled; submit after operator review.'};
+      const result=await binanceTrading.order({...order,notionalUsd:Number(order.notionalUsd||opportunity.capitalRequiredUsd||0)});
+      return{...base,status:'SUBMITTED',route:control.route,provider:'Binance',orderId:result.orderId||result.clientOrderId||null,result};
+    }
+    throw new Error('REAL_BROKER_EXECUTION_NOT_AVAILABLE');
   }
 }
 export const executionAdapter=new ExecutionAdapter();
