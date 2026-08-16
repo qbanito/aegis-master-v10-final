@@ -5,11 +5,12 @@ import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {io as connectSocket} from "socket.io-client";
 import {
   Activity, ArrowUpRight, BarChart3, Bot, Brain, Briefcase, ChevronRight, CircleDollarSign,
-  Database, Gauge, Globe2, Layers3, Orbit, Radar, Radio, RefreshCw, Rocket,
+  Database, ExternalLink, Gauge, Globe2, Layers3, Maximize2, Orbit, Radar, Radio, RefreshCw, Rocket,
   Image as ImageIcon, Mic2, MessageCircle, Music2, Plus, Settings, ShieldCheck, Sparkles, Target, TrendingUp, Video, Volume2, WalletCards, Zap
 } from "lucide-react";
 import "./style.css";
 import "./control-overlay.css";
+import "./ecosystem.css";
 import "./responsive.css";
 
 const ports = {finance: 8811, commerce: 8812, saas: 8813, media: 8814, services: 8815};
@@ -21,6 +22,115 @@ const config = {
   media: {name: "Media Brain", kicker: "CONTENT DISTRIBUTION", desc: "Convert signals into a living editorial system that ships, learns and compounds.", accent: "#ffb86b", accent2: "#ff6f9d", icon: Radar, page: "media", api: runtimeApi("http://localhost:8804", "/brain-api/media"), metric: "CONTENT QUEUE"},
   services: {name: "Services Brain", kicker: "SERVICE REVENUE SYSTEM", desc: "Vende, cotiza y entrega videos, páginas web, SEO y servicios digitales desde un solo cockpit.", accent: "#ff8b5b", accent2: "#25e8ff", icon: Briefcase, page: "services", api: runtimeApi("http://localhost:8808", "/brain-api/services"), metric: "ACTIVE SERVICES"}
 };
+
+const FINANCE_ECOSYSTEM_TOOLS = [
+  {
+    id: "tool-solana-launchpad",
+    name: "SOLANA TOKEN LAUNCHPAD",
+    shortName: "Token Launchpad",
+    category: "TOKEN CREATION",
+    network: "SOLANA",
+    description: "Generador de tokens y centro de lanzamiento para crear, configurar y preparar nuevos activos en Solana.",
+    url: "https://boostify-solana-launchpad-v4.netlify.app/",
+    accent: "#8f7cff",
+    Icon: Rocket,
+    embeddable: true,
+  },
+  {
+    id: "tool-telegram-suite",
+    name: "TELEGRAM BOT SUITE",
+    shortName: "Telegram Suite",
+    category: "COMMUNITY MOMENTUM",
+    network: "TELEGRAM",
+    description: "Convierte señales de comunidad en campañas, automatización y momentum coordinado.",
+    url: "https://telegram-bot-suite-v5.netlify.app/",
+    accent: "#42b7ff",
+    Icon: MessageCircle,
+    embeddable: false,
+    embedReason: "La plataforma protege sus páginas con SAMEORIGIN. El acceso completo se abre en una pestaña segura.",
+  },
+  {
+    id: "tool-defi-social-club",
+    name: "DEFI SOCIAL CLUB",
+    shortName: "DeFi Social Club",
+    category: "PRIVATE INTELLIGENCE",
+    network: "MIAMI CIRCLE",
+    description: "Círculo privado para inteligencia DeFi, relaciones estratégicas y oportunidades de comunidad.",
+    url: "https://defi-social-club-v3.netlify.app/",
+    accent: "#ffb768",
+    Icon: Globe2,
+    embeddable: true,
+  },
+  {
+    id: "tool-community-forge",
+    name: "COMMUNITYFORGE AI",
+    shortName: "CommunityForge",
+    category: "COMMUNITY SYSTEM",
+    network: "MULTI-CHANNEL",
+    description: "Sistema de construcción y activación de comunidades asistido por inteligencia artificial.",
+    url: "https://communityforge-ai-v10.netlify.app/",
+    accent: "#59e2b0",
+    Icon: Layers3,
+    embeddable: true,
+  },
+  {
+    id: "tool-nexus-defi",
+    name: "NEXUS DEFI SYSTEMS",
+    shortName: "Nexus DeFi",
+    category: "EDGE DISCOVERY",
+    network: "MULTI-CHAIN",
+    description: "Suite de sistemas que busca ventaja, desequilibrios y oportunidades antes de que cierren.",
+    url: "https://nexus-defi-systems.netlify.app/",
+    accent: "#ff7fb1",
+    Icon: Zap,
+    embeddable: true,
+  },
+  {
+    id: "tool-solana-liquidity",
+    name: "SOLANA LIQUIDITY INTELLIGENCE",
+    shortName: "Liquidity Engine",
+    category: "EXECUTION SAFETY",
+    network: "SOLANA",
+    description: "Construcción DEX-native, simulación RPC, compute-unit sizing y puertas de seguridad de ejecución.",
+    url: "https://solana-liquidity-intelligence-v7.netlify.app/",
+    accent: "#29e5c0",
+    Icon: Database,
+    embeddable: true,
+  },
+  {
+    id: "tool-arb-scanner",
+    name: "ARB SCANNER QUANTUM",
+    shortName: "Arb Scanner",
+    category: "CROSS-CHAIN EDGE",
+    network: "CROSS-CHAIN",
+    description: "Inteligencia de precios, riesgo de liquidación y cobertura de mercados Aave para encontrar el gap temprano.",
+    url: "https://arb-scanner-quantum.netlify.app/",
+    accent: "#63c9ff",
+    Icon: Radar,
+    embeddable: true,
+  },
+  {
+    id: "tool-multichain-command",
+    name: "MULTI-CHAIN COMMAND CENTER",
+    shortName: "Command Center",
+    category: "MARKET INTELLIGENCE",
+    network: "MULTI-CHAIN",
+    description: "Scanner, planner y consola de ejecución asistida por wallet con rutas multichain protegidas.",
+    url: "https://dapper-pudding-aa123b.netlify.app/",
+    accent: "#f3ca62",
+    Icon: Gauge,
+    embeddable: true,
+  },
+];
+
+const ecosystemNode = tool => ({
+  ...tool,
+  nodeType: "tool",
+  active: true,
+  enabled: true,
+  status: "CONNECTED",
+  pnl24h: 0,
+});
 
 const kind = import.meta.env.VITE_BRAIN_KIND || new URLSearchParams(location.search).get("brain") || "finance";
 const current = config[kind] || config.finance;
@@ -114,6 +224,7 @@ function App() {
   const [executionControl,setExecutionControl]=useState(null);
   const [executionBusy,setExecutionBusy]=useState(false);
   const [walletBusy, setWalletBusy] = useState(false);
+  const [selectedToolId, setSelectedToolId] = useState(null);
   const Icon = current.icon;
 
   const refresh = useCallback(async () => {
@@ -316,8 +427,9 @@ function App() {
       {kind === "services" && <ServicesControlPanel api={API} agents={summary?.agents || []} summary={summary} selectedAgentId={selectedBotId} onSelect={setSelectedBotId}/>} 
 
       {kind === "finance" && <CentralFinanceBrainPanel data={centralAgent} busy={centralBusy} onRun={runCentralAgent} mediaApi="http://localhost:8804" onSpeakingChange={setBrainSpeaking}/>} 
-      {kind === "finance" && <FinanceBrainOrbit bots={financeTelemetry} central={centralAgent} speaking={brainSpeaking} streamConnected={streamConnected} selectedBotId={selectedBotId} onSelect={setSelectedBotId}/>}
+      {kind === "finance" && <FinanceBrainOrbit bots={financeTelemetry} tools={FINANCE_ECOSYSTEM_TOOLS} central={centralAgent} speaking={brainSpeaking} streamConnected={streamConnected} selectedBotId={selectedBotId} onSelect={setSelectedBotId} onOpenTool={setSelectedToolId}/>}
       {kind === "finance" && <FinanceBotConfiguration bots={summary?.bots || []} state={summary} busyBot={busyBot} onAction={financeAction} onSelect={setSelectedBotId}/>} 
+      {kind === "finance" && <FinanceEcosystemPanel tools={FINANCE_ECOSYSTEM_TOOLS} onOpen={setSelectedToolId}/>}
       {kind === "finance" && <FinanceIntegrationsPanel api={API}/>} 
 
       <section className="lowerGrid"><div className="panel activityPanel"><PanelHead eyebrow="04 / ACTIVITY" title="Recent intelligence" action="AUTO-SYNC"/><div className="activityList">{feed.slice(0, 6).map((item, i) => <div className="activityRow" key={item.id || i}><span className="activityIcon"><Sparkles size={14}/></span><div><b>{item.type || item.strategy || item.title || "Signal received"}</b><small>{item.payload?.asset || item.asset || item.name || item.source || "Inter-brain protocol"}</small></div><time>{item.timestamp ? new Date(item.timestamp).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) : `0${i + 1}:2${i}`}</time><ArrowUpRight size={14}/></div>)}{!feed.length && <Empty text="Waiting for the first signal…"/>}</div></div><div className="panel commandPanel"><PanelHead eyebrow="05 / COMMAND LAYER" title="Make the next move."/><div className="commandCard"><div className="commandIcon"><Target size={21}/></div><div><b>Run a clean intelligence sync</b><p>Pull current health, events and opportunity data from this Brain.</p></div><button onClick={refresh}><ArrowUpRight size={16}/></button></div><div className="commandCard mutedCard"><div className="commandIcon"><Database size={21}/></div><div><b>Open system state</b><p>Inspect the raw state without leaving the command surface.</p></div><a href={`${API}${kind === "finance" ? "/api/state" : "/api/summary"}`} target="_blank" rel="noreferrer"><ChevronRight size={17}/></a></div></div></section>
@@ -325,6 +437,7 @@ function App() {
       <footer><span><i className="onlineDot"/> AEGIS INTER-BRAIN PROTOCOL · {current.name}</span><span>SAFE BY DEFAULT <ShieldCheck size={13}/></span></footer>
     </main>
     {kind === "finance" && selectedBotId && <BotControlErrorBoundary onClose={() => setSelectedBotId(null)}><BotControlModal api={API} bot={financeTelemetry.find(item => item.id === selectedBotId) || {id:selectedBotId,name:selectedBotId,active:false,status:"UNKNOWN"}} onClose={() => setSelectedBotId(null)} onScan={id => financeAction(id, "scan")} onToggle={id => financeAction(id, "toggle")} onSetExecutionMode={setBotExecutionMode}/></BotControlErrorBoundary>}
+    {kind === "finance" && selectedToolId && <FinanceToolEmbed tool={FINANCE_ECOSYSTEM_TOOLS.find(item => item.id === selectedToolId)} onClose={() => setSelectedToolId(null)}/>}
   </div>
 }
 
@@ -500,8 +613,44 @@ async function speakBrainReply(text,{brain="finance",mediaApi="http://localhost:
 
 const BRAIN_PREVIEW_URL = import.meta.env.VITE_FINANCE_BRAIN_PREVIEW_URL || "https://cdn.muapi.ai/outputs/generated/2fc3c576b7d84c0a85e6046aec421db6.png";
 
-function FinanceBrainOrbit({bots = [], central, speaking, streamConnected, selectedBotId, onSelect}) {
-  return <section className={"panel brain3dPanel " + (speaking ? "speaking" : "")}><div className="brain3dHeader"><div><small>03.6 / FINANCE BRAIN · COMMAND CHAMBER</small><h2>El sistema operativo de capital.</h2><p>Un núcleo neural coordina dieciséis módulos especializados conectados por rutas de señal. Selecciona un nodo para fijarlo, enfocar sus conexiones y abrir su cockpit operativo.</p></div><span className={`brain3dLive ${streamConnected?"streaming":""}`}><i/>{speaking ? "VOICE STREAMING" : selectedBotId ? "CONTROL LINK · LOCKED" : streamConnected ? "TELEMETRY STREAM · LIVE" : "NEURAL CORE · POLLING"}</span></div><Brain3DViewport bots={bots} central={central} selectedBotId={selectedBotId} onSelect={onSelect}/></section>;
+function FinanceBrainOrbit({bots = [], tools = [], central, speaking, streamConnected, selectedBotId, onSelect, onOpenTool}) {
+  const nodes = [...bots, ...tools.map(ecosystemNode)];
+  return <section className={"panel brain3dPanel " + (speaking ? "speaking" : "")}><div className="brain3dHeader"><div><small>03.6 / FINANCE BRAIN · COMMAND CHAMBER</small><h2>El sistema operativo de capital.</h2><p>Un núcleo neural coordina dieciséis bots y ocho plataformas conectadas. Selecciona un nodo para enfocar sus rutas; doble clic abre el cockpit del bot o el workspace embebido de la herramienta.</p></div><span className={`brain3dLive ${streamConnected?"streaming":""}`}><i/>{speaking ? "VOICE STREAMING" : selectedBotId ? "CONTROL LINK · LOCKED" : streamConnected ? "24-NODE ECOSYSTEM · LIVE" : "NEURAL CORE · POLLING"}</span></div><Brain3DViewport bots={nodes} central={central} selectedBotId={selectedBotId} onSelect={onSelect} onOpenTool={onOpenTool}/></section>;
+}
+
+function FinanceEcosystemPanel({tools = [], onOpen}) {
+  const [activeId, setActiveId] = useState(tools[0]?.id || "");
+  const [loadedId, setLoadedId] = useState("");
+  const active = tools.find(tool => tool.id === activeId) || tools[0];
+  if (!active) return null;
+  const ActiveIcon = active.Icon;
+  return <section className="panel financeEcosystemPanel" id="finance-ecosystem">
+    <div className="ecosystemHeader"><div><small>05 / FINANCE ECOSYSTEM · EXTERNAL PLATFORMS</small><h2>Herramientas creadas. Un solo centro de acceso.</h2><p>Estas plataformas no son bots: son productos independientes conectados al Finance Brain mediante previews seguros, enlaces directos y nodos dentro del Command Chamber 3D.</p></div><span><i/>{tools.length} PLATFORMS LINKED</span></div>
+    <div className="ecosystemLayout">
+      <div className="ecosystemToolGrid">{tools.map(tool => { const ToolIcon = tool.Icon; return <button key={tool.id} className={`ecosystemToolCard ${active.id === tool.id ? "active" : ""}`} onClick={() => { setActiveId(tool.id); setLoadedId(""); }} style={{"--toolAccent": tool.accent}}><span className="ecosystemToolIcon"><ToolIcon size={17}/></span><span><small>{tool.category}</small><b>{tool.shortName}</b><em>{tool.network}</em></span><i className={tool.embeddable ? "embedReady" : "linkOnly"}/></button>; })}</div>
+      <article className="ecosystemPreview" style={{"--toolAccent": active.accent}}>
+        <div className="ecosystemPreviewTop"><div><span className="ecosystemPreviewIcon"><ActiveIcon size={18}/></span><span><small>{active.category} · {active.network}</small><b>{active.name}</b></span></div><span className={active.embeddable ? "previewLive" : "previewProtected"}><i/>{active.embeddable ? loadedId === active.id ? "LIVE PREVIEW" : "CONNECTING" : "DIRECT ACCESS"}</span></div>
+        <div className={`ecosystemFrameShell ${active.embeddable ? "" : "protected"}`}>
+          {active.embeddable ? <iframe key={active.id} title={`${active.name} compact preview`} src={active.url} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads" referrerPolicy="strict-origin-when-cross-origin" tabIndex="-1" onLoad={() => setLoadedId(active.id)}/> : <div className="ecosystemProtected"><MessageCircle size={34}/><b>PREVIEW PROTEGIDO POR LA PLATAFORMA</b><p>{active.embedReason}</p></div>}
+          <button className="ecosystemPreviewShield" onClick={() => onOpen?.(active.id)} aria-label={`Abrir ${active.name} dentro de Finance Brain`}/>
+        </div>
+        <div className="ecosystemPreviewFoot"><p>{active.description}</p><div><button onClick={() => onOpen?.(active.id)}><Maximize2 size={13}/> OPEN EMBED</button><a href={active.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={13}/> OPEN PLATFORM</a></div></div>
+      </article>
+    </div>
+  </section>;
+}
+
+function FinanceToolEmbed({tool, onClose}) {
+  useEffect(() => { const close = event => { if (event.key === "Escape") onClose?.(); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, [onClose]);
+  if (!tool) return null;
+  const ToolIcon = tool.Icon;
+  return <div className="financeToolOverlay" role="dialog" aria-modal="true" aria-label={`${tool.name} embedded workspace`} onClick={onClose}>
+    <section className="financeToolWindow" onClick={event => event.stopPropagation()} style={{"--toolAccent": tool.accent}}>
+      <header><div><span><ToolIcon size={18}/></span><div><small>FINANCE ECOSYSTEM · {tool.category}</small><h2>{tool.name}</h2><p>{tool.network} · EXTERNAL PLATFORM</p></div></div><div><a href={tool.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> OPEN FULL SITE</a><button onClick={onClose} aria-label="Close embedded platform">×</button></div></header>
+      {tool.embeddable ? <iframe title={`${tool.name} embedded workspace`} src={tool.url} allow="clipboard-read; clipboard-write; fullscreen; payment" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals" referrerPolicy="strict-origin-when-cross-origin"/> : <div className="financeToolProtected"><span><ToolIcon size={44}/></span><small>DIRECT PLATFORM CONNECTION</small><h3>{tool.name}</h3><p>{tool.embedReason}</p><a href={tool.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={15}/> OPEN SECURE PLATFORM</a></div>}
+      <footer><span><i/> LINKED TO FINANCE BRAIN</span><span>INDEPENDENT PLATFORM · WALLET ACTIONS REQUIRE ITS OWN APPROVAL</span></footer>
+    </section>
+  </div>;
 }
 
 function CommerceBrainOrbit({bots = [], speaking, onSelect}) {
@@ -715,11 +864,11 @@ function botProfit24h(bot) {
   return Number(bot?.pnl24h ?? bot?.profit24hUsd ?? bot?.realizedPnl24h ?? 0) || 0;
 }
 
-function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
-  const mountRef = useRef(null), shellRef = useRef(null), cameraRef = useRef(null), controlsRef = useRef(null), selectRef = useRef(onSelect), hoverRef = useRef(null), selectedRef = useRef(selectedBotId), botsRef = useRef(bots), focusDistanceRef = useRef(3.25);
+function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect, onOpenTool}) {
+  const mountRef = useRef(null), shellRef = useRef(null), cameraRef = useRef(null), controlsRef = useRef(null), selectRef = useRef(onSelect), openToolRef = useRef(onOpenTool), hoverRef = useRef(null), selectedRef = useRef(selectedBotId), botsRef = useRef(bots), focusDistanceRef = useRef(3.25);
   const [loadStatus, setLoadStatus] = useState("online"), [fullscreen, setFullscreen] = useState(false), [hovered, setHovered] = useState(null), [focusedBotId, setFocusedBotId] = useState(selectedBotId);
   const effectiveFocusedBotId = focusedBotId || selectedBotId;
-  selectRef.current = onSelect; selectedRef.current = effectiveFocusedBotId; botsRef.current = bots;
+  selectRef.current = onSelect; openToolRef.current = onOpenTool; selectedRef.current = effectiveFocusedBotId; botsRef.current = bots;
   const botSignature = bots.map(bot => bot.id).join("|");
   useEffect(() => { if (selectedBotId) { setFocusedBotId(selectedBotId); focusDistanceRef.current = 3.25; } }, [selectedBotId]);
 
@@ -877,7 +1026,7 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
     const rayTargets = [];
     const nodeRecords = [];
     const palette = ["#55e8ff", "#a88aff", "#66e4ae", "#ffb36d", "#ff7db3", "#7bafff"];
-    const statusColor = bot => { if(bot?.uiBusy)return "#55e8ff";const status = String(bot.readiness?.runtime?.stage || bot.readiness?.stage || bot.status || (bot.active ? "ACTIVE" : "PAUSED")).toLowerCase(); if (status.includes("recovery") || status.includes("attention") || status.includes("block") || status.includes("error") || status.includes("degraded") || status.includes("review")) return "#ff789b"; return status.includes("running") || status.includes("paper_ready") || status.includes("proven") || status.includes("scan") || status.includes("ready") || status.includes("active") ? "#5be6b0" : "#f2bd69"; };
+    const statusColor = bot => { if(bot?.nodeType === "tool")return bot.accent || "#55e8ff";if(bot?.uiBusy)return "#55e8ff";const status = String(bot.readiness?.runtime?.stage || bot.readiness?.stage || bot.status || (bot.active ? "ACTIVE" : "PAUSED")).toLowerCase(); if (status.includes("recovery") || status.includes("attention") || status.includes("block") || status.includes("error") || status.includes("degraded") || status.includes("review")) return "#ff789b"; return status.includes("running") || status.includes("paper_ready") || status.includes("proven") || status.includes("scan") || status.includes("ready") || status.includes("active") ? "#5be6b0" : "#f2bd69"; };
     const ICON_TYPE = {
       liquidation: "bolt", arbitrage: "cycle", "solana-radar": "solana", volatility: "wave",
       momentum: "trend", perpetuals: "percent", polymarket: "polymarket", "smart-money": "pulse",
@@ -892,6 +1041,9 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
       "customer-health": "pulse", "pricing-lab": "trend", "stripe-adapter": "cycle", "saas-allocator": "hub",
       "content-intel": "radar", research: "radar", editorial: "target", script: "target",
       visual: "hub", video: "cycle", repurpose: "cycle", publisher: "trend", community: "pulse", growth: "hub",
+      "tool-solana-launchpad": "solana", "tool-telegram-suite": "pulse", "tool-defi-social-club": "hub",
+      "tool-community-forge": "cycle", "tool-nexus-defi": "bolt", "tool-solana-liquidity": "solana",
+      "tool-arb-scanner": "radar", "tool-multichain-command": "hub",
     };
     const arrowHead = (ctx, x, y, angle, size, color) => {
       ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color;
@@ -1013,7 +1165,7 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
       artifact.userData.frame = frame; artifact.userData.frameGlow = frameGlow; artifact.userData.frame2 = frame2; artifact.userData.frame2Glow = frame2Glow; artifact.userData.plate = plate;
       return artifact;
     };
-    const makePnlLabel = (amount) => {
+    const makePnlLabel = (amount, label = "") => {
       const positive = amount > .005,negative=amount < -.005,color=positive?"#6dffc1":negative?"#ff789b":"#9fb0c9",border=positive?"rgba(92, 255, 191, .9)":negative?"rgba(255, 120, 155, .9)":"rgba(151, 171, 201, .65)",background=positive?"rgba(3, 31, 30, .88)":negative?"rgba(43, 9, 25, .9)":"rgba(10, 20, 38, .9)";
       const canvas = document.createElement("canvas");
       canvas.width = 360; canvas.height = 80;
@@ -1023,7 +1175,7 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
       context.fillStyle = color; context.font = "700 26px DM Mono, monospace";
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.fillText(`${positive ? "+" : ""}${amount.toFixed(2)} USD`, 180, 40);
+      context.fillText(label || `${positive ? "+" : ""}${amount.toFixed(2)} USD`, 180, 40);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, opacity: .98, depthWrite: false, blending: THREE.AdditiveBlending}));
@@ -1053,8 +1205,8 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
       node.position.copy(position);
       node.userData.bot = bot;
       node.userData.phase = index * .63; node.userData.anchor = position.clone();
-      const color = statusColor(bot), identityColor = palette[index % palette.length]; const artifact = createArtifact(index, identityColor, color, bot); node.add(artifact); node.add(makeNameLabel(bot, color));
-      const pnl = botProfit24h(bot),pnlLabel=makePnlLabel(pnl);node.add(pnlLabel);node.userData.lastPnl=pnl;
+      const color = statusColor(bot), identityColor = bot.accent || palette[index % palette.length]; const artifact = createArtifact(index, identityColor, color, bot); node.add(artifact); node.add(makeNameLabel(bot, color));
+      const pnl = botProfit24h(bot),pnlLabel=makePnlLabel(pnl, bot.nodeType === "tool" ? "PLATFORM LINK" : "");node.add(pnlLabel);node.userData.lastPnl=pnl;
       const routePoints = [new THREE.Vector3(0, .12, 0), new THREE.Vector3(position.x * .42, position.y * .7 + .12, position.z * .42), position.clone().setY(position.y - .08)];
       const route = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), new THREE.LineBasicMaterial({color, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false})); routeGroup.add(route);
       const pulse = new THREE.Sprite(new THREE.SpriteMaterial({map: softParticleTexture, color, transparent: true, opacity: .68, blending: THREE.AdditiveBlending, depthWrite: false})); pulse.scale.set(.11, .11, 1); routeGroup.add(pulse);
@@ -1144,13 +1296,14 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
       setFocusedBotId(bot.id);
       selectedRef.current = bot.id;
       focusDistanceRef.current = 3.25;
-      selectRef.current?.(bot.id);
+      if (bot.nodeType === "tool") openToolRef.current?.(bot.id);
+      else selectRef.current?.(bot.id);
     };
     const handleKeyDown = event => {
       if (!['ArrowLeft','ArrowRight','Enter',' '].includes(event.key)) return;
       event.preventDefault();
       const rows=botsRef.current.length?botsRef.current:records,currentIndex=Math.max(0,rows.findIndex(bot=>bot.id===selectedRef.current));
-      if(event.key==='Enter'||event.key===' '){if(rows[currentIndex]?.id)selectRef.current?.(rows[currentIndex].id);return;}
+      if(event.key==='Enter'||event.key===' '){const item=rows[currentIndex];if(item?.id){if(item.nodeType==="tool")openToolRef.current?.(item.id);else selectRef.current?.(item.id);}return;}
       const step=event.key==='ArrowRight'?1:-1,next=(currentIndex+step+rows.length)%rows.length;
       if(rows[next]?.id){setFocusedBotId(rows[next].id);selectedRef.current=rows[next].id;focusDistanceRef.current=3.25;}
     };
@@ -1210,7 +1363,7 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
       const focusRecord=nodeRecords.find(record=>record.botId===selectedRef.current);
       nodeRecords.forEach(record => {const {botId,node,artifact,route,routePoints,pulse,speed}=record;
         const liveBot=botsRef.current.find(bot=>bot.id===botId)||node.userData.bot;node.userData.bot=liveBot;
-        const livePnl=botProfit24h(liveBot);if(Math.abs(livePnl-node.userData.lastPnl)>.004){node.remove(record.pnlLabel);record.pnlLabel.material.map?.dispose();record.pnlLabel.material.dispose();record.pnlLabel=makePnlLabel(livePnl);node.add(record.pnlLabel);node.userData.lastPnl=livePnl;}
+        const livePnl=botProfit24h(liveBot);if(liveBot.nodeType!=="tool"&&Math.abs(livePnl-node.userData.lastPnl)>.004){node.remove(record.pnlLabel);record.pnlLabel.material.map?.dispose();record.pnlLabel.material.dispose();record.pnlLabel=makePnlLabel(livePnl);node.add(record.pnlLabel);node.userData.lastPnl=livePnl;}
         const selected = (selectedRef.current&&botId===selectedRef.current)||(hoverRef.current?.id&&botId===hoverRef.current.id);
         const liveColor=statusColor(liveBot);artifact.userData.frame.material.color.set(liveColor);artifact.userData.frameGlow.material.color.set(liveColor);route.material.color.set(liveColor);pulse.material.color.set(liveColor);route.material.opacity=selected ? .72 : .18;
         node.position.y = node.userData.anchor.y + Math.sin(elapsed * 1.05 + node.userData.phase) * .045;
@@ -1268,7 +1421,7 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
   const status = String(selected?.status || ((selected?.active ?? selected?.enabled) ? "ACTIVE" : "PAUSED")).toUpperCase();
   const moduleCount = bots.length || 16;
   const selectedEvidence=selected?.readiness?.validation,selectedRuntime=selected?.readiness?.runtime?.stage||selected?.readiness?.stage;
-  return <div className={`brain3dCanvasShell ${effectiveFocusedBotId ? "hasPinnedBot" : ""}`} ref={shellRef}>{loadStatus === "fallback" && <img className="brain3dFallback" src={brainCoreUrl} alt={`${brainTheme.name} preview`}/>}<div className="brain3dCanvasMount" ref={mountRef}/><div className="brain3dCanvasHud"><span><i className={"brain3dStatusDot " + loadStatus}/>{loadStatus === "online" ? effectiveFocusedBotId ? "BOT LINK · FOCUSED" : "COMMAND CHAMBER · ONLINE" : "3D FALLBACK · WEBGL UNAVAILABLE"}</span><small>{moduleCount} MODULES · SIGNAL ROUTES ACTIVE</small><small>CLICK FOCUS · DOUBLE CLICK CONTROL · WHEEL ZOOM · ARROWS SELECT</small></div><div className="brain3dControls"><button onClick={() => zoom(.82)} aria-label="Zoom in">+</button><button onClick={() => zoom(1.22)} aria-label="Zoom out">−</button><button onClick={toggleFullscreen} aria-label="Toggle fullscreen">{fullscreen ? "×" : "⛶"}</button></div>{selected && <div className="brainBotFloat" role="dialog" aria-label={"Reporte de " + (selected.name || selected.id)}><div className="brainBotFloatTop"><span><i className={"brain3dStatusDot " + String(selectedRuntime || status).toLowerCase()}/>{selectedRuntime?.replaceAll("_"," ") || status} · LIVE MODULE REPORT</span><button onClick={() => onSelect?.(selected.id)}>{selectedBotId === selected.id ? "CONTROL OPEN" : "OPEN CONTROL"}</button></div><h3>{selected.name || selected.id}</h3><p>{botDescription(selected)}</p><div className="brainBotMetrics">{kind === "finance" ? <><span><small>READINESS</small><b>{Number(selected.readiness?.score||0).toFixed(0)}/100</b></span><span><small>VALIDATION</small><b>{selectedEvidence?.stage?.replaceAll("_"," ")||"SYNCING"}</b></span><span><small>EVIDENCE</small><b>{selectedEvidence?.target?`${selectedEvidence.evidence||0}/${selectedEvidence.target}`:"N/A"}</b></span></> : <><span><small>STATUS</small><b>{selected.status || (selected.enabled === false ? "PAUSED" : "ACTIVE")}</b></span><span><small>SIGNALS</small><b>{selected.metrics?.signals ?? selected.signals ?? "—"}</b></span><span><small>CONFIDENCE</small><b>{selected.metrics?.confidence ? `${selected.metrics.confidence}%` : "—"}</b></span></>}</div><div className="brainBotSignal"><small>{selected.lastError || selected.lastAction || selected.readiness?.blockers?.[0] || selected.readiness?.warnings?.[0] || selected.readiness?.nextAction || selected.status || "Observando señales y esperando el siguiente ciclo."}</small></div></div>}</div>;
+  return <div className={`brain3dCanvasShell ${effectiveFocusedBotId ? "hasPinnedBot" : ""}`} ref={shellRef}>{loadStatus === "fallback" && <img className="brain3dFallback" src={brainCoreUrl} alt={`${brainTheme.name} preview`}/>}<div className="brain3dCanvasMount" ref={mountRef}/><div className="brain3dCanvasHud"><span><i className={"brain3dStatusDot " + loadStatus}/>{loadStatus === "online" ? effectiveFocusedBotId ? "NODE LINK · FOCUSED" : "COMMAND CHAMBER · ONLINE" : "3D FALLBACK · WEBGL UNAVAILABLE"}</span><small>{moduleCount} MODULES · SIGNAL ROUTES ACTIVE</small><small>CLICK FOCUS · DOUBLE CLICK OPEN · WHEEL ZOOM · ARROWS SELECT</small></div><div className="brain3dControls"><button onClick={() => zoom(.82)} aria-label="Zoom in">+</button><button onClick={() => zoom(1.22)} aria-label="Zoom out">−</button><button onClick={toggleFullscreen} aria-label="Toggle fullscreen">{fullscreen ? "×" : "⛶"}</button></div>{selected && <div className={`brainBotFloat ${selected.nodeType === "tool" ? "toolNode" : ""}`} role="dialog" aria-label={`${selected.nodeType === "tool" ? "Plataforma" : "Reporte"} ${selected.name || selected.id}`}><div className="brainBotFloatTop"><span><i className={"brain3dStatusDot " + String(selected.nodeType === "tool" ? "online" : selectedRuntime || status).toLowerCase()}/>{selected.nodeType === "tool" ? "EXTERNAL PLATFORM · LINKED" : `${selectedRuntime?.replaceAll("_"," ") || status} · LIVE MODULE REPORT`}</span><button onClick={() => selected.nodeType === "tool" ? onOpenTool?.(selected.id) : onSelect?.(selected.id)}>{selected.nodeType === "tool" ? "OPEN EMBED" : selectedBotId === selected.id ? "CONTROL OPEN" : "OPEN CONTROL"}</button></div><h3>{selected.name || selected.id}</h3><p>{selected.description || botDescription(selected)}</p><div className="brainBotMetrics">{selected.nodeType === "tool" ? <><span><small>TYPE</small><b>PLATFORM</b></span><span><small>NETWORK</small><b>{selected.network}</b></span><span><small>ACCESS</small><b>{selected.embeddable ? "EMBED" : "DIRECT"}</b></span></> : kind === "finance" ? <><span><small>READINESS</small><b>{Number(selected.readiness?.score||0).toFixed(0)}/100</b></span><span><small>VALIDATION</small><b>{selectedEvidence?.stage?.replaceAll("_"," ")||"SYNCING"}</b></span><span><small>EVIDENCE</small><b>{selectedEvidence?.target?`${selectedEvidence.evidence||0}/${selectedEvidence.target}`:"N/A"}</b></span></> : <><span><small>STATUS</small><b>{selected.status || (selected.enabled === false ? "PAUSED" : "ACTIVE")}</b></span><span><small>SIGNALS</small><b>{selected.metrics?.signals ?? selected.signals ?? "—"}</b></span><span><small>CONFIDENCE</small><b>{selected.metrics?.confidence ? `${selected.metrics.confidence}%` : "—"}</b></span></>}</div><div className="brainBotSignal"><small>{selected.nodeType === "tool" ? `${selected.category} · ${selected.embeddable ? "preview y workspace disponibles" : "acceso directo protegido"}` : selected.lastError || selected.lastAction || selected.readiness?.blockers?.[0] || selected.readiness?.warnings?.[0] || selected.readiness?.nextAction || selected.status || "Observando señales y esperando el siguiente ciclo."}</small></div></div>}</div>;
 }
 
 
