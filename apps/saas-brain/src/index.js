@@ -51,6 +51,7 @@ const subscriptions = Array.isArray(neonSnapshot.subscriptions) ? neonSnapshot.s
 function persist() {
   void aegisData.writeState("saas", {state: {status: "online", processed: events.length}, subscriptions, events: events.slice(0, 200)});
 }
+persist();
 
 function emit(type, payload = {}, priority = 0.5) {
   const event = {
