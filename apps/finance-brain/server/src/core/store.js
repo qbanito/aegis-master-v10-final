@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {BOT_DEFINITIONS,DEFAULT_RISK} from './config.js';
-import {aegisData} from '../../../../packages/aegis-data/src/index.js';
+import {aegisData} from '../../../../../packages/aegis-data/src/index.js';
 const here=path.dirname(fileURLToPath(import.meta.url));
 const file=path.resolve(here,'../../data/state.json');
 const infra=()=>({

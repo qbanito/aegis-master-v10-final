@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {aegisData} from '../../../../packages/aegis-data/src/index.js';
+import {aegisData} from '../../../../../packages/aegis-data/src/index.js';
 const here=path.dirname(fileURLToPath(import.meta.url));const historyDir=path.resolve(here,'../../data/history');fs.mkdirSync(historyDir,{recursive:true});
 function append(name,payload){const record={recordedAt:new Date().toISOString(),...payload};const line=JSON.stringify(record)+'\n';fs.appendFile(path.join(historyDir,`${name}.jsonl`),line,()=>{});void aegisData.appendEvent('finance',name,record,{id:record.id,correlationId:record.correlation_id});}
 export const journal={
