@@ -30,3 +30,15 @@ test('solana paper uses a Jupiter quote and never falls back to invented PNL',as
   const quote=await broker.quote({asset:'TEST',network:'Solana',capitalRequiredUsd:100,metadata:{inputMint:'USDC',outputMint:'MINT',inputDecimals:6,tokenDecimals:6,notionalUsd:100,slippageBps:50}});
   assert.equal(received.inputMint,'USDC');assert.equal(received.outputMint,'MINT');assert.equal(received.amount,100000000);assert.equal(quote.provider,'Jupiter quote');assert.ok(quote.bid>0&&quote.ask>quote.bid);
 });
+
+test('solana paper converts Jupiter output into token depth and can open a real-market paper fill',async()=>{
+  const state=testState();const broker=new RealMarketPaperBroker({state,solanaTrading:{quote:async input=>({outAmount:input.inputMint==='USDC'?'1000000000':'100000000',routePlan:[]})}});
+  const opened=await broker.open({id:'solana-fill-1',strategyId:'solana-radar',asset:'TEST',network:'Solana',direction:'LONG',synthetic:false,capitalRequiredUsd:100,expectedProfitUsd:10,metadata:{inputMint:'USDC',outputMint:'MINT',inputDecimals:6,tokenDecimals:6,notionalUsd:100,slippageBps:50,maxLossUsd:8,paperPlan:{stopLossPct:8,takeProfitPct:18}}},{passed:true,estimatedNetProfitUsd:5});
+  assert.equal(opened.status,'OPEN');assert.equal(state.paperLedger.openPositions.length,1);assert.ok(state.paperLedger.openPositions[0].quantity>0);await broker.close(state.paperLedger.openPositions[0].id,'TEST_FILL');assert.equal(state.paperLedger.closedTrades,1);
+});
+
+test('solana paper never invents PNL when Jupiter has no quote',async()=>{
+  const state=testState();const broker=new RealMarketPaperBroker({state,solanaTrading:{quote:async()=>null}});
+  const result=await broker.open({id:'solana-no-quote',strategyId:'solana-radar',asset:'TEST',network:'Solana',direction:'LONG',synthetic:false,capitalRequiredUsd:100,expectedProfitUsd:10},{passed:true,estimatedNetProfitUsd:5,successProbability:.8});
+  assert.equal(result.status,'BLOCKED');assert.equal(result.reason,'NO_REAL_MARKET_QUOTE');assert.equal(state.paperLedger.realizedPnlUsd,0);
+});
