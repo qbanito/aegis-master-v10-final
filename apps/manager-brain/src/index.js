@@ -147,7 +147,8 @@ async function probe(t){
   for(let attempt=0;attempt<3;attempt++){
     try{
       const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),2500);
-      const r=await fetch(t.url+"/health",{signal:controller.signal}); clearTimeout(timer);
+      const probeUrl=`${t.url}/health?probe=${Date.now()}-${attempt}`;
+      const r=await fetch(probeUrl,{signal:controller.signal,headers:{"cache-control":"no-cache"}}); clearTimeout(timer);
       if(!r.ok) throw new Error("HTTP "+r.status);
       return {id:t.id,name:t.name,url:t.url,status:"online",health:await r.json()};
     }catch(e){
