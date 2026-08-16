@@ -37,6 +37,9 @@ const KIND_BRAIN = {
   services: {name: "SERVICES BRAIN", tagline: "El sistema operativo de servicios.", core: "/brains/services-core.svg", color: "#ff8b5b"},
 };
 const brainTheme = KIND_BRAIN[kind] || KIND_BRAIN.finance;
+const brainBase = String(import.meta.env.BASE_URL || "/").endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const brainAsset = asset => `${brainBase}${String(asset).replace(/^\/+/, "")}`;
+const brainCoreUrl = brainAsset(brainTheme.core);
 const API = import.meta.env.VITE_BRAIN_API_URL || current.api;
 const VOICE_API = import.meta.env.VITE_VOICE_API_URL || "http://localhost:8806";
 const chainLabel = value => { const raw=String(value||"").toLowerCase(); const id=raw.startsWith("0x")?Number.parseInt(raw,16):Number(raw); return ({1:"Ethereum",137:"Polygon",42161:"Arbitrum",8453:"Base"}[id]||`Chain ${raw}`); };
@@ -216,9 +219,9 @@ function App() {
   return <div className="app" style={{"--accent": current.accent, "--accent2": current.accent2}}>
     <div className="ambient ambientA"/><div className="ambient ambientB"/>
     <aside className="rail">
-      <a href="http://localhost:8810" className="brand"><span className="brandMark"><Brain size={22}/></span><span><b>AEGIS</b><small>OPERATING SYSTEM</small></span></a>
+      <a href="/" className="brand"><span className="brandMark"><Brain size={22}/></span><span><b>AEGIS</b><small>OPERATING SYSTEM</small></span></a>
       <div className="railLabel">BRAIN SPACE</div>
-      {Object.entries(config).map(([id, item]) => <a key={id} href={`http://localhost:${ports[id]}`} className={`brainLink ${id === kind ? "selected" : ""}`}><item.icon size={16}/><span>{item.name.replace(" Brain", "")}</span><i/></a>)}
+      {Object.entries(config).map(([id, item]) => <a key={id} href={`/brain-ui/${id}/`} className={`brainLink ${id === kind ? "selected" : ""}`}><item.icon size={16}/><span>{item.name.replace(" Brain", "")}</span><i/></a>)}
       <div className="railLabel lower">COMMAND</div>
       {["Signal field", "Agent mesh", "Playbooks"].map((label, i) => { const RailIcon = [Activity, Layers3, Zap][i]; return <button className="railLink" key={label} onClick={() => navigateCommand(label)} aria-label={`Open ${label}`}><RailIcon size={16}/><span>{label}</span></button>; })}
       <div className="railBottom"><span className="onlineDot"/>Network stable<small>local / paper mode</small></div>
@@ -227,7 +230,7 @@ function App() {
     <main className="workspace">
       <header className="topbar"><div className="crumb"><span>AEGIS /</span> {current.name.toUpperCase()}</div><div className="topActions"><span className="mode"><i/> PAPER MODE</span><span className="updated">{updated ? `SYNC ${updated.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})}` : "SYNCING"}</span>{kind === "finance" && <button className="walletButton" onClick={connectMetaMask} disabled={walletBusy}><WalletCards size={14}/>{wallet.address ? `${shortAddress(wallet.address)} · ${wallet.chainName}` : walletBusy ? "CONNECTING…" : "CONNECT METAMASK"}</button>}<button className="refresh" onClick={refresh} disabled={loading}><RefreshCw size={15} className={loading ? "spin" : ""}/> Refresh</button></div></header>
 
-      <section className="hero"><div className="heroCopy"><div className="eyebrow"><span/><b>{current.kicker}</b><em>/{kind.toUpperCase()}</em></div><h1>{current.name}<br/><span>thinks in signals.</span></h1><p>{current.desc}</p><div className="heroButtons"><button className="primary" onClick={refresh}><Radio size={16}/> Sync intelligence <ArrowUpRight size={14}/></button><a href="http://localhost:8810" className="ghost">Master Command <ChevronRight size={15}/></a></div></div><div className="heroOrb"><div className="orbit o1"/><div className="orbit o2"/><div className="orbit o3"/><div className="core"><Icon size={35}/></div><span className="orbLabel">{status}<small>CORE STATUS</small></span></div></section>
+      <section className="hero"><div className="heroCopy"><div className="eyebrow"><span/><b>{current.kicker}</b><em>/{kind.toUpperCase()}</em></div><h1>{current.name}<br/><span>thinks in signals.</span></h1><p>{current.desc}</p><div className="heroButtons"><button className="primary" onClick={refresh}><Radio size={16}/> Sync intelligence <ArrowUpRight size={14}/></button><a href="/" className="ghost">Master Command <ChevronRight size={15}/></a></div></div><div className="heroOrb"><div className="orbit o1"/><div className="orbit o2"/><div className="orbit o3"/><div className="core"><Icon size={35}/></div><span className="orbLabel">{status}<small>CORE STATUS</small></span></div></section>
 
       {error && <div className="errorBar"><span>!</span>{error}<button onClick={refresh}>Retry</button></div>}
 
@@ -719,7 +722,7 @@ function Brain3DViewport({bots = [], central, onSelect}) {
     aura.position.y = .05;
     brainRoot.add(aura);
 
-    const coreTexture = new THREE.TextureLoader().load(brainTheme.core);
+    const coreTexture = new THREE.TextureLoader().load(brainCoreUrl);
     coreTexture.colorSpace = THREE.SRGBColorSpace;
     const brainCore = new THREE.Sprite(new THREE.SpriteMaterial({map: coreTexture, transparent: true, opacity: .98, blending: THREE.AdditiveBlending, depthWrite: false}));
     brainCore.scale.set(3, 3, 1);
@@ -1087,7 +1090,7 @@ function Brain3DViewport({bots = [], central, onSelect}) {
   const selected = hovered;
   const status = String(selected?.status || ((selected?.active ?? selected?.enabled) ? "ACTIVE" : "PAUSED")).toUpperCase();
   const moduleCount = bots.length || 16;
-  return <div className="brain3dCanvasShell" ref={shellRef}>{loadStatus === "fallback" && <img className="brain3dFallback" src={brainTheme.core} alt={`${brainTheme.name} preview`}/>}<div className="brain3dCanvasMount" ref={mountRef}/><div className="brain3dCanvasHud"><span><i className={"brain3dStatusDot " + loadStatus}/>{loadStatus === "online" ? "COMMAND CHAMBER · ONLINE" : "3D FALLBACK · WEBGL UNAVAILABLE"}</span><small>{moduleCount} MODULES · SIGNAL ROUTES ACTIVE</small><small>LEFT DRAG EXPLORE · RIGHT DRAG PAN · WHEEL ZOOM · HOVER MODULE</small></div><div className="brain3dControls"><button onClick={() => zoom(.82)} aria-label="Zoom in">+</button><button onClick={() => zoom(1.22)} aria-label="Zoom out">−</button><button onClick={toggleFullscreen} aria-label="Toggle fullscreen">{fullscreen ? "×" : "⛶"}</button></div>{selected && <div className="brainBotFloat" role="dialog" aria-label={"Reporte de " + (selected.name || selected.id)}><div className="brainBotFloatTop"><span><i className="brain3dStatusDot online"/>{status} · LIVE MODULE REPORT</span><button onClick={() => onSelect?.(selected.id)}>OPEN CONTROL</button></div><h3>{selected.name || selected.id}</h3><p>{botDescription(selected)}</p><div className="brainBotMetrics">{kind === "finance" ? <><span><small>NETWORK</small><b>{botMetric(selected, "network", "MULTI")}</b></span><span><small>PAPER PNL</small><b>{Number(botMetric(selected, "pnl24h", 0)).toFixed(2)} USD</b></span><span><small>OPPS</small><b>{botMetric(selected, "opportunities", 0)}</b></span></> : <><span><small>STATUS</small><b>{selected.status || (selected.enabled === false ? "PAUSED" : "ACTIVE")}</b></span><span><small>SIGNALS</small><b>{selected.metrics?.signals ?? selected.signals ?? "—"}</b></span><span><small>CONFIDENCE</small><b>{selected.metrics?.confidence ? `${selected.metrics.confidence}%` : "—"}</b></span></>}</div><div className="brainBotSignal"><small>{selected.lastError || selected.lastAction || selected.readiness?.blockers?.[0] || selected.status || "Observando señales y esperando el siguiente ciclo."}</small></div></div>}</div>;
+  return <div className="brain3dCanvasShell" ref={shellRef}>{loadStatus === "fallback" && <img className="brain3dFallback" src={brainCoreUrl} alt={`${brainTheme.name} preview`}/>}<div className="brain3dCanvasMount" ref={mountRef}/><div className="brain3dCanvasHud"><span><i className={"brain3dStatusDot " + loadStatus}/>{loadStatus === "online" ? "COMMAND CHAMBER · ONLINE" : "3D FALLBACK · WEBGL UNAVAILABLE"}</span><small>{moduleCount} MODULES · SIGNAL ROUTES ACTIVE</small><small>LEFT DRAG EXPLORE · RIGHT DRAG PAN · WHEEL ZOOM · HOVER MODULE</small></div><div className="brain3dControls"><button onClick={() => zoom(.82)} aria-label="Zoom in">+</button><button onClick={() => zoom(1.22)} aria-label="Zoom out">−</button><button onClick={toggleFullscreen} aria-label="Toggle fullscreen">{fullscreen ? "×" : "⛶"}</button></div>{selected && <div className="brainBotFloat" role="dialog" aria-label={"Reporte de " + (selected.name || selected.id)}><div className="brainBotFloatTop"><span><i className="brain3dStatusDot online"/>{status} · LIVE MODULE REPORT</span><button onClick={() => onSelect?.(selected.id)}>OPEN CONTROL</button></div><h3>{selected.name || selected.id}</h3><p>{botDescription(selected)}</p><div className="brainBotMetrics">{kind === "finance" ? <><span><small>NETWORK</small><b>{botMetric(selected, "network", "MULTI")}</b></span><span><small>PAPER PNL</small><b>{Number(botMetric(selected, "pnl24h", 0)).toFixed(2)} USD</b></span><span><small>OPPS</small><b>{botMetric(selected, "opportunities", 0)}</b></span></> : <><span><small>STATUS</small><b>{selected.status || (selected.enabled === false ? "PAUSED" : "ACTIVE")}</b></span><span><small>SIGNALS</small><b>{selected.metrics?.signals ?? selected.signals ?? "—"}</b></span><span><small>CONFIDENCE</small><b>{selected.metrics?.confidence ? `${selected.metrics.confidence}%` : "—"}</b></span></>}</div><div className="brainBotSignal"><small>{selected.lastError || selected.lastAction || selected.readiness?.blockers?.[0] || selected.status || "Observando señales y esperando el siguiente ciclo."}</small></div></div>}</div>;
 }
 
 
