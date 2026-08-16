@@ -38,6 +38,7 @@ import {
   Target,
   Terminal,
   Users,
+  Wand2,
   Waves,
   WalletCards,
   X,
@@ -571,7 +572,7 @@ function CommandCenter() {
               type="button"
               onClick={() => openPage(id)}
               key={id}
-              className="hierarchyLink pageLink"
+              className={`hierarchyLink pageLink ${activePage === id ? "selected" : ""}`}
             >
               <m.icon size={17} />
               <span>
@@ -762,6 +763,12 @@ function CommandCenter() {
           ) : activePage === "services" ? (
             <ServicesPage
               onTalk={() => openChat("services")}
+              onBack={() => openPage("overview")}
+            />
+          ) : ["finance", "commerce", "saas", "media"].includes(activePage) ? (
+            <OperationalBrainPage
+              brainId={activePage}
+              onTalk={() => openChat(activePage)}
               onBack={() => openPage("overview")}
             />
           ) : activePage === "banking" ? (
@@ -1339,6 +1346,74 @@ function SatelliteCommandChamber({ brain, color, subtitle, modules }) {
         <div className="satelliteInspector"><small>SELECTED MODULE</small><h3>{active?.label || "COMMAND NODE"}</h3><p>{active?.detail || "Selecciona un nodo para inspeccionar su control."}</p><button onClick={() => active && openModule(active)}><ArrowRight size={14} /> OPEN CONNECTED CONTROL</button><span><CheckCircle2 size={13} /> no live movement · approval boundary active</span></div>
       </div>
       <div className="satelliteModuleStrip">{modules.map((module) => <button key={module.id} className={selected === module.id ? "selected" : ""} onClick={() => openModule(module)}><span>{module.label}</span><small>{module.detail}</small></button>)}</div>
+    </section>
+  );
+}
+
+const operationalModules = {
+  finance: [
+    { id: "portfolio", label: "PORTFOLIO", detail: "Equity, paper PnL y asignación de capital.", icon: CircleDollarSign, target: "operational-metrics" },
+    { id: "risk", label: "RISK CONTROL", detail: "Límites, exposición y guardas de ejecución.", icon: ShieldCheck, target: "operational-controls" },
+    { id: "opportunities", label: "OPPORTUNITIES", detail: "Señales y oportunidades para revisar.", icon: Target, target: "operational-controls" },
+    { id: "ledger", label: "PAPER LEDGER", detail: "Actividad simulada y trazabilidad.", icon: ReceiptText, target: "operational-metrics" },
+  ],
+  commerce: [
+    { id: "catalog", label: "CATALOG", detail: "Productos y drafts comerciales.", icon: Briefcase, target: "operational-metrics" },
+    { id: "signals", label: "DEMAND SIGNALS", detail: "Señales de demanda y proveedores.", icon: Activity, target: "operational-controls" },
+    { id: "offers", label: "OFFERS", detail: "Precio, margen y sensibilidad.", icon: CircleDollarSign, target: "operational-controls" },
+    { id: "sync", label: "MARKETPLACE SYNC", detail: "Sincronización controlada.", icon: RefreshCw, target: "operational-controls" },
+  ],
+  saas: [
+    { id: "products", label: "PRODUCTS", detail: "Productos SaaS y proyectos activos.", icon: Cpu, target: "operational-metrics" },
+    { id: "mrr", label: "MRR CONTROL", detail: "Ingresos recurrentes y crecimiento.", icon: CircleDollarSign, target: "operational-metrics" },
+    { id: "retention", label: "RETENTION", detail: "Cohortes, churn y expansión.", icon: Users, target: "operational-controls" },
+    { id: "billing", label: "BILLING", detail: "Stripe y eventos de suscripción.", icon: ReceiptText, target: "operational-controls" },
+  ],
+  media: [
+    { id: "content", label: "CONTENT", detail: "Piezas, briefs y calendario.", icon: Sparkles, target: "operational-metrics" },
+    { id: "generation", label: "GENERATION", detail: "MuAPI y generación de assets.", icon: Wand2, target: "operational-controls" },
+    { id: "distribution", label: "DISTRIBUTION", detail: "Social, SEO y alcance.", icon: Radio, target: "operational-controls" },
+    { id: "analytics", label: "ANALYTICS", detail: "Reach, engagement y rendimiento.", icon: Activity, target: "operational-metrics" },
+  ],
+};
+
+function OperationalBrainPage({ brainId, onTalk, onBack }) {
+  const meta = brainMeta[brainId];
+  const url = BRAIN_APIS[brainId];
+  const [health, setHealth] = useState(null);
+  const [notice, setNotice] = useState("Operational telemetry ready");
+  const load = useCallback(async () => {
+    const response = await fetch(`${url}/health?master_ui=${Date.now()}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    setHealth(data);
+    setNotice("Live connection confirmed · PAPER boundary active");
+  }, [url]);
+  useEffect(() => {
+    load().catch(() => setNotice("Brain telemetry unavailable · retrying"));
+    const timer = setInterval(() => load().catch(() => {}), 15000);
+    return () => clearInterval(timer);
+  }, [load]);
+  const modules = operationalModules[brainId] || [];
+  const color = meta?.color || "#25e8ff";
+  return (
+    <section className="brainPage operationalPage" style={{ "--page-accent": color }}>
+      <PageHeader eyebrow={`${meta.label} · OPERATIONAL CONTROL`} title={meta.name} description={`${meta.subtitle}. ${meta.detail}. Esta superficie concentra telemetría, módulos operativos y controles conectados del Brain.`} color={color} image={meta.image} onBack={onBack} onTalk={onTalk} />
+      <div className="pageNotice"><CheckCircle2 size={14} /> {notice}</div>
+      <SatelliteCommandChamber brain={meta.name} color={color} subtitle={`${meta.name.replace(" BRAIN", "")} command chamber`} modules={modules} />
+      <div className="financeMetrics" id="operational-metrics">
+        <MetricTile icon={Activity} label="STATUS" value={health?.status?.toUpperCase() || "SYNCING"} sub="public health endpoint" color={color} />
+        <MetricTile icon={Users} label="AGENTS ONLINE" value={`${health?.agentsOnline ?? "—"}/${health?.agentsTotal ?? "—"}`} sub="agent mesh" color="#57ef75" />
+        <MetricTile icon={ReceiptText} label="PROCESSED" value={health?.processed ?? health?.eventsProcessed ?? "—"} sub="events observed" color="#25e8ff" />
+        <MetricTile icon={ShieldCheck} label="MODE" value={health?.mode || "SAFE"} sub="approval boundary" color="#ffc531" />
+      </div>
+      <section className="financePanel booksPanel" id="operational-controls">
+        <div className="financePanelTitle"><div><span>{meta.name} · CONNECTED TOOLING</span><h2>Operational controls</h2></div><i className="liveLabel"><em /> ONLINE</i></div>
+        <div className="bookCards operationalToolCards">
+          {modules.map((module) => { const Icon = module.icon || Brain; return <div key={module.id}><Icon size={16} style={{ color }} /><b>{module.label}</b><small>{module.detail}</small><strong>CONNECTED</strong></div>; })}
+        </div>
+      </section>
+      <div className="pageSafety"><ShieldCheck size={15} /><span><b>PAPER-SAFE BOUNDARY</b> · La navegación abre la superficie operativa de {meta.name}. Las acciones sensibles permanecen sujetas a aprobación y no ejecutan capital real desde esta vista.</span></div>
     </section>
   );
 }
@@ -2377,6 +2452,7 @@ function BrainCard({ id, meta, online: live, onHover, onLeave, onTalk, onAsk, on
           onAsk={onAsk}
           onLeave={onLeave}
           onTalk={onTalk}
+          onOpen={onOpen}
         />
       </div>
       <div className="cardStats">
