@@ -1,0 +1,477 @@
+/* Responsive hardening for the classic Finance operations client. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+.shell,
+.dashboard,
+.upperGrid > *,
+.middleGrid > *,
+.panel,
+.centerStack,
+.rightStack,
+.agentConsole {
+  min-width: 0;
+}
+
+@media (hover: none), (pointer: coarse) {
+  button,
+  .navItem,
+  .panelButton,
+  .drawerPrimary,
+  .drawerSecondary {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  .runTiny,
+  .uniBotRun {
+    width: 28px;
+    height: 28px;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1280px) {
+  .shell {
+    grid-template-columns: 176px minmax(0, 1fr);
+  }
+
+  .dashboard {
+    padding: 9px;
+  }
+
+  .upperGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summaryPanel {
+    min-height: auto;
+  }
+
+  .middleGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .agentConsole {
+    grid-column: 1 / -1;
+  }
+
+  .walletGrid,
+  .botConfigGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .logo {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .logo div,
+  .navItem span,
+  .sideFooter {
+    display: none;
+  }
+
+  .navItem {
+    justify-content: center;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 64px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 7px 0 10px;
+  }
+
+  .brainTitle,
+  .topStatus {
+    grid-column: 1;
+  }
+
+  .brainTitle {
+    text-align: left;
+  }
+
+  .topStatus {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .middleGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .centerStack,
+  .rightStack,
+  .agentConsole {
+    grid-column: 1;
+  }
+
+  .allocationTreasury {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .walletGrid,
+  .botConfigGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .connectorGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .brainStage,
+  .networkCanvas,
+  .botUniverse {
+    min-height: 520px;
+  }
+
+  .networkCanvas {
+    min-width: 0;
+  }
+
+  .drawer {
+    width: min(520px, 96vw);
+  }
+}
+
+@media (max-width: 680px) {
+  .shell {
+    display: block;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 7px;
+    right: 7px;
+    bottom: calc(7px + env(safe-area-inset-bottom));
+    z-index: 120;
+    width: auto;
+    min-height: 0;
+    height: 60px;
+    padding: 5px;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid #1d4666;
+    border-radius: 14px;
+    background: rgba(3, 9, 17, 0.95);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(16px);
+  }
+
+  .sidebar .logo,
+  .sidebar .sideFooter {
+    display: none;
+  }
+
+  .sidebar nav {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    gap: 3px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navItem {
+    flex: 1 0 48px;
+    min-width: 48px;
+    min-height: 50px;
+    margin: 0;
+    border-radius: 9px;
+  }
+
+  .dashboard {
+    width: 100%;
+    padding: 7px;
+  }
+
+  .topStatus {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .topStatus > * {
+    flex: 0 0 auto;
+  }
+
+  .topStatus span:nth-child(2),
+  .topStatus span:nth-child(3) {
+    display: none;
+  }
+
+  .metamask {
+    max-width: 175px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .upperGrid,
+  .middleGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brainStage {
+    min-height: 510px;
+    overflow: hidden;
+  }
+
+  .networkCanvas,
+  .botUniverse {
+    width: 100%;
+    min-width: 0 !important;
+    min-height: 510px;
+    overflow: hidden;
+    contain: layout paint;
+  }
+
+  .digitalBrain {
+    top: 74px;
+    width: 180px;
+    height: 180px;
+  }
+
+  .digitalBrain svg {
+    width: 165px;
+    height: 145px;
+  }
+
+  .leftBots,
+  .rightBots {
+    top: 8px;
+    width: 38%;
+    gap: 5px;
+  }
+
+  .leftBots {
+    left: 6px;
+  }
+
+  .rightBots {
+    right: 6px;
+  }
+
+  .miniBot {
+    height: 55px;
+  }
+
+  .botHit {
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .botIcon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .botCopy b {
+    font-size: 7px;
+  }
+
+  .botCopy small {
+    font-size: 6px;
+  }
+
+  .botCopy em {
+    font-size: 6px;
+  }
+
+  .metaBot {
+    left: 27%;
+    width: 46%;
+  }
+
+  .summaryMetrics,
+  .walletGrid,
+  .botConfigGrid,
+  .connectorGrid,
+  .insightMetrics,
+  .promotionMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pipeSteps {
+    justify-content: flex-start;
+    gap: 12px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  .step {
+    flex: 0 0 72px;
+    scroll-snap-align: start;
+  }
+
+  .allocBody {
+    height: auto;
+    min-height: 176px;
+    grid-template-columns: 105px minmax(0, 1fr);
+  }
+
+  .feedRow {
+    grid-template-columns: 42px 16px minmax(0, 1fr) auto;
+  }
+
+  .feedRow em {
+    display: none;
+  }
+
+  .statusRow {
+    min-height: 34px;
+    height: auto;
+    grid-template-columns: 15px minmax(0, 1fr) auto;
+  }
+
+  .statusRow em {
+    display: none;
+  }
+
+  .networkFooter {
+    height: auto;
+    min-height: 42px;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 7px;
+  }
+
+  .drawerOverlay {
+    align-items: stretch;
+  }
+
+  .drawer {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    border-left: 0;
+  }
+
+  .drawerHead {
+    padding-right: 32px;
+  }
+
+  .toast {
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .brainTitle b {
+    font-size: 15px;
+  }
+
+  .metamask {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .summaryMetrics,
+  .walletGrid,
+  .botConfigGrid,
+  .connectorGrid,
+  .insightMetrics,
+  .promotionMetrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .leftBots,
+  .rightBots {
+    width: 40%;
+  }
+
+  .digitalBrain {
+    width: 150px;
+  }
+
+  .miniBot {
+    height: 52px;
+  }
+
+  .allocBody {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .allocList {
+    width: 100%;
+  }
+
+  .drawerStats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .sidebar {
+    height: 54px;
+  }
+
+  .shell {
+    padding-bottom: 62px;
+  }
+
+  .brainStage,
+  .networkCanvas,
+  .botUniverse {
+    min-height: 430px;
+  }
+}

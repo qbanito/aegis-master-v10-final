@@ -48,6 +48,7 @@ import "./style.css";
 import "./satellite.css";
 import "./hover-fix.css";
 import "./electricity.css";
+import "./responsive.css";
 
 const runtimeApi = (local, production) => import.meta.env.DEV ? local : production;
 const CEO = import.meta.env.VITE_CEO_BRAIN_URL || runtimeApi("http://localhost:8806", "/brain-api/ceo");

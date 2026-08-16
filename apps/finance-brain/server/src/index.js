@@ -46,6 +46,7 @@ import {strategyConfigService} from './core/strategyConfigService.js';
 import {HealthSupervisor} from './infrastructure/healthSupervisor.js';
 import {secretsVault} from './infrastructure/secretsVault.js';
 import {createAgentOrchestrator} from './agent/agentOrchestrator.js';
+import {BotCopilotService} from './agent/botCopilotService.js';
 import {normalizeBrainReply} from '../../../../packages/inter-brain-protocol/src/chat.js';
 import {LiquidationStrategyLab} from './bots/liquidation/liquidationStrategyLab.js';
 import {loadAaveMarkets} from './bots/liquidation/liquidationMarketRegistry.js';
@@ -61,20 +62,54 @@ import {MarketBotRegistry} from './bots/market/marketBotRegistry.js';
 import {alpacaPaper} from './infrastructure/brokers/demoBrokers.js';
 import {kronosForecast,kronosStatus} from './infrastructure/models/kronosForecast.js';
 import {AgentGovernance} from './core/agentGovernance.js';
+import {StrategyPromotionEngine} from './core/strategyPromotionEngine.js';
+import {operationalReadiness} from './core/operationalReadiness.js';
+import {syncValidatedPaperLedger,validatedPaperSnapshot as persistentValidatedPaperSnapshot} from './core/validatedPaperLedger.js';
+import {recordStrategyEvidence,strategyEvidenceSnapshot} from './core/strategyProfiles.js';
 
 await hydrateStateFromNeon();
+syncValidatedPaperLedger(state);
 persist();
 const PORT=Number(process.env.PORT||8787),CLIENT_ORIGIN=process.env.CLIENT_ORIGIN||process.env.CORS_ORIGIN||'*';
 const PAPER_EXECUTE_WATCH=String(process.env.PAPER_EXECUTE_WATCH||'true').toLowerCase()!=='false';
 const allowedOrigins=CLIENT_ORIGIN==='*'?null:new Set(CLIENT_ORIGIN.split(',').map(origin=>origin.trim()).filter(Boolean));
 const app=express();app.use(cors({origin(origin,callback){if(!origin||!allowedOrigins||allowedOrigins.has(origin)||origin.startsWith('http://localhost:')||origin.startsWith('http://127.0.0.1:'))return callback(null,true);return callback(null,false);}}));app.use(express.json({limit:'128kb'}));
-const server=http.createServer(app),io=new Server(server,{cors:{origin:CLIENT_ORIGIN}});const broadcast=()=>io.emit('state',publicState());
+const server=http.createServer(app),io=new Server(server,{cors:{origin:CLIENT_ORIGIN}});
+const STATE_BROADCAST_MS=Math.max(500,Number(process.env.STATE_BROADCAST_MS||1500));
+let stateBroadcastTimer=null,stateBroadcastPending=false;
+const broadcast=()=>{
+  stateBroadcastPending=true;
+  if(stateBroadcastTimer)return;
+  stateBroadcastTimer=setTimeout(()=>{
+    stateBroadcastTimer=null;
+    if(!stateBroadcastPending)return;
+    stateBroadcastPending=false;
+    // State snapshots are intentionally volatile: a newer snapshot supersedes
+    // an unsent one and must never create an unbounded Socket.IO write buffer.
+    io.volatile.emit('state',publicState());
+  },STATE_BROADCAST_MS);
+  stateBroadcastTimer.unref?.();
+};
 const fusionEngine=new SignalFusionEngine({windowMs:Number(process.env.FUSION_WINDOW_MS||120000),minSources:Number(process.env.FUSION_MIN_SOURCES||2)});
 const intelligenceLayer=new IntelligenceLayer();
 const circuitBreaker=new StrategyCircuitBreaker({maxConsecutiveLosses:Number(process.env.CB_MAX_CONSECUTIVE_LOSSES||3),maxDrawdownUsd:Number(process.env.CB_MAX_DRAWDOWN_USD||250),cooldownMs:Number(process.env.CB_COOLDOWN_MS||900000)});
 const polymarketTrading=new PolymarketTradingConnector({data:polymarketData});
 const marketBotRegistry=new MarketBotRegistry({state,persist,bus:opportunityBus});
 const governance=new AgentGovernance({state,persist,broadcast});
+const promotionEngine=new StrategyPromotionEngine({state});
+const refreshPromotionState=()=>{
+  state.infrastructure.performance={...performanceDb.snapshot(),promotion:promotionEngine.snapshot()};
+  return state.infrastructure.performance;
+};
+const refreshOperationalReadiness=()=>{
+  // Always evaluate against the latest provider probes and executions. Reusing
+  // the persisted promotion snapshot could leave a recovered provider blocked
+  // until the next trade refreshed performance state.
+  const promotion=promotionEngine.snapshot();
+  state.infrastructure.performance={...(state.infrastructure.performance||{}),promotion};
+  state.infrastructure.readiness=operationalReadiness({state,promotionSnapshot:promotion});
+  return state.infrastructure.readiness;
+};
 const refreshKronosState=()=>{state.infrastructure.kronos=kronosStatus();};
 refreshKronosState();
 state.infrastructure.solanaWorker={...solanaWorkerClient.status(),lastCheckAt:state.infrastructure.solanaWorker?.lastCheckAt||null,lastAnalysis:state.infrastructure.solanaWorker?.lastAnalysis||null};
@@ -83,13 +118,19 @@ const BLOCKED_RUNTIME_STATUS=/^(WAITING_|NOT_CONFIGURED|SCAN_ERROR|ERROR|FAILED|
 const CURRENT_OPPORTUNITY_MAX_AGE_MS=Math.max(10000,Number(process.env.CURRENT_OPPORTUNITY_MAX_AGE_MS||120000));
 const timestamp=value=>{const parsed=Date.parse(value||'');return Number.isFinite(parsed)?parsed:0;};
 const currentOpportunity=row=>{const now=Date.now(),expires=timestamp(row?.expiresAt),created=timestamp(row?.createdAt);return Boolean(row)&&(!expires||expires>=now)&&(!created||now-created<=CURRENT_OPPORTUNITY_MAX_AGE_MS);};
+function validatedPaperSnapshot(){
+  const executions=state.executions||[],validated=persistentValidatedPaperSnapshot(state);
+  const contaminated=executions.filter(item=>item.paperQuality==='MODEL_SIMULATED').reduce((sum,item)=>sum+Number(item.realizedProfitUsd||item.modeledProfitUsd||0),0);
+  return {...validated,legacyModeledPnlUsd:Number(contaminated.toFixed(2)),modelPnlExcluded:true};
+}
 function refreshBotMetrics(){
   const now=Date.now(),dayAgo=now-86400000;
   state.opportunities=(state.opportunities||[]).filter(currentOpportunity).slice(0,250);
   for(const bot of state.bots||[]){
     bot.opportunities=state.opportunities.filter(item=>item.strategyId===bot.id&&!item.metadata?.advisory&&!item.metadata?.signalOnly).length;
-    bot.pnl24h=Number((state.executions||[]).filter(item=>item.strategyId===bot.id&&item.status==='CLOSED'&&timestamp(item.closedAt||item.createdAt)>=dayAgo).reduce((sum,item)=>sum+Number(item.realizedProfitUsd||0),0).toFixed(2));
+    bot.pnl24h=Number((state.executions||[]).filter(item=>item.strategyId===bot.id&&item.status==='CLOSED'&&item.paperQuality==='REAL_MARKET_QUOTE'&&timestamp(item.closedAt||item.createdAt)>=dayAgo).reduce((sum,item)=>sum+Number(item.realizedProfitUsd||0),0).toFixed(2));
   }
+  state.infrastructure.dataQuality={...(state.infrastructure.dataQuality||{}),validatedPaper:validatedPaperSnapshot()};
 }
 function setRuntimeStatus(bot,status){
   if(!bot)return;
@@ -104,19 +145,28 @@ const paperBroker=new RealMarketPaperBroker({state,persist,solanaTrading,polygon
   const cb=circuitBreaker.record(opportunity.strategyId,Number(execution.realizedProfitUsd||0));
   state.infrastructure.production.circuitBreakers=circuitBreaker.snapshot();
   const perf=performanceDb.record({opportunity,simulation,execution});
-  state.infrastructure.performance=performanceDb.snapshot();
+  refreshPromotionState();
   journal.execution(execution);journal.performance(perf);persist();broadcast();
 }});
 configurePaperBroker(paperBroker);state.infrastructure.production.paperBroker=paperBroker.status();paperBroker.start();
 
 opportunityBus.on('raw-opportunity',async raw=>{
-  const opportunity=normalizeOpportunity(raw),brain=brainDecision(opportunity);
+  const normalized=normalizeOpportunity(raw);
+  const strategyBot=state.bots.find(item=>item.id===normalized.strategyId);
+  strategyConfigService.ensure(normalized.strategyId,{wallet:strategyBot?.wallet||`strategy-${normalized.strategyId}`,maxAllocationPct:strategyBot?.marketBotId?10:20});
+  // Score first, then the promotion gate converts an otherwise-valid signal
+  // into a safely-sized micro-PAPER candidate or blocks it with a reason.
+  const initialBrain=brainDecision(normalized);
+  const promotion=promotionEngine.apply({...normalized,brain:initialBrain});
+  const opportunity=promotion.opportunity,brain=brainDecision(opportunity);
   const routeNetwork=String(opportunity.network||'').toLowerCase();
   const simulation=simulationEngine.simulate({...opportunity,brain},{routeLatencyMs:rpcLatencyRouter.selectedLatency(routeNetwork)});
   const preRisk={...opportunity,brain,simulation};
-  const baseRisk=evaluateRisk(preRisk,state),governanceRisk=governance.evaluate(preRisk);
-  const risk={...baseRisk,governance:governanceRisk,approved:baseRisk.approved&&governanceRisk.approved,reasons:[...baseRisk.reasons,...governanceRisk.reasons.filter(reason=>!baseRisk.reasons.includes(reason))]};
-  const enriched={...preRisk,risk};
+  const baseRisk=evaluateRisk(preRisk,state),governanceRisk=governance.evaluate(preRisk),strategyPolicy=strategyConfigService.evaluate(normalized.strategyId,preRisk);
+  const riskReasons=[...baseRisk.reasons,...governanceRisk.reasons,...promotion.reasons,...strategyPolicy.reasons];
+  const risk={...baseRisk,governance:governanceRisk,strategyPolicy,promotion:promotion.report,approved:baseRisk.approved&&governanceRisk.approved&&promotion.approved&&strategyPolicy.approved,reasons:[...new Set(riskReasons)]};
+  const enriched={...preRisk,risk,promotion:promotion.report};
+  const validationEvidence=recordStrategyEvidence(state,enriched,{simulation,risk});if(validationEvidence){enriched.validationEvidence={id:validationEvidence.id,kind:validationEvidence.kind,mode:validationEvidence.validationMode,status:validationEvidence.status};journal.strategyEvidence(validationEvidence);}
   state.infrastructure.simulation.recent.unshift(simulation);state.infrastructure.simulation.recent=state.infrastructure.simulation.recent.slice(0,100);
   simulation.passed?state.infrastructure.simulation.passed++:state.infrastructure.simulation.rejected++;journal.simulation(simulation);
   state.opportunities.unshift(enriched);state.opportunities=state.opportunities.slice(0,250);refreshBotMetrics();
@@ -133,7 +183,7 @@ opportunityBus.on('raw-opportunity',async raw=>{
       if(enriched.execution.status==='CLOSED'){
         const cb=circuitBreaker.record(opportunity.strategyId,Number(enriched.execution.realizedProfitUsd||0));
         state.infrastructure.production.circuitBreakers=circuitBreaker.snapshot();enriched.circuitBreaker=cb;
-        const perf=performanceDb.record({opportunity:enriched,simulation,execution:enriched.execution});state.infrastructure.performance=performanceDb.snapshot();journal.performance(perf);
+        const perf=performanceDb.record({opportunity:enriched,simulation,execution:enriched.execution});refreshPromotionState();journal.performance(perf);
       }
     }catch(error){
       enriched.execution={id:crypto.randomUUID(),opportunityId:enriched.id,strategyId:enriched.strategyId,mode:state.mode==='PAPER'?'PAPER':'LIVE',status:'BLOCKED',error:error?.message||'EXECUTION_BLOCKED',createdAt:new Date().toISOString()};
@@ -218,7 +268,7 @@ state.infrastructure.solanaTrading=solanaTrading.status();
 state.infrastructure.polymarketTrading=polymarketTrading.status();
 setInterval(()=>{refreshBotMetrics();state.infrastructure.production.supervisor=supervisor.check();persist();broadcast();},Math.max(5000,Number(process.env.SUPERVISOR_INTERVAL_MS||15000)));
 setInterval(()=>{refreshKronosState();broadcast();},15000);
-state.infrastructure.performance=performanceDb.snapshot();probeRpc();probeLatencyRouter();probeMarketData();probeFuturesMarketData();probeYieldData();probeSolana();probePolymarket();probeMarketBots();setTimeout(scanMarketBots,10000).unref?.();rebalance();setInterval(probeRpc,15000);setInterval(probeLatencyRouter,20000);setInterval(probeMarketData,30000);setInterval(probeFuturesMarketData,30000);setInterval(probeYieldData,300000);setInterval(probeSolana,30000);setInterval(probePolymarket,45000);setInterval(probeMarketBots,60000);setInterval(scanMarketBots,Math.max(60000,Number(process.env.MARKET_BOTS_SCAN_MS||120000)));setInterval(rebalance,Math.max(15000,Number(process.env.ALLOCATOR_REBALANCE_MS||30000)));
+refreshPromotionState();refreshOperationalReadiness();probeRpc();probeLatencyRouter();probeMarketData();probeFuturesMarketData();probeYieldData();probeSolana();probePolymarket();probeMarketBots();setTimeout(scanMarketBots,10000).unref?.();rebalance();setInterval(probeRpc,15000);setInterval(probeLatencyRouter,20000);setInterval(probeMarketData,30000);setInterval(probeFuturesMarketData,30000);setInterval(probeYieldData,300000);setInterval(probeSolana,30000);setInterval(probePolymarket,45000);setInterval(probeMarketBots,60000);setInterval(scanMarketBots,Math.max(60000,Number(process.env.MARKET_BOTS_SCAN_MS||120000)));setInterval(()=>{refreshOperationalReadiness();broadcast();},30000);setInterval(rebalance,Math.max(15000,Number(process.env.ALLOCATOR_REBALANCE_MS||30000)));
 
 const centralSupervisor=new CentralSupervisor({state,persist,journal,broadcast,performanceSnapshot:()=>performanceDb.snapshot(),governance,tools:{rebalance,recoverStale:recoverBot,marketBots:marketBotRegistry},intervalMs:Math.max(10000,Number(process.env.CENTRAL_AGENT_INTERVAL_MS||15000))});
 centralSupervisor.start();
@@ -267,7 +317,7 @@ app.get('/api/integrations/data-providers/status',(req,res)=>res.json({mode:'PAP
 app.get('/api/kronos/status',(req,res)=>res.json(kronosStatus()));
 app.post('/api/kronos/forecast',async(req,res)=>{try{const result=await kronosForecast(req.body||{});res.status(result.available?200:503).json(result);}catch(error){res.status(400).json({available:false,error:error?.message||'KRONOS_FORECAST_ERROR'});}});
 
-const healthPayload=()=>{refreshBotMetrics();const bots=state.bots||[],agentsTotal=bots.length,agentsOnline=bots.filter(bot=>bot.active&&!BLOCKED_RUNTIME_STATUS.test(String(bot.status||'').toUpperCase())&&String(bot.status||'').toUpperCase()!=='PAUSED').length,blockedBots=bots.filter(bot=>bot.active&&BLOCKED_RUNTIME_STATUS.test(String(bot.status||'').toUpperCase())).map(bot=>({id:bot.id,status:bot.status})),processed=(state.opportunities?.length||0)+(state.executions?.length||0);return {ok:true,service:'AEGIS Core',kind:'finance',version:'11.0.0',status:blockedBots.length?'degraded':'online',mode:state.mode,time:new Date().toISOString(),agentsOnline,agentsTotal,blockedBots,processed,eventsProcessed:processed,paperEquityUsd:Number(state.treasury?.paperBalanceUsd||0)};};
+const healthPayload=()=>{refreshBotMetrics();const readiness=refreshOperationalReadiness(),validated=validatedPaperSnapshot(),bots=state.bots||[],agentsTotal=bots.length,agentsOnline=bots.filter(bot=>bot.active&&!BLOCKED_RUNTIME_STATUS.test(String(bot.status||'').toUpperCase())&&String(bot.status||'').toUpperCase()!=='PAUSED').length,blockedBots=bots.filter(bot=>bot.active&&BLOCKED_RUNTIME_STATUS.test(String(bot.status||'').toUpperCase())).map(bot=>({id:bot.id,status:bot.status})),processed=(state.opportunities?.length||0)+(state.executions?.length||0);return {ok:true,service:'AEGIS Core',kind:'finance',version:'11.0.0',status:blockedBots.length?'degraded':'online',mode:state.mode,time:new Date().toISOString(),agentsOnline,agentsTotal,blockedBots,processed,eventsProcessed:processed,paperEquityUsd:validated.equityUsd,validatedPaper:validated,ledgerReportedEquityUsd:Number(state.treasury?.paperBalanceUsd||0),readiness:{score:readiness.score,label:readiness.label,summary:readiness.summary}};};
 app.get('/health',(req,res)=>res.json(healthPayload()));
 app.get('/api/health',(req,res)=>res.json(healthPayload()));
 app.get('/api/state',(req,res)=>res.json(publicState()));app.get('/api/bots',(req,res)=>res.json(state.bots));app.get('/api/opportunities',(req,res)=>res.json(state.opportunities.slice(0,100)));
@@ -292,9 +342,12 @@ app.post('/api/infrastructure/rpc/latency-probe',async(req,res)=>{await probeLat
 app.post('/api/infrastructure/polymarket/probe',async(req,res)=>{await probePolymarket();res.json(state.infrastructure.polymarketData);});
 app.post('/api/polymarket/scan',async(req,res)=>{if(!polymarketBot?.active)return res.status(409).json({error:'POLYMARKET_BOT_PAUSED'});await polymarketScanner.scanOnce();res.json({ok:true,lastScans:state.infrastructure.polymarket.lastScans.slice(0,10)});});
 app.get('/api/simulation',(req,res)=>res.json(state.infrastructure.simulation));
-app.get('/api/paper/status',(req,res)=>res.json({mode:state.mode,live:false,broker:paperBroker.status(),ledger:state.paperLedger,legacyPnlQuarantined:Boolean(state.infrastructure.dataQuality?.legacyPaperPnlQuarantined)}));
+app.get('/api/paper/status',(req,res)=>res.json({mode:state.mode,live:false,broker:paperBroker.status(),ledger:state.paperLedger,validated:validatedPaperSnapshot(),legacyPnlQuarantined:Boolean(state.infrastructure.dataQuality?.legacyPaperPnlQuarantined),notice:'Only REAL_MARKET_QUOTE closes contribute to validated PNL.'}));
 app.post('/api/paper/positions/:id/close',async(req,res)=>{try{const result=await paperBroker.close(req.params.id,'MANUAL_API');if(!result)return res.status(404).json({error:'PAPER_POSITION_NOT_FOUND_OR_QUOTE_UNAVAILABLE'});res.json(result);}catch(error){res.status(502).json({error:error?.message||'PAPER_CLOSE_ERROR'});}});
-app.get('/api/performance',(req,res)=>res.json(performanceDb.snapshot()));
+app.get('/api/performance',(req,res)=>res.json(refreshPromotionState()));
+app.get('/api/performance/promotion',(req,res)=>res.json(promotionEngine.snapshot()));
+app.get('/api/operations/readiness',(req,res)=>res.json(refreshOperationalReadiness()));
+app.get('/api/operations/validation-evidence',(req,res)=>{const id=String(req.query.strategyId||'').trim();res.json(id?strategyEvidenceSnapshot(state,id):{updatedAt:new Date().toISOString(),rows:(state.infrastructure.strategyEvidence||[]).slice(0,200)});});
 app.get('/api/intelligence',(req,res)=>res.json(state.infrastructure.intelligence));
 app.post('/api/momentum/scan',async(req,res)=>{if(!momentumBot?.active)return res.status(409).json({error:'MOMENTUM_BOT_PAUSED'});await momentumScanner.scanOnce();res.json({ok:true,lastScans:state.infrastructure.momentum.lastScans.slice(0,12)});});
 app.post('/api/yield/scan',async(req,res)=>{if(!yieldBot?.active)return res.status(409).json({error:'YIELD_BOT_PAUSED'});await yieldScanner.scanOnce();res.json({ok:true,lastScans:state.infrastructure.yield.lastScans.slice(0,10)});});
@@ -307,9 +360,38 @@ app.post('/api/risk',(req,res)=>{try{const result=governance.applyRiskPatch(req.
 app.get('/api/production/status',(req,res)=>res.json(state.infrastructure.production));
 app.post('/api/replay/run',(req,res)=>{const result=replayEngine.run({limit:Math.min(5000,Math.max(1,Number(req.body?.limit||500))),riskState:state});state.infrastructure.production.replay.lastRun=result;persist();broadcast();res.json(result);});
 app.get('/api/strategies/config',(req,res)=>res.json(strategyConfigService.get()));
-app.patch('/api/strategies/:id/config',(req,res)=>{try{const id=req.params.id;if(!strategyConfigService.get()[id]&&marketBotRegistry.statusFor(id)){strategyConfigService.config[id]={enabled:true,maxAllocationPct:10,minConfidence:null,notes:'',wallet:state.bots.find(item=>item.id===id)?.wallet||`market-${id}`};strategyConfigService.save();}const cfg=strategyConfigService.patch(id,req.body||{});const bot=state.bots.find(x=>x.id===id);if(bot&&typeof req.body?.enabled==='boolean'){bot.active=req.body.enabled;bot.status=bot.active?'SCANNING':'PAUSED';bot.heartbeat=new Date().toISOString();}persist();broadcast();res.json(cfg);}catch(e){res.status(404).json({error:e.message});}});
+app.patch('/api/strategies/:id/config',(req,res)=>{try{const id=req.params.id;if(!strategyConfigService.get()[id]&&marketBotRegistry.statusFor(id))strategyConfigService.ensure(id,{wallet:state.bots.find(item=>item.id===id)?.wallet||`market-${id}`,maxAllocationPct:10});const cfg=strategyConfigService.patch(id,req.body||{});const bot=state.bots.find(x=>x.id===id);if(bot&&typeof req.body?.enabled==='boolean'){bot.active=req.body.enabled;bot.status=bot.active?'SCANNING':'PAUSED';bot.heartbeat=new Date().toISOString();}persist();broadcast();res.json(cfg);}catch(e){res.status(e.message==='STRATEGY_NOT_FOUND'?404:400).json({error:e.message});}});
 const BOT_INFRA_KEYS={liquidation:'liquidation',arbitrage:'arbitrage','solana-radar':'solana',volatility:'volatility',momentum:'momentum',perpetuals:'perpetuals',polymarket:'polymarket','smart-money':'smartMoney',yield:'yield',allocator:null};
-app.get('/api/bots/:id/results',(req,res)=>{const id=String(req.params.id);const bot=state.bots.find(x=>x.id===id);if(!bot)return res.status(404).json({error:'BOT_NOT_FOUND'});const limit=Math.min(100,Math.max(1,Number(req.query.limit||30)));const infraKey=BOT_INFRA_KEYS[id];const infrastructure=infraKey?state.infrastructure[infraKey]:state.allocator;let scans=(infrastructure?.lastScans||[]).slice(0,limit);const marketBotId=bot.marketBotId;const marketResult=marketBotId?state.infrastructure.marketBots?.results?.[marketBotId]:null;if(marketResult)scans=[marketResult,...scans.filter(row=>row.scannedAt!==marketResult.scannedAt)].slice(0,limit);const opportunities=state.opportunities.filter(x=>x.strategyId===id).slice(0,limit);const executions=state.executions.filter(x=>x.strategyId===id).slice(0,limit);res.json({bot,config:strategyConfigService.get()[id]||null,infrastructure,marketBotId,marketResult,scans,opportunities,executions,updatedAt:new Date().toISOString()});});
+const compactCopilotValue=(value,depth=0)=>{
+  if(value==null||typeof value==='number'||typeof value==='boolean')return value;
+  if(typeof value==='string')return value.length>1600?`${value.slice(0,1600)}…[TRUNCATED]`:value;
+  if(depth>=8)return '[DEPTH_LIMIT]';
+  if(Array.isArray(value))return value.slice(0,15).map(item=>compactCopilotValue(item,depth+1));
+  if(typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([key])=>!['raw','html','base64','transactionBase64','executionIds'].includes(key)).slice(0,80).map(([key,item])=>[key,compactCopilotValue(item,depth+1)]));
+  return String(value);
+};
+const botDataContext=id=>{
+  const bot=state.bots.find(row=>row.id===id);if(!bot)throw new Error('BOT_NOT_FOUND');
+  const infraKey=BOT_INFRA_KEYS[id],infrastructure=infraKey?state.infrastructure[infraKey]:id==='allocator'?state.allocator:null,marketResult=bot.marketBotId?state.infrastructure.marketBots?.results?.[bot.marketBotId]:null;
+  let scans=(infrastructure?.lastScans||[]).slice(0,20);if(marketResult)scans=[marketResult,...scans.filter(row=>row.scannedAt!==marketResult.scannedAt)].slice(0,20);
+  const opportunities=state.opportunities.filter(row=>row.strategyId===id).slice(0,30),executions=state.executions.filter(row=>row.strategyId===id).slice(0,30),performance=performanceDb.snapshot(),strategyPerformance=performance.strategies.find(row=>row.strategyId===id)||null;
+  const promotion=promotionEngine.evaluate(id),readiness=refreshOperationalReadiness().bots.find(row=>row.id===id)||null,diagnostics=(state.infrastructure.centralAgent?.botDiagnostics||[]).filter(row=>row.id===id||row.botId===id).slice(0,10),incidents=(state.infrastructure.centralAgent?.incidents||[]).filter(row=>row.botId===id||row.strategyId===id||String(row.message||'').includes(id)).slice(0,10);
+  const fusion=(state.infrastructure.fusion?.recent||[]).filter(row=>row.strategies?.includes?.(id)||row.strategyId===id).slice(0,10),intelligence=(state.infrastructure.intelligence?.recent||[]).filter(row=>row.strategies?.includes?.(id)||row.strategyId===id).slice(0,10),circuitBreaker=(state.infrastructure.production?.circuitBreakers||[]).find(row=>row.strategyId===id||row.id===id)||null;
+  const sources={scanner:scans.length>0,opportunities:opportunities.length>0,executions:executions.length>0,performance:Boolean(strategyPerformance),risk:Boolean(state.risk),readiness:Boolean(readiness),provider:Boolean(readiness?.provider||marketResult?.provider||infrastructure?.provider),centralDiagnostics:diagnostics.length>0||incidents.length>0,intelligence:fusion.length>0||intelligence.length>0};
+  const timestamps=[scans[0]?.scannedAt,scans[0]?.createdAt,opportunities[0]?.createdAt,executions[0]?.closedAt,executions[0]?.createdAt].map(value=>Date.parse(value||'')).filter(Number.isFinite),latestDataAt=timestamps.length?new Date(Math.max(...timestamps)).toISOString():null;
+  const data={generatedAt:new Date().toISOString(),mode:state.mode,bot,activeConfig:strategyConfigService.get()[id]||null,scanner:{infrastructure,marketResult,recent:scans},opportunities,executions,strategyPerformance,promotion,readiness,validationEvidence:strategyEvidenceSnapshot(state,id),validatedPaper:validatedPaperSnapshot(),riskEnvelope:state.risk,circuitBreaker,connectors:{rpc:state.infrastructure.rpc,marketData:state.infrastructure.marketData,futures:state.infrastructure.futuresMarketData,solana:state.infrastructure.solanaRpc,polymarket:state.infrastructure.polymarketData,marketBot:bot.marketBotId?state.infrastructure.marketBots?.connectors:null},central:{diagnostics,incidents,latestReport:state.infrastructure.centralAgent?.reports?.[0]||null},crossSignals:{fusion,intelligence}};
+  return {coverage:{connected:Object.values(sources).filter(Boolean).length,total:Object.keys(sources).length,sources,latestDataAt},data:compactCopilotValue(data)};
+};
+const botCopilot=new BotCopilotService({state,persist,journal,strategyConfigService,contextBuilder:botDataContext});
+const copilotError=(res,error)=>{const message=error?.message||'BOT_COPILOT_ERROR',status=message.includes('NOT_FOUND')?404:message.includes('CONFIRMATION')||message.includes('PAPER_MODE')||message.includes('ALREADY_REVIEWED')?409:400;return res.status(status).json({error:message});};
+app.get('/api/bot-copilot/status',(req,res)=>res.json(botCopilot.status()));
+app.get('/api/bots/:id/copilot',(req,res)=>{try{res.json(botCopilot.snapshot(String(req.params.id)));}catch(error){copilotError(res,error);}});
+app.post('/api/bots/:id/copilot/chat',async(req,res)=>{try{const answer=await botCopilot.chat(String(req.params.id),req.body?.message,req.body?.conversation);broadcast();res.json(answer);}catch(error){copilotError(res,error);}});
+app.post('/api/bots/:id/copilot/proposals/:proposalId/approve',(req,res)=>{try{const result=botCopilot.approve(String(req.params.id),String(req.params.proposalId),{confirmPaper:req.body?.confirmPaper===true,actor:'FINANCE_UI'});rebalance();broadcast();res.json(result);}catch(error){copilotError(res,error);}});
+app.post('/api/bots/:id/copilot/proposals/:proposalId/reject',(req,res)=>{try{const result=botCopilot.reject(String(req.params.id),String(req.params.proposalId),{actor:'FINANCE_UI'});broadcast();res.json(result);}catch(error){copilotError(res,error);}});
+app.post('/api/bots/:id/copilot/presets',(req,res)=>{try{const result=botCopilot.createPreset(String(req.params.id),req.body||{});broadcast();res.status(201).json(result);}catch(error){copilotError(res,error);}});
+app.post('/api/bots/:id/copilot/presets/:presetId/activate',(req,res)=>{try{const result=botCopilot.activatePreset(String(req.params.id),String(req.params.presetId),{confirmPaper:req.body?.confirmPaper===true,actor:'FINANCE_UI'});rebalance();broadcast();res.json(result);}catch(error){copilotError(res,error);}});
+app.get('/api/bots/:id/results',(req,res)=>{const id=String(req.params.id);const bot=state.bots.find(x=>x.id===id);if(!bot)return res.status(404).json({error:'BOT_NOT_FOUND'});const limit=Math.min(100,Math.max(1,Number(req.query.limit||30)));const infraKey=BOT_INFRA_KEYS[id];const infrastructure=infraKey?state.infrastructure[infraKey]:state.allocator;let scans=(infrastructure?.lastScans||[]).slice(0,limit);const marketBotId=bot.marketBotId;const marketResult=marketBotId?state.infrastructure.marketBots?.results?.[marketBotId]:null;if(marketResult)scans=[marketResult,...scans.filter(row=>row.scannedAt!==marketResult.scannedAt)].slice(0,limit);const opportunities=state.opportunities.filter(x=>x.strategyId===id).slice(0,limit);const executions=state.executions.filter(x=>x.strategyId===id).slice(0,limit);const promotion=promotionEngine.evaluate(id),readiness=refreshOperationalReadiness().bots.find(row=>row.id===id)||null;res.json({bot,config:strategyConfigService.get()[id]||null,infrastructure,marketBotId,marketResult,scans,opportunities,executions,promotion,readiness,validationEvidence:strategyEvidenceSnapshot(state,id),validatedPaper:validatedPaperSnapshot(),updatedAt:new Date().toISOString()});});
 app.post('/api/circuit-breakers/:id/reset',(req,res)=>{const row=circuitBreaker.reset(req.params.id);state.infrastructure.production.circuitBreakers=circuitBreaker.snapshot();persist();broadcast();res.json(row);});
 app.get('/api/execution/capabilities',(req,res)=>res.json(executionAdapter.capabilities()));
 app.get('/api/vault/status',(req,res)=>res.json(secretsVault.status()));

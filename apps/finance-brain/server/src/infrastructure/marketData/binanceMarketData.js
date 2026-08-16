@@ -1,24 +1,14 @@
-const BASE=process.env.BINANCE_MARKET_DATA_URL||'https://api.binance.com';
-const timeoutMs=Math.max(1000,Number(process.env.MARKET_DATA_TIMEOUT_MS||5000));
 import {fetchJson} from '../httpClient.js';
+import {okxSpotMarketData} from './okxSpotMarketData.js';
 import {ccxtSpotFallback} from './ccxtSpotFallback.js';
 
-export class BinanceMarketData {
-  constructor(){this.base=BASE.replace(/\/$/,'');}
-  async ping(){const t=Date.now(); await fetchJson(`${this.base}/api/v3/ping`,{timeoutMs,retries:2,errorPrefix:'BINANCE_SPOT'}); return {provider:'Binance Spot',online:true,latencyMs:Date.now()-t,checkedAt:new Date().toISOString()};}
-  async klines(symbol,interval='1m',limit=120){
-    const url=`${this.base}/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${Math.min(1000,Math.max(10,limit))}`;
-    const rows=await fetchJson(url,{timeoutMs,retries:2,errorPrefix:'BINANCE_SPOT'});
-    return rows.map(r=>({openTime:Number(r[0]),open:Number(r[1]),high:Number(r[2]),low:Number(r[3]),close:Number(r[4]),volume:Number(r[5]),closeTime:Number(r[6]),quoteVolume:Number(r[7]),trades:Number(r[8])}));
-  }
-  async bookTicker(symbol){
-    try{const url=`${this.base}/api/v3/ticker/bookTicker?symbol=${encodeURIComponent(symbol)}`;const row=await fetchJson(url,{timeoutMs,retries:2,errorPrefix:'BINANCE_SPOT_BOOK'});return {provider:'Binance Spot',symbol:String(symbol).toUpperCase(),bid:Number(row.bidPrice),ask:Number(row.askPrice),bidQty:Number(row.bidQty||0),askQty:Number(row.askQty||0),observedAt:new Date().toISOString()};}
-    catch(error){try{return await ccxtSpotFallback.bookTicker(symbol);}catch{throw error;}}
-  }
-  async depth(symbol,limit=20){
-    const url=`${this.base}/api/v3/depth?symbol=${encodeURIComponent(symbol)}&limit=${Math.min(100,Math.max(5,limit))}`;
-    const row=await fetchJson(url,{timeoutMs,retries:2,errorPrefix:'BINANCE_SPOT_DEPTH'});
-    return {provider:'Binance Spot',symbol:String(symbol).toUpperCase(),bids:(row.bids||[]).map(([price,quantity])=>[Number(price),Number(quantity)]),asks:(row.asks||[]).map(([price,quantity])=>[Number(price),Number(quantity)]),observedAt:new Date().toISOString()};
-  }
+const timeoutMs=Math.max(1000,Number(process.env.MARKET_DATA_TIMEOUT_MS||5000));
+export class BinanceMarketData{
+  constructor({base=process.env.BINANCE_MARKET_DATA_URL||'https://api.binance.com',fallbacks=[okxSpotMarketData,ccxtSpotFallback],request=fetchJson}={}){this.base=String(base).replace(/\/$/,'');this.fallbacks=fallbacks;this.request=request;this.provider='Binance Spot';this.lastProvider=this.provider;this.lastFallbackError=null;}
+  async fallback(method,args,primaryError){const failures=[];for(const provider of this.fallbacks){if(!provider?.[method])continue;try{const result=await provider[method](...args);this.lastProvider=result?.provider||provider.constructor?.name||'Spot fallback';this.lastFallbackError=null;return result;}catch(error){failures.push(error?.message||String(error));}}this.lastFallbackError=failures.join('; ').slice(0,600);throw new Error(`${primaryError?.message||'BINANCE_SPOT_UNAVAILABLE'}; ${this.lastFallbackError||'SPOT_FALLBACK_UNAVAILABLE'}`);}
+  async ping(){const started=Date.now();try{await this.request(`${this.base}/api/v3/ping`,{timeoutMs,retries:1,errorPrefix:'BINANCE_SPOT'});this.lastProvider=this.provider;return {provider:this.provider,online:true,latencyMs:Date.now()-started,checkedAt:new Date().toISOString()};}catch(error){return this.fallback('ping',[],error);}}
+  async klines(symbol,interval='1m',limit=120){try{const url=`${this.base}/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${Math.min(1000,Math.max(10,limit))}`,rows=await this.request(url,{timeoutMs,retries:1,errorPrefix:'BINANCE_SPOT'});this.lastProvider=this.provider;return rows.map(row=>({openTime:Number(row[0]),open:Number(row[1]),high:Number(row[2]),low:Number(row[3]),close:Number(row[4]),volume:Number(row[5]),closeTime:Number(row[6]),quoteVolume:Number(row[7]),trades:Number(row[8]),provider:this.provider}));}catch(error){return this.fallback('klines',[symbol,interval,limit],error);}}
+  async bookTicker(symbol){try{const url=`${this.base}/api/v3/ticker/bookTicker?symbol=${encodeURIComponent(symbol)}`,row=await this.request(url,{timeoutMs,retries:1,errorPrefix:'BINANCE_SPOT_BOOK'});this.lastProvider=this.provider;return {provider:this.provider,symbol:String(symbol).toUpperCase(),bid:Number(row.bidPrice),ask:Number(row.askPrice),bidQty:Number(row.bidQty||0),askQty:Number(row.askQty||0),observedAt:new Date().toISOString()};}catch(error){return this.fallback('bookTicker',[symbol],error);}}
+  async depth(symbol,limit=20){try{const url=`${this.base}/api/v3/depth?symbol=${encodeURIComponent(symbol)}&limit=${Math.min(100,Math.max(5,limit))}`,row=await this.request(url,{timeoutMs,retries:1,errorPrefix:'BINANCE_SPOT_DEPTH'});this.lastProvider=this.provider;return {provider:this.provider,symbol:String(symbol).toUpperCase(),bids:(row.bids||[]).map(([price,quantity])=>[Number(price),Number(quantity)]),asks:(row.asks||[]).map(([price,quantity])=>[Number(price),Number(quantity)]),observedAt:new Date().toISOString()};}catch(error){return this.fallback('depth',[symbol,limit],error);}}
 }
 export const binanceMarketData=new BinanceMarketData();

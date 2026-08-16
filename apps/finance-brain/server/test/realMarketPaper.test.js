@@ -10,10 +10,10 @@ test('real-market paper blocks synthetic opportunities',async()=>{
   assert.equal(result.status,'BLOCKED');assert.equal(result.reason,'SYNTHETIC_OPPORTUNITY_BLOCKED');assert.equal(state.paperLedger.realizedPnlUsd,0);
 });
 
-test('paper model fallback records yield allocations and modeled pnl',async()=>{
+test('paper model fallback records research but never mutates validated pnl',async()=>{
   const state=testState();state.bots.push({id:'yield',pnl24h:0});const broker=new RealMarketPaperBroker({state});broker.quote=async()=>null;
   const result=await broker.open({id:'yield-1',strategyId:'yield',asset:'USDC-AERO',network:'Base',synthetic:false,capitalRequiredUsd:1000,expectedProfitUsd:20},{passed:true,estimatedNetProfitUsd:20,successProbability:.75});
-  assert.equal(result.status,'CLOSED');assert.equal(result.paperQuality,'MODEL_SIMULATED');assert.equal(result.actualMarketFill,false);assert.equal(state.paperLedger.closedTrades,1);assert.equal(state.paperLedger.realizedPnlUsd,14);assert.equal(state.paperLedger.cashUsd,10014);assert.equal(state.paperLedger.feesUsd,1);assert.equal(state.executions.length,1);
+  assert.equal(result.status,'RESEARCH_ONLY');assert.equal(result.paperQuality,'MODEL_RESEARCH');assert.equal(result.actualMarketFill,false);assert.equal(result.modeledExpectedProfitUsd,14);assert.equal(state.paperLedger.closedTrades,0);assert.equal(state.paperLedger.realizedPnlUsd,0);assert.equal(state.paperLedger.cashUsd,10000);assert.equal(state.paperLedger.feesUsd,0);assert.equal(state.bots.find(bot=>bot.id==='yield').pnl24h,0);assert.equal(state.infrastructure.researchLedger.observations,1);assert.equal(state.executions.length,1);
 });
 
 test('real-market paper uses bid ask depth and closes with mark price',async()=>{
@@ -23,6 +23,7 @@ test('real-market paper uses bid ask depth and closes with mark price',async()=>
   assert.equal(opened.status,'OPEN');assert.equal(state.paperLedger.openPositions.length,1);assert.equal(state.paperLedger.equityUsd,10000);
   phase='close';await broker.close(state.paperLedger.openPositions[0].id,'TEST');
   assert.equal(closeResult.status,'CLOSED');assert.ok(closeResult.realizedProfitUsd>0);assert.equal(state.paperLedger.openPositions.length,0);assert.ok(state.paperLedger.equityUsd>10000);
+  assert.equal(state.paperLedger.validated.closedRealQuotePaper,1);assert.equal(state.paperLedger.validated.strategies.momentum.closedRealQuotePaper,1);
 });
 
 test('solana paper uses a Jupiter quote and never falls back to invented PNL',async()=>{

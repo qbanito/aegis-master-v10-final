@@ -2,7 +2,7 @@
   "state": {
     "startedAt": "2026-08-15T23:03:10.715Z",
     "status": "online",
-    "processed": 788,
+    "processed": 816,
     "alerts": [],
     "metrics": {
       "revenue": 0,
@@ -20,9 +20,9 @@
       "order": 1,
       "status": "READY",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.581Z",
+      "lastRunAt": "2026-08-15T23:48:16.848Z",
       "lastResult": {
-        "runId": "00cd841e-4581-4a0e-9b61-e358d4c1af1a",
+        "runId": "4a19c30d-881f-4fab-ba55-4d9793fd35fc",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Amazon Product Scout completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -70,10 +70,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.581Z"
+        "timestamp": "2026-08-15T23:48:16.848Z"
       },
       "metrics": {
-        "signals": 62,
+        "signals": 64,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -96,7 +96,7 @@
       "order": 2,
       "status": "ATTENTION",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.584Z",
+      "lastRunAt": "2026-08-15T23:48:16.853Z",
       "lastResult": {
         "status": "BLOCKED",
         "mode": "PAPER",
@@ -131,9 +131,9 @@
       "order": 3,
       "status": "READY",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.588Z",
+      "lastRunAt": "2026-08-15T23:48:16.857Z",
       "lastResult": {
-        "runId": "9a140b61-6ee9-4999-aa70-1c360614df1d",
+        "runId": "7daf7c5d-4d4b-4d26-ab64-c5933f92d52b",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -157,10 +157,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.588Z"
+        "timestamp": "2026-08-15T23:48:16.857Z"
       },
       "metrics": {
-        "signals": 58,
+        "signals": 60,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -183,9 +183,9 @@
       "order": 4,
       "status": "READY",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.591Z",
+      "lastRunAt": "2026-08-15T23:48:16.859Z",
       "lastResult": {
-        "runId": "740be486-180a-4e58-81aa-5ff821ba24d7",
+        "runId": "f0809085-3f19-4759-a48a-0e9a7103ca18",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -218,10 +218,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.591Z"
+        "timestamp": "2026-08-15T23:48:16.859Z"
       },
       "metrics": {
-        "signals": 56,
+        "signals": 58,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -244,9 +244,9 @@
       "order": 5,
       "status": "READY",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.594Z",
+      "lastRunAt": "2026-08-15T23:48:16.862Z",
       "lastResult": {
-        "runId": "2a3a4f5c-a683-4d5a-bb69-a9bedee86fdf",
+        "runId": "e55d432e-79eb-47e3-9ef6-5b8b460e1f1c",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -274,10 +274,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.594Z"
+        "timestamp": "2026-08-15T23:48:16.862Z"
       },
       "metrics": {
-        "signals": 57,
+        "signals": 59,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -300,9 +300,9 @@
       "order": 6,
       "status": "READY",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.596Z",
+      "lastRunAt": "2026-08-15T23:48:16.864Z",
       "lastResult": {
-        "runId": "95c62e58-a2a7-4267-97f5-c1e357aad4f4",
+        "runId": "ca897894-9f72-4e47-b424-ff0eeffe2ec5",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -329,10 +329,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.596Z"
+        "timestamp": "2026-08-15T23:48:16.864Z"
       },
       "metrics": {
-        "signals": 57,
+        "signals": 59,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -355,9 +355,9 @@
       "order": 7,
       "status": "READY",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.598Z",
+      "lastRunAt": "2026-08-15T23:48:16.868Z",
       "lastResult": {
-        "runId": "f5c6f88f-d597-47b7-8f1d-0ea9609aec78",
+        "runId": "fdfad812-1741-44ff-84bb-2047b7589b89",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -383,10 +383,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.598Z"
+        "timestamp": "2026-08-15T23:48:16.868Z"
       },
       "metrics": {
-        "signals": 57,
+        "signals": 59,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -409,9 +409,9 @@
       "order": 8,
       "status": "ATTENTION",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.601Z",
+      "lastRunAt": "2026-08-15T23:48:16.871Z",
       "lastResult": {
-        "runId": "8a2ae42a-c1e7-40cb-8634-f173a8c1c868",
+        "runId": "cbd417f7-0012-4c97-b251-0fff22610f08",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -434,10 +434,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.601Z"
+        "timestamp": "2026-08-15T23:48:16.871Z"
       },
       "metrics": {
-        "signals": 57,
+        "signals": 59,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -462,9 +462,9 @@
       "order": 9,
       "status": "ATTENTION",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.604Z",
+      "lastRunAt": "2026-08-15T23:48:16.875Z",
       "lastResult": {
-        "runId": "505f272a-f98b-47d9-a6e5-73f7613444e7",
+        "runId": "0b913c48-95df-4c16-b14d-a99acb6d65ac",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -487,10 +487,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.604Z"
+        "timestamp": "2026-08-15T23:48:16.875Z"
       },
       "metrics": {
-        "signals": 57,
+        "signals": 59,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -515,9 +515,9 @@
       "order": 10,
       "status": "ATTENTION",
       "active": true,
-      "lastRunAt": "2026-08-15T23:18:16.606Z",
+      "lastRunAt": "2026-08-15T23:48:16.876Z",
       "lastResult": {
-        "runId": "1022c7bf-6119-4cf2-a366-f9e1b0fe22a5",
+        "runId": "753f1500-a40a-4ab9-823c-7394a1cc3594",
         "mode": "PAPER",
         "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
         "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
@@ -539,10 +539,10 @@
           "cycle": "automatic",
           "reason": "scheduled"
         },
-        "timestamp": "2026-08-15T23:18:16.606Z"
+        "timestamp": "2026-08-15T23:48:16.876Z"
       },
       "metrics": {
-        "signals": 58,
+        "signals": 60,
         "candidates": 4,
         "drafts": 6,
         "confidence": 55,
@@ -631,6 +631,1648 @@
     }
   },
   "events": [
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "2865bde0-fad0-4320-8db0-79b78033ef37",
+      "correlation_id": "458bdc18-f27d-4944-bb72-4a88b1f348dd",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_cycle_completed",
+      "priority": 0.8,
+      "timestamp": "2026-08-15T23:48:16.878Z",
+      "payload": {
+        "id": "34b062b1-bb46-47f9-b184-0b93b26478fa",
+        "createdAt": "2026-08-15T23:48:16.878Z",
+        "mode": "PAPER",
+        "discovery": {
+          "count": 4,
+          "providerFeedUsed": false
+        },
+        "topProduct": null,
+        "botsRun": 10,
+        "results": [
+          {
+            "botId": "product-scout",
+            "result": {
+              "runId": "4a19c30d-881f-4fab-ba55-4d9793fd35fc",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Amazon Product Scout completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "rankedProducts": [
+                  {
+                    "id": "amazon-paper-2",
+                    "name": "Portable Recovery Massager",
+                    "score": 67,
+                    "tier": "REVIEW",
+                    "marginPct": 33.5
+                  },
+                  {
+                    "id": "amazon-paper-1",
+                    "name": "Compact USB-C Travel Hub",
+                    "score": 65,
+                    "tier": "REVIEW",
+                    "marginPct": 33
+                  },
+                  {
+                    "id": "aliexpress-paper-2",
+                    "name": "Magnetic Desk Organizer",
+                    "score": 65,
+                    "tier": "REVIEW",
+                    "marginPct": 32.2
+                  },
+                  {
+                    "id": "aliexpress-paper-1",
+                    "name": "Rechargeable Motion Sensor Light",
+                    "score": 64,
+                    "tier": "REVIEW",
+                    "marginPct": 32.6
+                  }
+                ]
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.848Z"
+            }
+          },
+          {
+            "botId": "dropship-hunter",
+            "result": {
+              "status": "BLOCKED",
+              "mode": "PAPER",
+              "source": "aliexpress",
+              "blockers": [
+                "ALIEXPRESS_CONNECTOR_NOT_CONFIGURED"
+              ],
+              "message": "Configura una API o feed de AliExpress antes de usar datos operativos. No se crean candidatos sintéticos en este módulo."
+            }
+          },
+          {
+            "botId": "digital-builder",
+            "result": {
+              "runId": "7daf7c5d-4d4b-4d26-ab64-c5933f92d52b",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "ideas": [
+                  "starter bundle",
+                  "digital guide",
+                  "post-purchase upsell"
+                ],
+                "basedOn": "Compact USB-C Travel Hub"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.857Z"
+            }
+          },
+          {
+            "botId": "offer-pricing",
+            "result": {
+              "runId": "f0809085-3f19-4759-a48a-0e9a7103ca18",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "topProduct": "Compact USB-C Travel Hub",
+                "economics": {
+                  "price": 28.99,
+                  "cost": 10.44,
+                  "shipping": 0,
+                  "paymentFee": 1.14,
+                  "platformFee": 0.58,
+                  "refundReserve": 1.45,
+                  "adReserve": 5.8,
+                  "contribution": 9.58,
+                  "marginPct": 33,
+                  "breakEvenCac": 15.38,
+                  "targetCac": 10
+                },
+                "recommendation": "test offer"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.859Z"
+            }
+          },
+          {
+            "botId": "creative-factory",
+            "result": {
+              "runId": "e55d432e-79eb-47e3-9ef6-5b8b460e1f1c",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "contentBrief": {
+                  "productId": "amazon-paper-1",
+                  "channels": [
+                    "landing",
+                    "short_video",
+                    "ugc_script",
+                    "email"
+                  ],
+                  "angle": "problem → transformation → proof → offer"
+                }
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.862Z"
+            }
+          },
+          {
+            "botId": "store-manager",
+            "result": {
+              "runId": "ca897894-9f72-4e47-b424-ff0eeffe2ec5",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "shopify": {
+                  "id": "shopify",
+                  "name": "Shopify",
+                  "provider": "Admin API",
+                  "configured": false,
+                  "live": false,
+                  "detail": "store domain + admin token required"
+                },
+                "nextStep": "prepare product draft"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.864Z"
+            }
+          },
+          {
+            "botId": "traffic",
+            "result": {
+              "runId": "fdfad812-1741-44ff-84bb-2047b7589b89",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "channels": [
+                  "organic_search",
+                  "short_video",
+                  "creator_affiliate",
+                  "email"
+                ],
+                "budgetPolicy": "never exceed target CAC",
+                "productId": "amazon-paper-1"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.868Z"
+            }
+          },
+          {
+            "botId": "closer",
+            "result": {
+              "runId": "cbd417f7-0012-4c97-b251-0fff22610f08",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": false,
+                "blockers": [
+                  "crm_empty"
+                ],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "leads": 0,
+                "hotLeads": 0,
+                "nextStep": "connect checkout or CRM webhook"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.871Z"
+            }
+          },
+          {
+            "botId": "retention",
+            "result": {
+              "runId": "0b913c48-95df-4c16-b14d-a99acb6d65ac",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": false,
+                "blockers": [
+                  "crm_empty"
+                ],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "orders": 0,
+                "repeatCustomers": 0,
+                "nextStep": "collect post-purchase events"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.875Z"
+            }
+          },
+          {
+            "botId": "allocator",
+            "result": {
+              "runId": "753f1500-a40a-4ab9-823c-7394a1cc3594",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": false,
+                "blockers": [
+                  "no_test_ready_products"
+                ],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "recommendedBudget": 100,
+                "allocationRule": "fund only TEST_READY products"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:48:16.876Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "6d6afec1-8f1e-4014-9a8b-e096f11a3a55",
+      "correlation_id": "dbd1b8d4-4e9b-449a-bbcb-7f1a4e209903",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.876Z",
+      "payload": {
+        "botId": "allocator",
+        "result": {
+          "runId": "753f1500-a40a-4ab9-823c-7394a1cc3594",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": false,
+            "blockers": [
+              "no_test_ready_products"
+            ],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "recommendedBudget": 100,
+            "allocationRule": "fund only TEST_READY products"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.876Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "5b8c2815-68bc-4b3b-ac48-7a9b8dfbde4f",
+      "correlation_id": "a3620382-4f1c-4157-ac73-f93dca16a7b9",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.875Z",
+      "payload": {
+        "botId": "retention",
+        "result": {
+          "runId": "0b913c48-95df-4c16-b14d-a99acb6d65ac",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": false,
+            "blockers": [
+              "crm_empty"
+            ],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "orders": 0,
+            "repeatCustomers": 0,
+            "nextStep": "collect post-purchase events"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.875Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "29c870c2-a45b-4fb3-a3f7-4b0d982fb13e",
+      "correlation_id": "b71d82b0-5402-45d5-9071-82360c0e5db8",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.871Z",
+      "payload": {
+        "botId": "closer",
+        "result": {
+          "runId": "cbd417f7-0012-4c97-b251-0fff22610f08",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": false,
+            "blockers": [
+              "crm_empty"
+            ],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "leads": 0,
+            "hotLeads": 0,
+            "nextStep": "connect checkout or CRM webhook"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.871Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "8cae12a9-cbb9-4165-828f-a00515ee4a9a",
+      "correlation_id": "b27d10be-73d3-4eb6-9b9e-8c34b34f376b",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.868Z",
+      "payload": {
+        "botId": "traffic",
+        "result": {
+          "runId": "fdfad812-1741-44ff-84bb-2047b7589b89",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "channels": [
+              "organic_search",
+              "short_video",
+              "creator_affiliate",
+              "email"
+            ],
+            "budgetPolicy": "never exceed target CAC",
+            "productId": "amazon-paper-1"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.868Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "f9581351-ebad-460b-9367-ca0cd1644678",
+      "correlation_id": "7b9ec364-5956-4466-87d9-787c341c3125",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.864Z",
+      "payload": {
+        "botId": "store-manager",
+        "result": {
+          "runId": "ca897894-9f72-4e47-b424-ff0eeffe2ec5",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "shopify": {
+              "id": "shopify",
+              "name": "Shopify",
+              "provider": "Admin API",
+              "configured": false,
+              "live": false,
+              "detail": "store domain + admin token required"
+            },
+            "nextStep": "prepare product draft"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.864Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "4b396aeb-dd21-40e5-ae14-e9994a283ca6",
+      "correlation_id": "92b3341c-04d0-42f9-8574-424b8c06f48d",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.862Z",
+      "payload": {
+        "botId": "creative-factory",
+        "result": {
+          "runId": "e55d432e-79eb-47e3-9ef6-5b8b460e1f1c",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "contentBrief": {
+              "productId": "amazon-paper-1",
+              "channels": [
+                "landing",
+                "short_video",
+                "ugc_script",
+                "email"
+              ],
+              "angle": "problem → transformation → proof → offer"
+            }
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.862Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "3c091eb6-cfc2-45a8-bb13-5af013f905f4",
+      "correlation_id": "5e427b90-9d6f-4ff1-9033-0421348d2fc6",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.859Z",
+      "payload": {
+        "botId": "offer-pricing",
+        "result": {
+          "runId": "f0809085-3f19-4759-a48a-0e9a7103ca18",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "topProduct": "Compact USB-C Travel Hub",
+            "economics": {
+              "price": 28.99,
+              "cost": 10.44,
+              "shipping": 0,
+              "paymentFee": 1.14,
+              "platformFee": 0.58,
+              "refundReserve": 1.45,
+              "adReserve": 5.8,
+              "contribution": 9.58,
+              "marginPct": 33,
+              "breakEvenCac": 15.38,
+              "targetCac": 10
+            },
+            "recommendation": "test offer"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.859Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "36370084-190c-4d32-b84b-0a08d3bee401",
+      "correlation_id": "fa7b6d0d-7399-4180-81f9-4652eb362dad",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.857Z",
+      "payload": {
+        "botId": "digital-builder",
+        "result": {
+          "runId": "7daf7c5d-4d4b-4d26-ab64-c5933f92d52b",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "ideas": [
+              "starter bundle",
+              "digital guide",
+              "post-purchase upsell"
+            ],
+            "basedOn": "Compact USB-C Travel Hub"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.857Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "254e5ebf-792c-47a7-9a53-987d40f31066",
+      "correlation_id": "36e81441-ad3a-4e25-be04-912634e50716",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_dropship_hunter_blocked",
+      "priority": 0.8,
+      "timestamp": "2026-08-15T23:48:16.853Z",
+      "payload": {
+        "status": "BLOCKED",
+        "mode": "PAPER",
+        "source": "aliexpress",
+        "blockers": [
+          "ALIEXPRESS_CONNECTOR_NOT_CONFIGURED"
+        ],
+        "message": "Configura una API o feed de AliExpress antes de usar datos operativos. No se crean candidatos sintéticos en este módulo."
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "07585aa7-3c8e-4f8a-a62a-ce7e80dc64aa",
+      "correlation_id": "9cc541cd-b572-43b0-9e5c-5071a6c8b34b",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.848Z",
+      "payload": {
+        "botId": "product-scout",
+        "result": {
+          "runId": "4a19c30d-881f-4fab-ba55-4d9793fd35fc",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Amazon Product Scout completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "rankedProducts": [
+              {
+                "id": "amazon-paper-2",
+                "name": "Portable Recovery Massager",
+                "score": 67,
+                "tier": "REVIEW",
+                "marginPct": 33.5
+              },
+              {
+                "id": "amazon-paper-1",
+                "name": "Compact USB-C Travel Hub",
+                "score": 65,
+                "tier": "REVIEW",
+                "marginPct": 33
+              },
+              {
+                "id": "aliexpress-paper-2",
+                "name": "Magnetic Desk Organizer",
+                "score": 65,
+                "tier": "REVIEW",
+                "marginPct": 32.2
+              },
+              {
+                "id": "aliexpress-paper-1",
+                "name": "Rechargeable Motion Sensor Light",
+                "score": 64,
+                "tier": "REVIEW",
+                "marginPct": 32.6
+              }
+            ]
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:48:16.848Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "a2007887-7f92-49f1-ba10-cffa9ab059e4",
+      "correlation_id": "b4f7bffa-6efe-41ef-abbb-378b43e45ee8",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_product_discovery",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:48:16.844Z",
+      "payload": {
+        "sources": [
+          "amazon",
+          "aliexpress"
+        ],
+        "count": 4,
+        "mode": "PAPER",
+        "providerFeedUsed": false
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "c03a5d70-76eb-4d8d-8b54-c8645954e443",
+      "correlation_id": "4b3df9a4-067e-46b7-aa59-9cf6723d9da5",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_provider_error",
+      "priority": 0.7,
+      "timestamp": "2026-08-15T23:48:16.842Z",
+      "payload": {
+        "source": "apify",
+        "message": "apify 404"
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "e0661d3b-8175-457d-b335-df2ffb919815",
+      "correlation_id": "7d4e73d9-e258-4b4f-9dbf-f0ddb2944589",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_provider_error",
+      "priority": 0.7,
+      "timestamp": "2026-08-15T23:48:16.777Z",
+      "payload": {
+        "source": "apify",
+        "message": "apify 404"
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "808c5538-71c3-4408-842f-bae6ea333904",
+      "correlation_id": "cfd78b96-599e-4344-ac4d-0527903c4682",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_cycle_completed",
+      "priority": 0.8,
+      "timestamp": "2026-08-15T23:33:17.095Z",
+      "payload": {
+        "id": "cb420c54-6c8a-41ef-a779-9b557b5f340f",
+        "createdAt": "2026-08-15T23:33:17.095Z",
+        "mode": "PAPER",
+        "discovery": {
+          "count": 4,
+          "providerFeedUsed": false
+        },
+        "topProduct": null,
+        "botsRun": 10,
+        "results": [
+          {
+            "botId": "product-scout",
+            "result": {
+              "runId": "90413174-e0de-4604-8f5b-ae909de58a39",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Amazon Product Scout completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "rankedProducts": [
+                  {
+                    "id": "amazon-paper-2",
+                    "name": "Portable Recovery Massager",
+                    "score": 67,
+                    "tier": "REVIEW",
+                    "marginPct": 33.5
+                  },
+                  {
+                    "id": "amazon-paper-1",
+                    "name": "Compact USB-C Travel Hub",
+                    "score": 65,
+                    "tier": "REVIEW",
+                    "marginPct": 33
+                  },
+                  {
+                    "id": "aliexpress-paper-2",
+                    "name": "Magnetic Desk Organizer",
+                    "score": 65,
+                    "tier": "REVIEW",
+                    "marginPct": 32.2
+                  },
+                  {
+                    "id": "aliexpress-paper-1",
+                    "name": "Rechargeable Motion Sensor Light",
+                    "score": 64,
+                    "tier": "REVIEW",
+                    "marginPct": 32.6
+                  }
+                ]
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.808Z"
+            }
+          },
+          {
+            "botId": "dropship-hunter",
+            "result": {
+              "status": "BLOCKED",
+              "mode": "PAPER",
+              "source": "aliexpress",
+              "blockers": [
+                "ALIEXPRESS_CONNECTOR_NOT_CONFIGURED"
+              ],
+              "message": "Configura una API o feed de AliExpress antes de usar datos operativos. No se crean candidatos sintéticos en este módulo."
+            }
+          },
+          {
+            "botId": "digital-builder",
+            "result": {
+              "runId": "d52d35b5-3679-4c35-9a56-503ae09f9621",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "ideas": [
+                  "starter bundle",
+                  "digital guide",
+                  "post-purchase upsell"
+                ],
+                "basedOn": "Compact USB-C Travel Hub"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.863Z"
+            }
+          },
+          {
+            "botId": "offer-pricing",
+            "result": {
+              "runId": "11b9afe7-a8ba-4c3d-ad1f-0dd28a39de3a",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "topProduct": "Compact USB-C Travel Hub",
+                "economics": {
+                  "price": 28.99,
+                  "cost": 10.44,
+                  "shipping": 0,
+                  "paymentFee": 1.14,
+                  "platformFee": 0.58,
+                  "refundReserve": 1.45,
+                  "adReserve": 5.8,
+                  "contribution": 9.58,
+                  "marginPct": 33,
+                  "breakEvenCac": 15.38,
+                  "targetCac": 10
+                },
+                "recommendation": "test offer"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.890Z"
+            }
+          },
+          {
+            "botId": "creative-factory",
+            "result": {
+              "runId": "a6b4f7fd-08de-4a99-b3a6-2925e492cf18",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "contentBrief": {
+                  "productId": "amazon-paper-1",
+                  "channels": [
+                    "landing",
+                    "short_video",
+                    "ugc_script",
+                    "email"
+                  ],
+                  "angle": "problem → transformation → proof → offer"
+                }
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.907Z"
+            }
+          },
+          {
+            "botId": "store-manager",
+            "result": {
+              "runId": "567c4f1d-7da8-4ab1-90f7-35cbb61ed2dd",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "shopify": {
+                  "id": "shopify",
+                  "name": "Shopify",
+                  "provider": "Admin API",
+                  "configured": false,
+                  "live": false,
+                  "detail": "store domain + admin token required"
+                },
+                "nextStep": "prepare product draft"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.923Z"
+            }
+          },
+          {
+            "botId": "traffic",
+            "result": {
+              "runId": "296e748c-88e8-4be3-a39d-f4cde1a990d6",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": true,
+                "blockers": [],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "channels": [
+                  "organic_search",
+                  "short_video",
+                  "creator_affiliate",
+                  "email"
+                ],
+                "budgetPolicy": "never exceed target CAC",
+                "productId": "amazon-paper-1"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.957Z"
+            }
+          },
+          {
+            "botId": "closer",
+            "result": {
+              "runId": "e02662bf-d466-4d3d-801e-36c8a37632fa",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": false,
+                "blockers": [
+                  "crm_empty"
+                ],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "leads": 0,
+                "hotLeads": 0,
+                "nextStep": "connect checkout or CRM webhook"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:16.990Z"
+            }
+          },
+          {
+            "botId": "retention",
+            "result": {
+              "runId": "7142bb4c-f422-422e-845d-4cd05199ce58",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": false,
+                "blockers": [
+                  "crm_empty"
+                ],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "orders": 0,
+                "repeatCustomers": 0,
+                "nextStep": "collect post-purchase events"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:17.023Z"
+            }
+          },
+          {
+            "botId": "allocator",
+            "result": {
+              "runId": "46ef6fe5-31bf-4110-a613-07141cc81c84",
+              "mode": "PAPER",
+              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+              "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
+              "candidates": 4,
+              "confidence": 55,
+              "readiness": {
+                "ready": false,
+                "blockers": [
+                  "no_test_ready_products"
+                ],
+                "nextAction": "Run discovery and scoring",
+                "topProductId": null
+              },
+              "details": {
+                "recommendedBudget": 100,
+                "allocationRule": "fund only TEST_READY products"
+              },
+              "input": {
+                "cycle": "automatic",
+                "reason": "scheduled"
+              },
+              "timestamp": "2026-08-15T23:33:17.045Z"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "eb4c772c-36bb-4381-81de-2d5ed3b5c377",
+      "correlation_id": "22787b0e-817c-4f2c-9983-589ac8eb0248",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:17.045Z",
+      "payload": {
+        "botId": "allocator",
+        "result": {
+          "runId": "46ef6fe5-31bf-4110-a613-07141cc81c84",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": false,
+            "blockers": [
+              "no_test_ready_products"
+            ],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "recommendedBudget": 100,
+            "allocationRule": "fund only TEST_READY products"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:17.045Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "7f7590ed-4cc1-4ac5-be40-fdab7c2a4fba",
+      "correlation_id": "2164b566-c3bc-4505-ad7b-16c7e26b80e9",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:17.024Z",
+      "payload": {
+        "botId": "retention",
+        "result": {
+          "runId": "7142bb4c-f422-422e-845d-4cd05199ce58",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": false,
+            "blockers": [
+              "crm_empty"
+            ],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "orders": 0,
+            "repeatCustomers": 0,
+            "nextStep": "collect post-purchase events"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:17.023Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "14abd04f-c0a6-4eba-82a1-393daa53f888",
+      "correlation_id": "def7b888-3864-4777-af23-35af27d15609",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.990Z",
+      "payload": {
+        "botId": "closer",
+        "result": {
+          "runId": "e02662bf-d466-4d3d-801e-36c8a37632fa",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": false,
+            "blockers": [
+              "crm_empty"
+            ],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "leads": 0,
+            "hotLeads": 0,
+            "nextStep": "connect checkout or CRM webhook"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.990Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "a696b7b9-4ed5-4012-8a63-b8dfcb65c82e",
+      "correlation_id": "af2b05e3-9810-4926-b83c-095971984335",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.957Z",
+      "payload": {
+        "botId": "traffic",
+        "result": {
+          "runId": "296e748c-88e8-4be3-a39d-f4cde1a990d6",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "channels": [
+              "organic_search",
+              "short_video",
+              "creator_affiliate",
+              "email"
+            ],
+            "budgetPolicy": "never exceed target CAC",
+            "productId": "amazon-paper-1"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.957Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "0788ea5d-407b-41d5-a761-ee2f1eabfaad",
+      "correlation_id": "4e2ee836-afcf-45c8-84da-0b4fbaf1f1ab",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.924Z",
+      "payload": {
+        "botId": "store-manager",
+        "result": {
+          "runId": "567c4f1d-7da8-4ab1-90f7-35cbb61ed2dd",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "shopify": {
+              "id": "shopify",
+              "name": "Shopify",
+              "provider": "Admin API",
+              "configured": false,
+              "live": false,
+              "detail": "store domain + admin token required"
+            },
+            "nextStep": "prepare product draft"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.923Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "ecfe7885-ec3a-411a-bf10-5f1c40af4c3b",
+      "correlation_id": "6053c24e-8444-471c-a05b-de44e5ab0d54",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.907Z",
+      "payload": {
+        "botId": "creative-factory",
+        "result": {
+          "runId": "a6b4f7fd-08de-4a99-b3a6-2925e492cf18",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "contentBrief": {
+              "productId": "amazon-paper-1",
+              "channels": [
+                "landing",
+                "short_video",
+                "ugc_script",
+                "email"
+              ],
+              "angle": "problem → transformation → proof → offer"
+            }
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.907Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "529efd71-00c1-43c5-8739-13c0334b2f3e",
+      "correlation_id": "83a2b48f-38a6-486c-9adb-dd2eb3881e96",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.890Z",
+      "payload": {
+        "botId": "offer-pricing",
+        "result": {
+          "runId": "11b9afe7-a8ba-4c3d-ad1f-0dd28a39de3a",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "topProduct": "Compact USB-C Travel Hub",
+            "economics": {
+              "price": 28.99,
+              "cost": 10.44,
+              "shipping": 0,
+              "paymentFee": 1.14,
+              "platformFee": 0.58,
+              "refundReserve": 1.45,
+              "adReserve": 5.8,
+              "contribution": 9.58,
+              "marginPct": 33,
+              "breakEvenCac": 15.38,
+              "targetCac": 10
+            },
+            "recommendation": "test offer"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.890Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "9a45186b-1f10-45aa-a15c-0d34f86a76a5",
+      "correlation_id": "047f35aa-8a74-400e-aca2-88682e47cbfe",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.863Z",
+      "payload": {
+        "botId": "digital-builder",
+        "result": {
+          "runId": "d52d35b5-3679-4c35-9a56-503ae09f9621",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "ideas": [
+              "starter bundle",
+              "digital guide",
+              "post-purchase upsell"
+            ],
+            "basedOn": "Compact USB-C Travel Hub"
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.863Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "c63a558f-d585-4ded-aaae-38171c93eea2",
+      "correlation_id": "a8de296c-739c-481b-8a67-b310a52d0607",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_dropship_hunter_blocked",
+      "priority": 0.8,
+      "timestamp": "2026-08-15T23:33:16.834Z",
+      "payload": {
+        "status": "BLOCKED",
+        "mode": "PAPER",
+        "source": "aliexpress",
+        "blockers": [
+          "ALIEXPRESS_CONNECTOR_NOT_CONFIGURED"
+        ],
+        "message": "Configura una API o feed de AliExpress antes de usar datos operativos. No se crean candidatos sintéticos en este módulo."
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "60c6a81b-c3b4-477e-ab1d-ec82ccfa09d9",
+      "correlation_id": "48d66d99-dbce-40f4-97c0-f9c2bc065c9d",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_bot_scan",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.808Z",
+      "payload": {
+        "botId": "product-scout",
+        "result": {
+          "runId": "90413174-e0de-4604-8f5b-ae909de58a39",
+          "mode": "PAPER",
+          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
+          "summary": "Amazon Product Scout completó un ciclo de inteligencia sin ejecutar acciones externas.",
+          "candidates": 4,
+          "confidence": 55,
+          "readiness": {
+            "ready": true,
+            "blockers": [],
+            "nextAction": "Run discovery and scoring",
+            "topProductId": null
+          },
+          "details": {
+            "rankedProducts": [
+              {
+                "id": "amazon-paper-2",
+                "name": "Portable Recovery Massager",
+                "score": 67,
+                "tier": "REVIEW",
+                "marginPct": 33.5
+              },
+              {
+                "id": "amazon-paper-1",
+                "name": "Compact USB-C Travel Hub",
+                "score": 65,
+                "tier": "REVIEW",
+                "marginPct": 33
+              },
+              {
+                "id": "aliexpress-paper-2",
+                "name": "Magnetic Desk Organizer",
+                "score": 65,
+                "tier": "REVIEW",
+                "marginPct": 32.2
+              },
+              {
+                "id": "aliexpress-paper-1",
+                "name": "Rechargeable Motion Sensor Light",
+                "score": 64,
+                "tier": "REVIEW",
+                "marginPct": 32.6
+              }
+            ]
+          },
+          "input": {
+            "cycle": "automatic",
+            "reason": "scheduled"
+          },
+          "timestamp": "2026-08-15T23:33:16.808Z"
+        }
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "ce56be80-6270-4239-9764-53117ebe61a9",
+      "correlation_id": "7bd6e033-50d1-425e-9faa-d34f39fe3ed3",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_product_discovery",
+      "priority": 0.5,
+      "timestamp": "2026-08-15T23:33:16.780Z",
+      "payload": {
+        "sources": [
+          "amazon",
+          "aliexpress"
+        ],
+        "count": 4,
+        "mode": "PAPER",
+        "providerFeedUsed": false
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "d2f4387b-4b92-42d5-b1f9-b2b35c9e1eb4",
+      "correlation_id": "1e2e0173-92b7-4972-b5ea-55185cd8fea9",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_provider_error",
+      "priority": 0.7,
+      "timestamp": "2026-08-15T23:33:16.727Z",
+      "payload": {
+        "source": "apify",
+        "message": "apify 404"
+      }
+    },
+    {
+      "schema": "aegis.interbrain",
+      "version": "1.0",
+      "id": "33b58143-6e41-4607-b40f-fa8bf2a13aa5",
+      "correlation_id": "a3f20f3c-2849-49c8-bcbb-e0e58c28ad67",
+      "source": "commerce",
+      "target": "manager",
+      "type": "commerce_provider_error",
+      "priority": 0.7,
+      "timestamp": "2026-08-15T23:33:16.673Z",
+      "payload": {
+        "source": "apify",
+        "message": "apify 404"
+      }
+    },
     {
       "schema": "aegis.interbrain",
       "version": "1.0",
@@ -16010,1207 +17652,6 @@
         },
         "mode": "PAPER"
       }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "83ff5b17-cd89-420d-8283-60419934ed7d",
-      "correlation_id": "ab229c6d-957f-4c67-80ec-465e46dda54a",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_dropship_hunter_blocked",
-      "priority": 0.8,
-      "timestamp": "2026-08-15T17:20:07.662Z",
-      "payload": {
-        "status": "BLOCKED",
-        "mode": "PAPER",
-        "source": "aliexpress",
-        "blockers": [
-          "ALIEXPRESS_CONNECTOR_NOT_CONFIGURED"
-        ],
-        "message": "Configura una API o feed de AliExpress antes de usar datos operativos. No se crean candidatos sintéticos en este módulo."
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "d0ea91ed-f063-4b35-bd33-4238e9647fc0",
-      "correlation_id": "e68a7b7b-2173-4c24-80ad-2973876c5e1d",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_master_command_completed",
-      "priority": 0.85,
-      "timestamp": "2026-08-15T17:19:14.602Z",
-      "payload": {
-        "action": "set_parameters",
-        "moduleId": "dropship-hunter",
-        "result": {
-          "status": "COMPLETED"
-        },
-        "mode": "PAPER"
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "fe467c45-d6ac-4da9-a52b-bf3185013318",
-      "correlation_id": "2b72191f-4841-439e-a189-ff56c6fc320e",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_dropship_hunter_blocked",
-      "priority": 0.8,
-      "timestamp": "2026-08-15T17:19:02.415Z",
-      "payload": {
-        "status": "BLOCKED",
-        "mode": "PAPER",
-        "source": "aliexpress",
-        "blockers": [
-          "ALIEXPRESS_CONNECTOR_NOT_CONFIGURED"
-        ],
-        "message": "Configura una API o feed de AliExpress antes de usar datos operativos. No se crean candidatos sintéticos en este módulo."
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "f3348d21-9c81-46fc-9337-20d98a27e59a",
-      "correlation_id": "ea7b1336-afd9-49d6-bb0f-f00f5068a9b6",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_master_command_completed",
-      "priority": 0.85,
-      "timestamp": "2026-08-15T17:19:02.394Z",
-      "payload": {
-        "action": "set_parameters",
-        "moduleId": "dropship-hunter",
-        "result": {
-          "status": "COMPLETED"
-        },
-        "mode": "PAPER"
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "a31d41bd-8374-4f34-b3e2-6c4296e02d29",
-      "correlation_id": "83d4c775-7c55-4ff5-8da4-fce26accbf52",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_product_scored",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:51:14.023Z",
-      "payload": {
-        "productId": "amazon-paper-1",
-        "score": 65,
-        "tier": "REVIEW"
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "4b9fdbc2-0764-4204-b376-dace5747f1e5",
-      "correlation_id": "124f4f85-f974-4a76-a680-ec1fdde96476",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_product_scored",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:50:38.545Z",
-      "payload": {
-        "productId": "amazon-paper-1",
-        "score": 70,
-        "tier": "REVIEW"
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "9d9b25d9-2aed-4f92-a1dd-88f60b6f40c2",
-      "correlation_id": "619b7ef4-c894-48d3-b1d5-92f3b5292289",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_product_launch_workflow_completed",
-      "priority": 0.85,
-      "timestamp": "2026-08-15T16:50:38.536Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "status": "REVIEW_REQUIRED",
-        "blockers": [
-          "product_not_test_ready",
-          "missing_product_image",
-          "demand_signal_missing",
-          "negative_content_contribution"
-        ]
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "b81caf36-92ac-4e23-bf72-47e5f220f4aa",
-      "correlation_id": "45758d8a-2ddb-4a52-9061-5d990736ab91",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.534Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "REVIEW_REQUIRED",
-        "status": "REVIEW_REQUIRED",
-        "details": {
-          "blockers": [
-            "product_not_test_ready",
-            "missing_product_image",
-            "demand_signal_missing",
-            "negative_content_contribution"
-          ],
-          "paperOnly": true,
-          "publishAllowed": false,
-          "adSpendAllowed": false
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "02ed2962-fe19-4599-86a7-5a9fc9378852",
-      "correlation_id": "450f95bd-44de-4205-ae44-b7f51d5b61bd",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.533Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "CAMPAIGN_READY",
-        "status": "REVIEW_REQUIRED",
-        "details": {
-          "campaignId": "9d3947ca-9a61-4b86-b894-094212618a53",
-          "blockers": [
-            "product_not_test_ready",
-            "missing_product_image",
-            "demand_signal_missing",
-            "negative_content_contribution"
-          ]
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "f87eeb7b-3c86-4601-8cac-c19755d246a2",
-      "correlation_id": "82a2b73d-4e3b-44da-b2fd-0474f3b20520",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.530Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "STORE_DRAFT_READY",
-        "status": "SKIPPED",
-        "details": {
-          "reason": "Amazon Affiliate uses editorial clickout; no Shopify inventory draft created."
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "95290183-4541-44be-972a-f41da6360e65",
-      "correlation_id": "ae89d9d4-8052-4eec-a81f-c0fc20acd1ba",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.528Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "CREATIVE_READY",
-        "status": "COMPLETED",
-        "details": {
-          "landingId": "192343ed-30d8-4e40-ac95-459366c38c59",
-          "asset": {
-            "mode": "brief",
-            "status": "NOT_REQUESTED",
-            "prompt": "Product launch asset package for Compact USB-C Travel Hub"
-          }
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "6d688258-6893-4d99-b007-db11cfb2743f",
-      "correlation_id": "baeb1cc7-d665-44a4-bd95-a83bd194918d",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.525Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "OFFER_READY",
-        "status": "REVIEW_REQUIRED",
-        "details": {
-          "economics": {
-            "monetizationModel": "AMAZON_AFFILIATE",
-            "price": 28.99,
-            "currency": "USD",
-            "inventoryCost": 0,
-            "shipping": 0,
-            "commissionRate": 0.04,
-            "expectedCommission": 1.16,
-            "contentCost": 1.5,
-            "contribution": -0.34,
-            "marginPct": -29.3,
-            "breakEvenCac": 1.16,
-            "targetCac": 0.75,
-            "planningOnly": true
-          }
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "f9dc71e8-6893-411f-bce1-da09c6b9ba31",
-      "correlation_id": "e454092b-55b6-488a-8c1a-b9b0a3a5e4dc",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.523Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "COMPLIANCE_REVIEW",
-        "status": "COMPLETED",
-        "details": {
-          "blockers": [],
-          "warnings": [
-            "demand_signal_required_before_promotion",
-            "amazon_affiliate_content_only_no_shopify_inventory",
-            "product_image_missing"
-          ],
-          "checkedAt": "2026-08-15T16:50:38.523Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "8003f88c-afb8-4d09-89d7-756548a635da",
-      "correlation_id": "e31a5761-e378-4d6a-9b83-dee5d7c97e45",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.517Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "SCORED",
-        "status": "COMPLETED",
-        "details": {
-          "score": 70,
-          "tier": "REVIEW",
-          "economics": {
-            "monetizationModel": "AMAZON_AFFILIATE",
-            "price": 28.99,
-            "currency": "USD",
-            "inventoryCost": 0,
-            "shipping": 0,
-            "commissionRate": 0.04,
-            "expectedCommission": 1.16,
-            "contentCost": 1.5,
-            "contribution": -0.34,
-            "marginPct": -29.3,
-            "breakEvenCac": 1.16,
-            "targetCac": 0.75,
-            "planningOnly": true
-          }
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "eefbe410-0c9f-4e3c-9f9b-5dae6456871c",
-      "correlation_id": "cd38fb69-10ae-4063-9e28-863980686397",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.515Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "ENRICHED",
-        "status": "COMPLETED",
-        "details": {
-          "fields": [
-            "price",
-            "rating",
-            "demandScore",
-            "economics"
-          ]
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "23bcaa9d-9e00-4ad3-b7d6-d31470e8993c",
-      "correlation_id": "7831168b-7559-42f9-90a9-4d4227f4e028",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_workflow_stage",
-      "priority": 0.7,
-      "timestamp": "2026-08-15T16:50:38.513Z",
-      "payload": {
-        "workflowId": "e05e3e9e-de52-4eae-ad7b-e751a8cab0e9",
-        "productId": "amazon-paper-1",
-        "stage": "DISCOVERED",
-        "status": "COMPLETED",
-        "details": {
-          "source": "amazon",
-          "sourceStatus": "AMAZON_CREATORS_API"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "6ad91ff8-1bd6-467f-8fce-a02a6679ac2a",
-      "correlation_id": "b5e9514a-6f45-49fc-9ba1-d879f880579e",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_product_scored",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:50:38.487Z",
-      "payload": {
-        "productId": "amazon-paper-1",
-        "score": 70,
-        "tier": "REVIEW"
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "761a700a-7d41-4561-bd81-7f0e4bd27a7e",
-      "correlation_id": "db62e391-c115-4955-8391-568f74f5c2a7",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_provider_error",
-      "priority": 0.8,
-      "timestamp": "2026-08-15T16:49:01.231Z",
-      "payload": {
-        "source": "apify_amazon_affiliate_actor",
-        "actorId": "connected_monkey~amazon-affiliate-product-scout",
-        "status": 403,
-        "message": "Monthly usage hard limit exceeded"
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "f1d3c17a-d682-4fe3-b9f5-6928f2f10182",
-      "correlation_id": "e6c10f5d-4a87-414a-b9c9-2348c257159e",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_cycle_completed",
-      "priority": 0.8,
-      "timestamp": "2026-08-15T16:46:13.937Z",
-      "payload": {
-        "id": "e39fff13-0439-4cbd-adad-20970a470238",
-        "createdAt": "2026-08-15T16:46:13.937Z",
-        "mode": "PAPER",
-        "discovery": {
-          "count": 4,
-          "providerFeedUsed": false
-        },
-        "topProduct": null,
-        "botsRun": 10,
-        "results": [
-          {
-            "botId": "product-scout",
-            "result": {
-              "runId": "066f979a-d4aa-47d2-88ad-9df8ab8f6ad2",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Amazon Product Scout completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": false,
-                "blockers": [
-                  "provider_credentials_missing"
-                ],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "rankedProducts": [
-                  {
-                    "id": "amazon-paper-2",
-                    "name": "Portable Recovery Massager",
-                    "score": 67,
-                    "tier": "REVIEW",
-                    "marginPct": 33.5
-                  },
-                  {
-                    "id": "amazon-paper-1",
-                    "name": "Compact USB-C Travel Hub",
-                    "score": 65,
-                    "tier": "REVIEW",
-                    "marginPct": 33
-                  },
-                  {
-                    "id": "aliexpress-paper-2",
-                    "name": "Magnetic Desk Organizer",
-                    "score": 65,
-                    "tier": "REVIEW",
-                    "marginPct": 32.2
-                  },
-                  {
-                    "id": "aliexpress-paper-1",
-                    "name": "Rechargeable Motion Sensor Light",
-                    "score": 64,
-                    "tier": "REVIEW",
-                    "marginPct": 32.6
-                  }
-                ]
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.621Z"
-            }
-          },
-          {
-            "botId": "dropship-hunter",
-            "result": {
-              "runId": "17e8b713-4959-4f12-9bca-3fae1fe78cbe",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Dropshipping Hunter completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": false,
-                "blockers": [
-                  "provider_credentials_missing"
-                ],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "rankedProducts": [
-                  {
-                    "id": "amazon-paper-2",
-                    "name": "Portable Recovery Massager",
-                    "score": 67,
-                    "tier": "REVIEW",
-                    "marginPct": 33.5
-                  },
-                  {
-                    "id": "amazon-paper-1",
-                    "name": "Compact USB-C Travel Hub",
-                    "score": 65,
-                    "tier": "REVIEW",
-                    "marginPct": 33
-                  },
-                  {
-                    "id": "aliexpress-paper-2",
-                    "name": "Magnetic Desk Organizer",
-                    "score": 65,
-                    "tier": "REVIEW",
-                    "marginPct": 32.2
-                  },
-                  {
-                    "id": "aliexpress-paper-1",
-                    "name": "Rechargeable Motion Sensor Light",
-                    "score": 64,
-                    "tier": "REVIEW",
-                    "marginPct": 32.6
-                  }
-                ]
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.628Z"
-            }
-          },
-          {
-            "botId": "digital-builder",
-            "result": {
-              "runId": "c970b630-71bc-4856-b8ab-81998258b4eb",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": true,
-                "blockers": [],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "ideas": [
-                  "starter bundle",
-                  "digital guide",
-                  "post-purchase upsell"
-                ],
-                "basedOn": "Compact USB-C Travel Hub"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.710Z"
-            }
-          },
-          {
-            "botId": "offer-pricing",
-            "result": {
-              "runId": "bca1dc49-a284-4fc2-9dae-ca191ac957c3",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": true,
-                "blockers": [],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "topProduct": "Compact USB-C Travel Hub",
-                "economics": {
-                  "price": 28.99,
-                  "cost": 10.44,
-                  "shipping": 0,
-                  "paymentFee": 1.14,
-                  "platformFee": 0.58,
-                  "refundReserve": 1.45,
-                  "adReserve": 5.8,
-                  "contribution": 9.58,
-                  "marginPct": 33,
-                  "breakEvenCac": 15.38,
-                  "targetCac": 10
-                },
-                "recommendation": "test offer"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.810Z"
-            }
-          },
-          {
-            "botId": "creative-factory",
-            "result": {
-              "runId": "d876e031-304e-4702-9376-682aa2d67472",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": true,
-                "blockers": [],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "contentBrief": {
-                  "productId": "amazon-paper-1",
-                  "channels": [
-                    "landing",
-                    "short_video",
-                    "ugc_script",
-                    "email"
-                  ],
-                  "angle": "problem → transformation → proof → offer"
-                }
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.818Z"
-            }
-          },
-          {
-            "botId": "store-manager",
-            "result": {
-              "runId": "16071b60-57f0-45c6-9c27-c90a1a3202d1",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": true,
-                "blockers": [],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "shopify": {
-                  "id": "shopify",
-                  "name": "Shopify",
-                  "provider": "Admin API",
-                  "configured": false,
-                  "live": false,
-                  "detail": "store domain + admin token required"
-                },
-                "nextStep": "prepare product draft"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.832Z"
-            }
-          },
-          {
-            "botId": "traffic",
-            "result": {
-              "runId": "04c7c73f-d809-47eb-8c75-9cff936f04a0",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": true,
-                "blockers": [],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "channels": [
-                  "organic_search",
-                  "short_video",
-                  "creator_affiliate",
-                  "email"
-                ],
-                "budgetPolicy": "never exceed target CAC",
-                "productId": "amazon-paper-1"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.845Z"
-            }
-          },
-          {
-            "botId": "closer",
-            "result": {
-              "runId": "a87db4e6-400f-4026-96db-441ad945d267",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": false,
-                "blockers": [
-                  "crm_empty"
-                ],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "leads": 0,
-                "hotLeads": 0,
-                "nextStep": "connect checkout or CRM webhook"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.847Z"
-            }
-          },
-          {
-            "botId": "retention",
-            "result": {
-              "runId": "1e8b0ea3-fa4f-48fa-8ef3-dbc27ba56f63",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": false,
-                "blockers": [
-                  "crm_empty"
-                ],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "orders": 0,
-                "repeatCustomers": 0,
-                "nextStep": "collect post-purchase events"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.860Z"
-            }
-          },
-          {
-            "botId": "allocator",
-            "result": {
-              "runId": "e10ee374-3155-42dd-806f-89ae33bc7af9",
-              "mode": "PAPER",
-              "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-              "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
-              "candidates": 4,
-              "confidence": 55,
-              "readiness": {
-                "ready": true,
-                "blockers": [],
-                "nextAction": "Run discovery and scoring",
-                "topProductId": null
-              },
-              "details": {
-                "recommendedBudget": 100,
-                "allocationRule": "fund only TEST_READY products"
-              },
-              "input": {
-                "cycle": "automatic",
-                "reason": "scheduled"
-              },
-              "timestamp": "2026-08-15T16:46:13.882Z"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "31393941-7d87-4458-9a09-710c127f718a",
-      "correlation_id": "42a401d1-1765-4222-9bf7-9af13592e99c",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.882Z",
-      "payload": {
-        "botId": "allocator",
-        "result": {
-          "runId": "e10ee374-3155-42dd-806f-89ae33bc7af9",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Revenue Allocator completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": true,
-            "blockers": [],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "recommendedBudget": 100,
-            "allocationRule": "fund only TEST_READY products"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.882Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "54dde05e-740a-4015-aa4a-f5a4fa45ce43",
-      "correlation_id": "fd23ddf2-b1db-46fb-aff0-dc4bcc55b67c",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.860Z",
-      "payload": {
-        "botId": "retention",
-        "result": {
-          "runId": "1e8b0ea3-fa4f-48fa-8ef3-dbc27ba56f63",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Retention & Upsell Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": false,
-            "blockers": [
-              "crm_empty"
-            ],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "orders": 0,
-            "repeatCustomers": 0,
-            "nextStep": "collect post-purchase events"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.860Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "63eb1ed9-b362-47a7-9bc1-9b98622c2b49",
-      "correlation_id": "6e789397-5636-4203-9209-031505794502",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.847Z",
-      "payload": {
-        "botId": "closer",
-        "result": {
-          "runId": "a87db4e6-400f-4026-96db-441ad945d267",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Sales Closer / CRM completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": false,
-            "blockers": [
-              "crm_empty"
-            ],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "leads": 0,
-            "hotLeads": 0,
-            "nextStep": "connect checkout or CRM webhook"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.847Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "4329ab6e-da82-43da-b85a-bfe3b85a5804",
-      "correlation_id": "fc3ba4bc-917a-4432-beeb-c079514dedd0",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.845Z",
-      "payload": {
-        "botId": "traffic",
-        "result": {
-          "runId": "04c7c73f-d809-47eb-8c75-9cff936f04a0",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Traffic Acquisition Agent completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": true,
-            "blockers": [],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "channels": [
-              "organic_search",
-              "short_video",
-              "creator_affiliate",
-              "email"
-            ],
-            "budgetPolicy": "never exceed target CAC",
-            "productId": "amazon-paper-1"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.845Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "2073f640-30d0-496b-9829-32e272e2dc29",
-      "correlation_id": "364e4c72-afa0-4796-9e58-058083157aaf",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.833Z",
-      "payload": {
-        "botId": "store-manager",
-        "result": {
-          "runId": "16071b60-57f0-45c6-9c27-c90a1a3202d1",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Store & Marketplace Manager completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": true,
-            "blockers": [],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "shopify": {
-              "id": "shopify",
-              "name": "Shopify",
-              "provider": "Admin API",
-              "configured": false,
-              "live": false,
-              "detail": "store domain + admin token required"
-            },
-            "nextStep": "prepare product draft"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.832Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "19034050-9295-47e9-b87f-49105c05600e",
-      "correlation_id": "ba985022-89a3-432d-9184-fbae75b8cb51",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.825Z",
-      "payload": {
-        "botId": "creative-factory",
-        "result": {
-          "runId": "d876e031-304e-4702-9376-682aa2d67472",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Content & Creative Factory completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": true,
-            "blockers": [],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "contentBrief": {
-              "productId": "amazon-paper-1",
-              "channels": [
-                "landing",
-                "short_video",
-                "ugc_script",
-                "email"
-              ],
-              "angle": "problem → transformation → proof → offer"
-            }
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.818Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "f36b2cf9-e848-4494-9f1c-6f8318d95f82",
-      "correlation_id": "49da4523-5180-41f7-805f-119da3238396",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.811Z",
-      "payload": {
-        "botId": "offer-pricing",
-        "result": {
-          "runId": "bca1dc49-a284-4fc2-9dae-ca191ac957c3",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Offer & Pricing Engine completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": true,
-            "blockers": [],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "topProduct": "Compact USB-C Travel Hub",
-            "economics": {
-              "price": 28.99,
-              "cost": 10.44,
-              "shipping": 0,
-              "paymentFee": 1.14,
-              "platformFee": 0.58,
-              "refundReserve": 1.45,
-              "adReserve": 5.8,
-              "contribution": 9.58,
-              "marginPct": 33,
-              "breakEvenCac": 15.38,
-              "targetCac": 10
-            },
-            "recommendation": "test offer"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.810Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "80138ae2-f7b3-414b-872e-e19f30a1cd36",
-      "correlation_id": "e7350b4f-2372-45f2-bd72-1a71500d00fd",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.710Z",
-      "payload": {
-        "botId": "digital-builder",
-        "result": {
-          "runId": "c970b630-71bc-4856-b8ab-81998258b4eb",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Digital Product Builder completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": true,
-            "blockers": [],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "ideas": [
-              "starter bundle",
-              "digital guide",
-              "post-purchase upsell"
-            ],
-            "basedOn": "Compact USB-C Travel Hub"
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.710Z"
-        }
-      }
-    },
-    {
-      "schema": "aegis.interbrain",
-      "version": "1.0",
-      "id": "bcd155d0-dcfe-457f-9a93-77b2391c5181",
-      "correlation_id": "7e4166d4-6a49-4570-bc05-58a3618ac61f",
-      "source": "commerce",
-      "target": "manager",
-      "type": "commerce_bot_scan",
-      "priority": 0.5,
-      "timestamp": "2026-08-15T16:46:13.628Z",
-      "payload": {
-        "botId": "dropship-hunter",
-        "result": {
-          "runId": "17e8b713-4959-4f12-9bca-3fae1fe78cbe",
-          "mode": "PAPER",
-          "sourceStatus": "SYNTHETIC_OR_CONFIGURED_READ_ONLY",
-          "summary": "Dropshipping Hunter completó un ciclo de inteligencia sin ejecutar acciones externas.",
-          "candidates": 4,
-          "confidence": 55,
-          "readiness": {
-            "ready": false,
-            "blockers": [
-              "provider_credentials_missing"
-            ],
-            "nextAction": "Run discovery and scoring",
-            "topProductId": null
-          },
-          "details": {
-            "rankedProducts": [
-              {
-                "id": "amazon-paper-2",
-                "name": "Portable Recovery Massager",
-                "score": 67,
-                "tier": "REVIEW",
-                "marginPct": 33.5
-              },
-              {
-                "id": "amazon-paper-1",
-                "name": "Compact USB-C Travel Hub",
-                "score": 65,
-                "tier": "REVIEW",
-                "marginPct": 33
-              },
-              {
-                "id": "aliexpress-paper-2",
-                "name": "Magnetic Desk Organizer",
-                "score": 65,
-                "tier": "REVIEW",
-                "marginPct": 32.2
-              },
-              {
-                "id": "aliexpress-paper-1",
-                "name": "Rechargeable Motion Sensor Light",
-                "score": 64,
-                "tier": "REVIEW",
-                "marginPct": 32.6
-              }
-            ]
-          },
-          "input": {
-            "cycle": "automatic",
-            "reason": "scheduled"
-          },
-          "timestamp": "2026-08-15T16:46:13.628Z"
-        }
-      }
     }
   ],
   "opportunities": [],
@@ -17228,7 +17669,7 @@
       "estimatedMargin": 12.18,
       "demandScore": 70,
       "imageUrl": "",
-      "discoveredAt": "2026-08-15T23:18:16.577Z",
+      "discoveredAt": "2026-08-15T23:48:16.844Z",
       "economics": {
         "price": 28.99,
         "cost": 10.44,
@@ -17248,7 +17689,7 @@
         "missing_product_image",
         "synthetic_source"
       ],
-      "updatedAt": "2026-08-15T23:18:16.591Z"
+      "updatedAt": "2026-08-15T23:48:16.859Z"
     },
     {
       "id": "amazon-paper-2",
@@ -17263,7 +17704,7 @@
       "estimatedMargin": 21,
       "demandScore": 77,
       "imageUrl": "",
-      "discoveredAt": "2026-08-15T23:18:16.577Z",
+      "discoveredAt": "2026-08-15T23:48:16.844Z",
       "economics": {
         "price": 49.99,
         "cost": 18,
@@ -17283,7 +17724,7 @@
         "missing_product_image",
         "synthetic_source"
       ],
-      "updatedAt": "2026-08-15T23:18:16.591Z",
+      "updatedAt": "2026-08-15T23:48:16.859Z",
       "pricing": {
         "recommendedPrice": 40.58,
         "targetMarginPct": 25,
@@ -17336,7 +17777,7 @@
       "estimatedMargin": 8.36,
       "demandScore": 70,
       "imageUrl": "",
-      "discoveredAt": "2026-08-15T23:18:16.577Z",
+      "discoveredAt": "2026-08-15T23:48:16.844Z",
       "economics": {
         "price": 19.9,
         "cost": 7.16,
@@ -17356,7 +17797,7 @@
         "missing_product_image",
         "synthetic_source"
       ],
-      "updatedAt": "2026-08-15T23:18:16.591Z"
+      "updatedAt": "2026-08-15T23:48:16.859Z"
     },
     {
       "id": "aliexpress-paper-2",
@@ -17371,7 +17812,7 @@
       "estimatedMargin": 6.93,
       "demandScore": 77,
       "imageUrl": "",
-      "discoveredAt": "2026-08-15T23:18:16.577Z",
+      "discoveredAt": "2026-08-15T23:48:16.844Z",
       "economics": {
         "price": 16.5,
         "cost": 5.94,
@@ -17391,7 +17832,7 @@
         "missing_product_image",
         "synthetic_source"
       ],
-      "updatedAt": "2026-08-15T23:18:16.591Z"
+      "updatedAt": "2026-08-15T23:48:16.859Z"
     }
   ],
   "digitalProducts": [

@@ -1,25 +1,18 @@
-export class SolanaRpc {
-  constructor(){
-    this.urls=[process.env.SOLANA_RPC_URL,process.env.SOLANA_RPC_URL_2,process.env.SOLANA_RPC_URL_3].filter(Boolean);
-    if(!this.urls.length)this.urls=['https://api.mainnet-beta.solana.com'];
-    this.url=this.urls[0];this.timeoutMs=Number(process.env.SOLANA_RPC_TIMEOUT_MS||8000);this.id=1;this.endpointIndex=0;
+import PQueue from 'p-queue';
+
+const unique=values=>[...new Set(values.filter(Boolean).map(value=>String(value).trim()).filter(Boolean))];
+const endpointLabel=value=>{try{return new URL(value).hostname;}catch{return 'configured-solana-rpc';}};
+export class SolanaRpc{
+  constructor({urls=null,timeoutMs=Number(process.env.SOLANA_RPC_TIMEOUT_MS||8000),fetchImpl=fetch}={}){
+    const configured=urls||[process.env.SOLANA_RPC_URL,process.env.SOLANA_RPC_URL_2,process.env.SOLANA_RPC_URL_3];
+    this.urls=unique([...configured,'https://solana.publicnode.com','https://solana-rpc.publicnode.com','https://api.mainnet-beta.solana.com']);this.url=this.urls[0];this.timeoutMs=timeoutMs;this.fetchImpl=fetchImpl;this.id=1;this.endpointIndex=0;this.health=new Map(this.urls.map(url=>[url,{failures:0,cooldownUntil:0,lastError:null,lastSuccessAt:null}]));this.maxQueueDepth=Math.max(8,Number(process.env.SOLANA_RPC_MAX_QUEUE_DEPTH||48));this.queue=new PQueue({concurrency:Math.max(1,Number(process.env.SOLANA_RPC_CONCURRENCY||2)),interval:1000,intervalCap:Math.max(1,Number(process.env.SOLANA_RPC_REQUESTS_PER_SECOND||6)),carryoverConcurrencyCount:true});
   }
-  async call(method,params=[]){
-    let lastError=null;
-    for(let attempt=0;attempt<this.urls.length;attempt++){
-      const index=(this.endpointIndex+attempt)%this.urls.length,url=this.urls[index];
-      const controller=new AbortController();const t=setTimeout(()=>controller.abort(),this.timeoutMs);
-      try{
-        const res=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:this.id++,method,params}),signal:controller.signal});
-        if(!res.ok){const error=new Error(`SOLANA_RPC_HTTP_${res.status}`);if(![408,425,429,500,502,503,504].includes(res.status))throw error;lastError=error;continue;}
-        const body=await res.json();if(body.error)throw new Error(body.error.message||'SOLANA_RPC_ERROR');
-        this.endpointIndex=index;this.url=url;return body.result;
-      }catch(error){lastError=error;if(attempt<this.urls.length-1)await new Promise(resolve=>setTimeout(resolve,Math.min(1000,150*(attempt+1))));}
-      finally{clearTimeout(t);}
-    }
-    throw lastError||new Error('SOLANA_RPC_UNAVAILABLE');
-  }
-  async ping(){const started=Date.now();try{const [version,slot]=await Promise.all([this.call('getVersion'),this.call('getSlot',[{commitment:'processed'}])]);return {provider:'Solana RPC',online:true,url:this.url,endpoints:this.urls.length,slot,version:version?.['solana-core']||null,latencyMs:Date.now()-started,checkedAt:new Date().toISOString()};}catch(error){return {provider:'Solana RPC',online:false,url:this.url,endpoints:this.urls.length,error:error?.message||'SOLANA_RPC_ERROR',latencyMs:Date.now()-started,checkedAt:new Date().toISOString()};}}
+  orderedEndpoints(){const indexed=this.urls.map((url,index)=>({url,index,health:this.health.get(url)})),rotated=[...indexed.slice(this.endpointIndex),...indexed.slice(0,this.endpointIndex)],available=rotated.filter(row=>Number(row.health?.cooldownUntil||0)<=Date.now());return available.length?available:rotated.sort((a,b)=>Number(a.health?.cooldownUntil||0)-Number(b.health?.cooldownUntil||0));}
+  markFailure(url,error,status=0){const health=this.health.get(url)||{failures:0,cooldownUntil:0};health.failures+=1;health.lastError=error?.message||String(error);const backoff=status===429?60000:Math.min(45000,2000*2**Math.min(5,health.failures-1));health.cooldownUntil=Date.now()+backoff;this.health.set(url,health);}
+  markSuccess(url,index){const health=this.health.get(url)||{};health.failures=0;health.cooldownUntil=0;health.lastError=null;health.lastSuccessAt=new Date().toISOString();this.health.set(url,health);this.endpointIndex=(index+1)%this.urls.length;this.url=url;}
+  call(method,params=[]){const priority=method==='getLatestBlockhash'?100:method==='getSignatureStatuses'?50:0;if(priority===0&&this.queue.size>=this.maxQueueDepth)return Promise.reject(new Error('SOLANA_RPC_BACKPRESSURE'));return this.queue.add(()=>this.callDirect(method,params),{priority});}
+  async callDirect(method,params=[]){let lastError=null;for(const row of this.orderedEndpoints()){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),this.timeoutMs);try{const response=await this.fetchImpl(row.url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:this.id++,method,params}),signal:controller.signal});if(!response.ok){const error=new Error(`SOLANA_RPC_HTTP_${response.status}`);this.markFailure(row.url,error,response.status);lastError=error;continue;}const body=await response.json();if(body.error){const error=new Error(body.error.message||'SOLANA_RPC_ERROR');this.markFailure(row.url,error);lastError=error;continue;}this.markSuccess(row.url,row.index);return body.result;}catch(error){lastError=error;this.markFailure(row.url,error);}finally{clearTimeout(timer);}}throw lastError||new Error('SOLANA_RPC_UNAVAILABLE');}
+  async ping(){const started=Date.now();try{const latest=await this.call('getLatestBlockhash',[{commitment:'processed'}]),slot=latest?.context?.slot??null;return {provider:'Solana RPC rotation',online:true,endpoint:endpointLabel(this.url),endpoints:this.urls.length,slot,blockhashAvailable:Boolean(latest?.value?.blockhash),latencyMs:Date.now()-started,checkedAt:new Date().toISOString(),queue:{pending:this.queue.pending,size:this.queue.size},rotation:{healthy:[...this.health.values()].filter(row=>!row.failures).length,coolingDown:[...this.health.values()].filter(row=>row.cooldownUntil>Date.now()).length}};}catch(error){return {provider:'Solana RPC rotation',online:false,endpoint:endpointLabel(this.url),endpoints:this.urls.length,error:error?.message||'SOLANA_RPC_ERROR',latencyMs:Date.now()-started,checkedAt:new Date().toISOString(),queue:{pending:this.queue.pending,size:this.queue.size},rotation:{healthy:[...this.health.values()].filter(row=>!row.failures).length,coolingDown:[...this.health.values()].filter(row=>row.cooldownUntil>Date.now()).length}};}}
   signatures(address,limit=30){return this.call('getSignaturesForAddress',[address,{limit,commitment:'confirmed'}]);}
   transaction(signature,commitment='confirmed'){return this.call('getTransaction',[signature,{encoding:'jsonParsed',maxSupportedTransactionVersion:0,commitment}]);}
   signatureStatus(signature,commitment='confirmed'){return this.call('getSignatureStatuses',[[signature],{searchTransactionHistory:false,commitment}]).then(result=>({value:result?.value?.[0]||null}));}

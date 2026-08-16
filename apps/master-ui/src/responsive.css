@@ -1,0 +1,673 @@
+/* Final responsive layer for Master, CEO, Manager, Banking and Account. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+canvas,
+iframe {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+.commandApp,
+.layout,
+.stage,
+.brainPage,
+.financePanel,
+.sidePanel,
+.brainStation,
+.brainCard,
+.voiceDock {
+  min-width: 0;
+}
+
+.stationCopy,
+.pageHeaderCopy,
+.financePanelTitle > div,
+.hierarchyNode > div,
+.downstreamItem > div,
+.incidentRow > div,
+.proposalRow > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (hover: none), (pointer: coarse) {
+  button,
+  .pageBack,
+  .pageTalk,
+  .internalAction,
+  .hierarchyItem,
+  .hierarchyLink,
+  .brainCard,
+  .brainStation,
+  .serviceCatalogCard {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  .brainCard:hover,
+  .brainStation:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .commandApp {
+    padding: 12px;
+  }
+
+  .masthead {
+    height: auto;
+    min-height: 84px;
+    gap: 18px;
+    padding: 14px 18px;
+  }
+
+  .topCommand {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .layout {
+    grid-template-columns: 180px minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .rightRail {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vision {
+    grid-column: 1 / -1;
+  }
+
+  .voiceDock,
+  .commandApp > .voiceDock {
+    width: 100%;
+    margin: 12px 0 0;
+  }
+
+  .brainRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bottomStats {
+    grid-template-columns: 1.6fr repeat(2, 1fr);
+  }
+
+  .communication {
+    grid-row: span 2;
+  }
+
+  .syncMetric {
+    display: none;
+  }
+
+  .brainEmbedShell,
+  .brainEmbedShell iframe {
+    min-height: 1050px;
+    height: 1050px;
+  }
+}
+
+@media (max-width: 900px) {
+  .commandApp {
+    padding: 8px;
+  }
+
+  .masthead {
+    border-radius: 10px 10px 0 0;
+  }
+
+  .aegisWord {
+    font-size: clamp(24px, 5vw, 31px);
+  }
+
+  .architecture {
+    font-size: clamp(10px, 2.2vw, 14px);
+  }
+
+  .layout,
+  .focusMode .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 9px;
+  }
+
+  .hierarchy {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    gap: 6px;
+    padding: 7px;
+    margin: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    border: 1px solid #1b324e;
+    border-radius: 10px;
+    background: rgba(2, 8, 18, 0.94);
+    backdrop-filter: blur(16px);
+  }
+
+  .hierarchy::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hierarchy > .sectionLabel,
+  .hierarchyFoot {
+    display: none;
+  }
+
+  .hierarchyItem,
+  .hierarchyLink,
+  .hierarchyLink.pageLink {
+    flex: 0 0 68px;
+    min-width: 68px;
+    min-height: 54px;
+    padding: 8px;
+    justify-content: center;
+    border: 1px solid #1b324e;
+    border-radius: 8px;
+    scroll-snap-align: start;
+  }
+
+  .hierarchyItem span,
+  .hierarchyLink span,
+  .hierarchyItem i,
+  .hierarchyLink i {
+    display: none;
+  }
+
+  .executiveRow,
+  .managerRow,
+  .focusMode .managerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .managerSatellites {
+    width: 100%;
+    height: auto;
+    min-height: 112px;
+    flex-direction: row;
+    justify-content: center;
+    gap: clamp(34px, 12vw, 96px);
+    padding: 10px;
+  }
+
+  .satelliteBus,
+  .satelliteStub {
+    display: none;
+  }
+
+  .brainStation,
+  .brainStation.big,
+  .focusMode .brainStation.big {
+    min-height: 390px;
+  }
+
+  .brainStation.big .stationBrain,
+  .focusMode .brainStation.big .stationBrain {
+    width: min(430px, 62vw);
+    height: min(410px, 62vw);
+  }
+
+  .brainRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rightRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bottomStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .communication {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .voiceDock {
+    grid-template-columns: minmax(170px, 0.7fr) minmax(0, 1.3fr);
+  }
+
+  .voiceDock .commandInput,
+  .voiceDock .quickCommands {
+    grid-column: 1 / -1;
+  }
+
+  .pageStage {
+    padding: 0 6px 16px;
+  }
+
+  .brainPageHeader {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .financeColumns,
+  .accountColumns,
+  .managerLowerColumns,
+  .treasuryWalletColumns,
+  .crmPanelBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .financeMetrics,
+  .bookCards,
+  .serviceCatalogGrid,
+  .agentCards,
+  .downstreamGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ledgerPanel {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .ledgerTable {
+    min-width: 620px;
+  }
+
+  .brainEmbedShell,
+  .brainEmbedShell iframe {
+    min-height: 980px;
+    height: 980px;
+  }
+}
+
+@media (max-width: 640px) {
+  .accessGate {
+    width: 100%;
+    min-width: 0;
+    min-height: 100dvh;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(62px, calc(42px + env(safe-area-inset-bottom)));
+  }
+
+  .accessPanel {
+    width: min(430px, 100%);
+    max-width: 100%;
+  }
+
+  .accessPanel h1,
+  .accessPanel p,
+  .accessForm button {
+    overflow-wrap: anywhere;
+  }
+
+  .accessFooter {
+    bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .commandApp {
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .masthead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .mission {
+    max-width: 220px;
+    white-space: normal;
+    line-height: 1.45;
+  }
+
+  .topCommand {
+    gap: 8px;
+    font-size: 0;
+  }
+
+  .topCommand b {
+    font-size: 8px;
+  }
+
+  .layout,
+  .focusMode .layout {
+    padding: 7px;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .hierarchy {
+    margin: -1px -1px 3px;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .hierarchyItem,
+  .hierarchyLink,
+  .hierarchyLink.pageLink {
+    flex-basis: 58px;
+    min-width: 58px;
+  }
+
+  .brainStation,
+  .brainStation.big,
+  .focusMode .brainStation.big {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    min-height: 500px;
+    padding: 18px 12px 10px;
+    clip-path: none;
+    border-radius: 12px;
+  }
+
+  .stationCopy,
+  .focusMode .brainStation.big .stationCopy {
+    position: relative;
+    inset: auto;
+    z-index: 5;
+    max-width: none;
+  }
+
+  .stationCopy h2,
+  .brainStation.big .stationCopy h2,
+  .focusMode .brainStation.big .stationCopy h2 {
+    font-size: clamp(20px, 7vw, 27px);
+    margin-bottom: 10px;
+  }
+
+  .stationCopy small {
+    max-width: min(78%, 330px);
+  }
+
+  .stationBrain,
+  .brainStation.big .stationBrain,
+  .focusMode .brainStation.big .stationBrain {
+    width: min(330px, 88vw);
+    height: 285px;
+    margin: -18px auto 0;
+    transform: none;
+  }
+
+  .brainRail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brainCard {
+    min-height: 310px;
+    clip-path: none;
+    border-radius: 12px;
+  }
+
+  .cardStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cardStats span:nth-child(2) {
+    border-right: 0;
+  }
+
+  .rightRail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bottomStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .communication {
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .wave {
+    width: 82px;
+  }
+
+  .voiceDock {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .voiceIdentity,
+  .answer,
+  .commandInput,
+  .quickCommands {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .answer span {
+    white-space: normal;
+  }
+
+  .quickCommands {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .quickCommands button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  .brainPageHeader {
+    min-height: 370px;
+    padding: 16px 12px;
+  }
+
+  .pageHeaderCopy {
+    max-width: 100%;
+  }
+
+  .pageHeaderCopy h1 {
+    max-width: 88%;
+    font-size: clamp(26px, 9vw, 34px);
+    overflow-wrap: anywhere;
+  }
+
+  .pageHeaderCopy p {
+    max-width: 78%;
+    font-size: 11px;
+  }
+
+  .pageHeaderBrain {
+    right: -8px;
+    bottom: -4px;
+    width: 165px;
+    height: 165px;
+    opacity: 0.58;
+  }
+
+  .pageHeaderActions {
+    max-width: 78%;
+  }
+
+  .financeMetrics,
+  .bookCards,
+  .serviceCatalogGrid,
+  .agentCards,
+  .downstreamGrid,
+  .functionCards,
+  .crmSignals {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .financeMetric {
+    min-height: 104px;
+  }
+
+  .financePanel,
+  .ledgerPanel,
+  .booksPanel,
+  .pageSafety,
+  .pageNotice,
+  .treasuryWalletPanel,
+  .crmPanel {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .financePanelTitle {
+    gap: 8px;
+  }
+
+  .financePanelTitle h2 {
+    font-size: 15px;
+  }
+
+  .financePanelTitle > i {
+    max-width: 38%;
+    text-align: right;
+    white-space: normal;
+  }
+
+  .treasuryAssignForm,
+  .crmLeadForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crmLeadForm .crmGoal,
+  .crmLeadForm button {
+    grid-column: auto;
+  }
+
+  .accountRow {
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+  }
+
+  .accountRow .ledgerLive {
+    display: none;
+  }
+
+  .incidentRow,
+  .proposalRow,
+  .downstreamItem {
+    min-width: 0;
+  }
+
+  .commandOverlay {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .commandModal {
+    width: 100vw;
+    max-width: none;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 0;
+    clip-path: none;
+    overflow-y: auto;
+  }
+
+  .modalBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modalBrain {
+    min-height: 250px;
+  }
+
+  .modalQuick {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .modalQuick button {
+    flex: 0 0 auto;
+  }
+
+  .brainEmbedShell,
+  .brainEmbedShell iframe {
+    min-height: calc(100dvh - 86px);
+    height: calc(100dvh - 86px);
+    border-left: 0;
+    border-right: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .architecture {
+    letter-spacing: 0.13em;
+  }
+
+  .mission i {
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+
+  .brainStation,
+  .brainStation.big,
+  .focusMode .brainStation.big {
+    min-height: 470px;
+  }
+
+  .stationCopy small,
+  .pageHeaderCopy p,
+  .pageHeaderActions {
+    max-width: 100%;
+  }
+
+  .pageHeaderBrain {
+    opacity: 0.28;
+  }
+
+  .financeMetrics,
+  .bottomStats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .communication {
+    grid-column: 1;
+  }
+
+  .entityNode.level1,
+  .entityNode.level2 {
+    margin-left: 10px;
+  }
+
+  .entityChildren,
+  .entityNode small {
+    margin-left: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

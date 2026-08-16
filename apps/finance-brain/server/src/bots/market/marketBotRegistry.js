@@ -71,7 +71,8 @@ export class MarketBotRegistry{
   }
   async refreshConnectors(){
     const [solana,polygon,alpaca,oanda,ibkr,publicTradFiStatus,publicFx,heliusStatus,goplusStatus,okxStatus]=await Promise.all([this.solanaDiscovery.health(),this.polygonDiscovery.health(),alpacaPaper.probe(),oandaPractice.probe(),ibkrPaper.probe(),publicTradFi.probe(),publicTradFi.fxPrices(['EUR_USD']).then(payload=>({provider:'ExchangeRate API public reference',online:Boolean(payload?.prices?.length),mode:'READ_ONLY',checkedAt:now()})).catch(error=>({provider:'ExchangeRate API public reference',online:false,mode:'READ_ONLY',error:error?.message||'PUBLIC_FX_UNAVAILABLE',checkedAt:now()})),helius.probe(),goPlus.probe(),okxDerivativesMarketData.ping().catch(error=>({...okxDerivativesMarketData.status(),online:false,readiness:'DEGRADED',error:error?.message||'OKX_PUBLIC_UNAVAILABLE',checkedAt:now()}))]);
-    const connectors={alpaca,oanda,ibkr,publicTradFi:publicTradFiStatus,publicFx,solanaDiscovery:solana,polygonDiscovery:polygon,polygonPaperQuotes:polygonPaperQuotes.status(),helius:heliusStatus,goPlus:goplusStatus,okxDerivatives:okxStatus};this.state.infrastructure.marketBots.connectors=connectors;this.persist?.();return connectors;
+    const checkedAt=now();
+    const connectors={alpaca,oanda,ibkr,publicTradFi:publicTradFiStatus,publicFx,solanaDiscovery:{...solana,checkedAt:solana?.checkedAt||checkedAt},polygonDiscovery:{...polygon,checkedAt:polygon?.checkedAt||checkedAt},polygonPaperQuotes:{...polygonPaperQuotes.status(),checkedAt},helius:heliusStatus,goPlus:goplusStatus,okxDerivatives:okxStatus};this.state.infrastructure.marketBots.connectors=connectors;this.persist?.();return connectors;
   }
   async scan(id){
     const definition=DEFINITIONS.find(item=>item.id===id);if(!definition)throw new Error('MARKET_BOT_NOT_FOUND');

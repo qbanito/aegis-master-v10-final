@@ -1,80 +1,94 @@
-const clean=s=>String(s||'').trim();
+const clean=value=>String(value||'').trim();
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 function extractOpenAIText(payload){
-  if(typeof payload?.output_text==='string') return payload.output_text;
+  if(typeof payload?.output_text==='string')return payload.output_text;
   const parts=[];
-  for(const item of payload?.output||[]){
-    for(const c of item?.content||[]){
-      if(c?.type==='output_text' && typeof c?.text==='string') parts.push(c.text);
-      else if(typeof c?.text==='string') parts.push(c.text);
-    }
-  }
+  for(const item of payload?.output||[])for(const content of item?.content||[])if(typeof content?.text==='string')parts.push(content.text);
   return parts.join('\n').trim();
 }
-
-function extractAnthropicText(payload){
-  return (payload?.content||[]).filter(x=>x?.type==='text').map(x=>x.text).join('\n').trim();
+function extractAnthropicText(payload){return (payload?.content||[]).filter(item=>item?.type==='text').map(item=>item.text).join('\n').trim();}
+function extractMuapiText(payload){
+  const candidates=[payload?.output_text,payload?.text,payload?.response,payload?.result,payload?.output,payload?.data?.output_text,payload?.data?.text,payload?.data?.response,payload?.data?.result,payload?.data?.output];
+  for(const value of candidates){
+    if(typeof value==='string'&&value.trim())return value.trim();
+    if(Array.isArray(value)){const text=value.map(item=>typeof item==='string'?item:item?.text||item?.content||'').filter(Boolean).join('\n').trim();if(text)return text;}
+    if(value&&typeof value==='object'){const text=value.text||value.content||value.output_text||value.response;if(typeof text==='string'&&text.trim())return text.trim();}
+  }
+  return '';
 }
 
+const providerOrder=()=>[...new Set(clean(process.env.AEGIS_COPILOT_PROVIDER_ORDER||'openai,muapi,anthropic,local').toLowerCase().split(',').map(clean).filter(Boolean))];
 export function getProviderStatus(){
-  const provider=(process.env.AEGIS_AI_PROVIDER||'mock').toLowerCase();
-  const model=provider==='openai'
-    ? (process.env.OPENAI_MODEL||'CONFIGURE_OPENAI_MODEL')
-    : provider==='anthropic'
-      ? (process.env.ANTHROPIC_MODEL||'CONFIGURE_ANTHROPIC_MODEL')
-      : (process.env.AEGIS_AI_MODEL||'AEGIS local demo');
-  const configured=provider==='openai'?!!process.env.OPENAI_API_KEY:provider==='anthropic'?!!process.env.ANTHROPIC_API_KEY:true;
-  return {provider,model,configured};
+  const order=providerOrder(),providers={
+    openai:{configured:Boolean(process.env.OPENAI_API_KEY),model:process.env.AEGIS_COPILOT_MODEL||'gpt-5.6-sol'},
+    muapi:{configured:Boolean(process.env.MUAPI_API_KEY),model:process.env.MUAPI_COPILOT_MODEL||'gpt-5-6-sol'},
+    anthropic:{configured:Boolean(process.env.ANTHROPIC_API_KEY),model:process.env.ANTHROPIC_MODEL||'claude-opus-4-6'},
+    local:{configured:true,model:'AEGIS deterministic fallback'}
+  };
+  const primary=order.find(name=>providers[name]?.configured)||'local';
+  return {provider:primary,model:providers[primary].model,configured:primary!=='local',order,providers};
 }
 
-export async function completeWithProvider({system,user}){
-  const status=getProviderStatus();
-  const timeoutMs=Math.max(1500,Number(process.env.AEGIS_AI_TIMEOUT_MS||7000));
-  if(status.provider==='openai'){
-    if(!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY_NOT_CONFIGURED');
-    try{
-      const response=await fetch('https://api.openai.com/v1/responses',{
-        method:'POST',
-        headers:{'content-type':'application/json','authorization':`Bearer ${process.env.OPENAI_API_KEY}`},
-        body:JSON.stringify({model:status.model,instructions:system,input:user,max_output_tokens:900}),
-        signal:AbortSignal.timeout(timeoutMs)
-      });
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok) throw new Error(data?.error?.message||`OPENAI_HTTP_${response.status}`);
-      return {text:extractOpenAIText(data),provider:status.provider,model:status.model,raw:data};
-    }catch(error){return {text:mockReply(user),provider:'local-fallback-timeout',model:`${status.model} · fallback`,raw:{warning:error?.name==='TimeoutError'?'AI_PROVIDER_TIMEOUT':'AI_PROVIDER_UNAVAILABLE'}};}
+async function completeOpenAI({system,user,responseSchema,maxOutputTokens,reasoningEffort,timeoutMs}){
+  if(!process.env.OPENAI_API_KEY)throw new Error('OPENAI_API_KEY_NOT_CONFIGURED');
+  const model=process.env.AEGIS_COPILOT_MODEL||'gpt-5.6-sol';
+  const body={model,instructions:system,input:user,max_output_tokens:maxOutputTokens,reasoning:{effort:reasoningEffort}};
+  if(responseSchema)body.text={format:{type:'json_schema',name:responseSchema.name||'aegis_response',strict:true,schema:responseSchema.schema}};
+  const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${process.env.OPENAI_API_KEY}`},body:JSON.stringify(body),signal:AbortSignal.timeout(timeoutMs)});
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data?.error?.message||`OPENAI_HTTP_${response.status}`);
+  const text=extractOpenAIText(data);if(!text)throw new Error('OPENAI_EMPTY_RESPONSE');return {text,provider:'openai',model,raw:data};
+}
+async function completeMuapi({system,user,responseSchema,reasoningEffort,timeoutMs}){
+  if(!process.env.MUAPI_API_KEY)throw new Error('MUAPI_API_KEY_NOT_CONFIGURED');
+  const base=clean(process.env.MUAPI_BASE_URL||'https://api.muapi.ai').replace(/\/$/,''),model=process.env.MUAPI_COPILOT_MODEL||'gpt-5-6-sol';
+  const schemaInstruction=responseSchema?`\n\nDevuelve solamente JSON válido que cumpla este JSON Schema:\n${JSON.stringify(responseSchema.schema)}`:'';
+  const submit=await fetch(`${base}/api/v1/${model}`,{method:'POST',headers:{'content-type':'application/json','x-api-key':process.env.MUAPI_API_KEY},body:JSON.stringify({prompt:user,system_prompt:`${system}${schemaInstruction}`,reasoning_effort:['low','medium','high','xhigh'].includes(reasoningEffort)?reasoningEffort:'high',web_search_switch:false}),signal:AbortSignal.timeout(Math.min(timeoutMs,30000))});
+  const submitted=await submit.json().catch(()=>({}));if(!submit.ok)throw new Error(submitted?.message||submitted?.error||`MUAPI_HTTP_${submit.status}`);
+  let result=submitted;const requestId=submitted?.request_id||submitted?.id||submitted?.data?.request_id;
+  if(requestId){
+    const deadline=Date.now()+timeoutMs;
+    while(Date.now()<deadline){
+      await sleep(Math.min(1500,Math.max(250,Number(process.env.MUAPI_POLL_MS||900))));
+      const response=await fetch(`${base}/api/v1/predictions/${encodeURIComponent(requestId)}/result`,{headers:{'x-api-key':process.env.MUAPI_API_KEY},signal:AbortSignal.timeout(Math.min(15000,Math.max(1500,deadline-Date.now())))});
+      result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result?.message||result?.error||`MUAPI_RESULT_HTTP_${response.status}`);
+      const status=clean(result?.status||result?.data?.status).toLowerCase();if(['failed','error','cancelled'].includes(status))throw new Error(result?.error||result?.message||`MUAPI_${status.toUpperCase()}`);
+      const text=extractMuapiText(result);if(text)return {text,provider:'muapi',model,raw:result};if(['completed','succeeded','success'].includes(status))break;
+    }
   }
-  if(status.provider==='anthropic'){
-    if(!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY_NOT_CONFIGURED');
+  const text=extractMuapiText(result);if(!text)throw new Error(requestId?'MUAPI_RESULT_TIMEOUT_OR_EMPTY':'MUAPI_EMPTY_RESPONSE');return {text,provider:'muapi',model,raw:result};
+}
+async function completeAnthropic({system,user,maxOutputTokens,timeoutMs}){
+  if(!process.env.ANTHROPIC_API_KEY)throw new Error('ANTHROPIC_API_KEY_NOT_CONFIGURED');
+  const model=process.env.ANTHROPIC_MODEL||'claude-opus-4-6';
+  const response=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},body:JSON.stringify({model,max_tokens:maxOutputTokens,system,messages:[{role:'user',content:user}]}),signal:AbortSignal.timeout(timeoutMs)});
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data?.error?.message||`ANTHROPIC_HTTP_${response.status}`);
+  const text=extractAnthropicText(data);if(!text)throw new Error('ANTHROPIC_EMPTY_RESPONSE');return {text,provider:'anthropic',model,raw:data};
+}
+
+export async function completeWithProvider({system,user,responseSchema=null,maxOutputTokens=1200,reasoningEffort='high',timeoutMs=Number(process.env.AEGIS_AI_TIMEOUT_MS||90000),providerOrderOverride=null}){
+  const order=providerOrderOverride||providerOrder(),failures=[],deadline=Date.now()+timeoutMs;
+  for(const provider of order){
+    const remainingMs=deadline-Date.now();
+    if(remainingMs<1500){failures.push({provider,error:'AI_TOTAL_TIMEOUT'});break;}
+    const providerTimeoutMs=Math.min(remainingMs,Math.max(5000,Number(process.env.AEGIS_AI_PROVIDER_TIMEOUT_MS||45000)));
     try{
-      const response=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'content-type':'application/json','x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},
-        body:JSON.stringify({model:status.model,max_tokens:900,system,messages:[{role:'user',content:user}]}),
-        signal:AbortSignal.timeout(timeoutMs)
-      });
-      const data=await response.json().catch(()=>({}));
-      if(!response.ok) throw new Error(data?.error?.message||`ANTHROPIC_HTTP_${response.status}`);
-      return {text:extractAnthropicText(data),provider:status.provider,model:status.model,raw:data};
-    }catch(error){return {text:mockReply(user),provider:'local-fallback-timeout',model:`${status.model} · fallback`,raw:{warning:error?.name==='TimeoutError'?'AI_PROVIDER_TIMEOUT':'AI_PROVIDER_UNAVAILABLE'}};}
+      if(provider==='openai')return {...await completeOpenAI({system,user,responseSchema,maxOutputTokens,reasoningEffort,timeoutMs:providerTimeoutMs}),fallbacks:failures};
+      if(provider==='muapi')return {...await completeMuapi({system,user,responseSchema,reasoningEffort,timeoutMs:providerTimeoutMs}),fallbacks:failures};
+      if(provider==='anthropic')return {...await completeAnthropic({system,user,maxOutputTokens,timeoutMs:providerTimeoutMs}),fallbacks:failures};
+      if(provider==='local')return {text:mockReply(user),provider:'local',model:'AEGIS deterministic fallback',raw:null,fallbacks:failures};
+    }catch(error){failures.push({provider,error:clean(error?.message||error).slice(0,240)});}
   }
-  return {text:mockReply(user),provider:'mock',model:status.model,raw:null};
+  return {text:mockReply(user),provider:'local',model:'AEGIS deterministic fallback',raw:null,fallbacks:failures};
 }
 
 function mockReply(user){
   const q=clean(user).toLowerCase();
-  if(q.includes('incidencia')||q.includes('fallo')||q.includes('supervisor')||q.includes('control central')||q.includes('reporte central')||q.includes('brain central')) return JSON.stringify({reply:'Reviso el reporte del Finance Brain central, la salud de los diez bots y las incidencias persistidas.',toolCalls:['central_report']});
-  if((q.includes('descubr')||q.includes('prestatari')||q.includes('borrower')) && q.includes('liquid')) return JSON.stringify({reply:'Voy a descubrir prestatarios y revisar el riesgo de liquidación en modo read-only.',toolCalls:['discover_borrowers']});
-  if((q.includes('recal')||q.includes('re-score')||q.includes('rescore')||q.includes('puntua')) && q.includes('liquid')) return JSON.stringify({reply:'Voy a recalcular el ranking del Liquidation Strategy Lab sin ejecutar operaciones.',toolCalls:['rescore_liquidations']});
-  if(q.includes('producci')||q.includes('vault')||q.includes('bóveda')||q.includes('boveda')) return JSON.stringify({reply:'Consulto el estado de producción, supervisor, vault y circuit breakers.',toolCalls:['production_status']});
-  if(q.includes('rendimiento')||q.includes('performance')||q.includes('desempeño')||q.includes('desempeno')) return JSON.stringify({reply:'Consulto el snapshot de rendimiento de las estrategias.',toolCalls:['performance_snapshot']});
-  if(q.includes('liquid')) return JSON.stringify({reply:'Voy a revisar Liquidation Hunter y comparar sus candidatos con el Risk Engine.',toolCalls:['scan_liquidations']});
-  if(q.includes('arbit')) return JSON.stringify({reply:'Voy a comparar los DEX configurados y devolver el spread neto simulado.',toolCalls:['scan_arbitrage']});
-  if(q.includes('volatil')) return JSON.stringify({reply:'Activo Volatility Hunter para revisar BTC, ETH y SOL.',toolCalls:['scan_volatility']});
-  if(q.includes('perpet')||q.includes('funding')) return JSON.stringify({reply:'Consulto funding, basis y open interest.',toolCalls:['scan_perpetuals']});
-  if(q.includes('solana')) return JSON.stringify({reply:'Activo el radar de Solana en modo read-only.',toolCalls:['scan_solana']});
-  if(q.includes('polymarket')) return JSON.stringify({reply:'Reviso los mercados de Polymarket y sus dislocaciones.',toolCalls:['scan_polymarket']});
-  if(q.includes('rebalance')||q.includes('capital')) return JSON.stringify({reply:'Recalculo la asignación PAPER entre estrategias.',toolCalls:['rebalance']});
-  if(q.includes('mejor')||q.includes('oportunidad')) return JSON.stringify({reply:'Voy a comparar el Opportunity Bus, scores del Brain y filtros de riesgo para priorizar la mejor oportunidad.',toolCalls:[]});
-  return JSON.stringify({reply:'Estoy conectado al AEGIS Brain. Puedo revisar oportunidades, lanzar scanners read-only, comparar estrategias, rebalancear PAPER y explicar el estado del sistema.',toolCalls:[]});
+  if(q.includes('incidencia')||q.includes('fallo')||q.includes('supervisor')||q.includes('control central'))return JSON.stringify({reply:'Reviso el reporte del Finance Brain central, la salud de los bots y las incidencias persistidas.',toolCalls:['central_report']});
+  if(q.includes('rendimiento')||q.includes('performance')||q.includes('desempe'))return JSON.stringify({reply:'Consulto el rendimiento validado de las estrategias.',toolCalls:['performance_snapshot']});
+  if(q.includes('liquid'))return JSON.stringify({reply:'Voy a revisar Liquidation Hunter y sus filtros de riesgo.',toolCalls:['scan_liquidations']});
+  if(q.includes('arbit'))return JSON.stringify({reply:'Voy a comparar los DEX configurados y el spread neto simulado.',toolCalls:['scan_arbitrage']});
+  if(q.includes('solana'))return JSON.stringify({reply:'Activo el radar de Solana en modo read-only.',toolCalls:['scan_solana']});
+  if(q.includes('rebalance')||q.includes('capital'))return JSON.stringify({reply:'Recalculo la asignación PAPER entre estrategias.',toolCalls:['rebalance']});
+  return JSON.stringify({reply:'Estoy conectado al AEGIS Brain. Puedo analizar evidencia, riesgo y rendimiento en PAPER.',toolCalls:[]});
 }

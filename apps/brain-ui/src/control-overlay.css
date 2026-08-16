@@ -1,0 +1,365 @@
+/* Finance bot control: glass command window above the full-width 3D chamber. */
+.botControlOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(1, 4, 12, 0.42);
+  backdrop-filter: blur(3px) saturate(0.92);
+  animation: controlFade 0.18s ease;
+}
+
+.botControlOverlay .botControlModal {
+  width: min(1120px, 95vw);
+  min-height: min(760px, 92vh);
+  max-height: 92vh;
+  overflow: auto;
+  position: relative;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--botAccent) 62%, #273153);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 12% 0, color-mix(in srgb, var(--botAccent) 13%, transparent), transparent 31%),
+    linear-gradient(155deg, rgba(13, 20, 43, 0.96), rgba(4, 8, 19, 0.97));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 34px 110px rgba(0, 0, 0, 0.66),
+    0 0 65px color-mix(in srgb, var(--botAccent) 15%, transparent);
+  animation: controlWindowIn 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  scrollbar-color: color-mix(in srgb, var(--botAccent) 42%, #263451) transparent;
+}
+
+.botControlOverlay .botControlHeader {
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  padding: 3px 30px 16px 0;
+}
+
+.botControlOverlay .botControlPulse {
+  justify-items: end;
+}
+
+.botControlOverlay .botEdgeBand {
+  grid-template-columns: minmax(150px, 0.8fr) 110px 145px minmax(240px, 1.35fr);
+  margin-top: 10px;
+  padding: 11px;
+}
+
+.botControlOverlay .botControlTabs {
+  position: sticky;
+  top: -22px;
+  z-index: 8;
+  margin: 12px -7px 0;
+  padding: 9px 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(180deg, rgba(6, 10, 24, 0.99), rgba(6, 10, 24, 0.94));
+  backdrop-filter: blur(16px);
+}
+
+.botControlOverlay .botControlTabs button {
+  white-space: nowrap;
+}
+
+.botControlOverlay .botControlStats {
+  gap: 7px;
+  padding: 0;
+}
+
+.botControlOverlay .botControlStats span {
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.botControlOverlay .botControlStats b {
+  font-size: 12px;
+}
+
+.botControlOverlay .botResultList.modern {
+  max-height: none;
+  overflow: visible;
+}
+
+.botControlOverlay .botControlClose {
+  position: sticky;
+  float: right;
+  top: 0;
+  z-index: 12;
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(121, 145, 185, 0.28);
+  border-radius: 9px;
+  background: rgba(7, 13, 28, 0.9);
+  font-size: 21px;
+}
+
+@keyframes controlWindowIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.975); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Copilot analysis theatre: visible only while a bot model request is active. */
+.copilotThinkingBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--botAccent) 16%, transparent), transparent 35%),
+    rgba(1, 4, 13, 0.83);
+  backdrop-filter: blur(15px) saturate(1.15);
+  animation: copilotBackdropIn 0.26s ease;
+}
+
+.copilotThinkingWindow {
+  width: min(1050px, 94vw);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--botAccent) 58%, #31405f);
+  border-radius: 25px;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--botAccent) 7%, transparent), transparent 34%),
+    linear-gradient(155deg, rgba(11, 18, 39, 0.99), rgba(3, 7, 18, 0.995));
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.035),
+    0 42px 130px rgba(0,0,0,.72),
+    0 0 80px color-mix(in srgb, var(--botAccent) 18%, transparent);
+  animation: copilotWindowIn .34s cubic-bezier(.16,.85,.25,1);
+}
+
+.copilotThinkingTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 17px;
+  border-bottom: 1px solid rgba(114,139,182,.17);
+  background: rgba(7,12,27,.72);
+}
+
+.copilotThinkingTop span,
+.copilotThinkingTop small {
+  font: 8px 'DM Mono', monospace;
+  letter-spacing: .1em;
+}
+
+.copilotThinkingTop span { display: flex; align-items: center; gap: 8px; color: #dce9fa; }
+.copilotThinkingTop small { color: #6fe3b0; }
+.copilotThinkingTop span > i { width: 7px; height: 7px; border-radius: 50%; background: #63e8b1; box-shadow: 0 0 13px #63e8b1; animation: copilotPulse 1s ease-in-out infinite alternate; }
+
+.copilotThinkingLayout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(330px, .92fr); min-height: 580px; }
+.copilotNeuralStage { position: relative; min-width: 0; min-height: 580px; overflow: hidden; border-right: 1px solid rgba(111,136,180,.16); background: radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--botAccent) 17%, transparent), transparent 24%), radial-gradient(circle at 50% 45%, rgba(38,214,238,.07), transparent 45%), #050a17; }
+.copilotAmbientGrid { position: absolute; inset: 0; opacity: .32; background-image: linear-gradient(rgba(108,139,188,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(108,139,188,.1) 1px,transparent 1px); background-size: 34px 34px; mask-image: radial-gradient(circle at center,#000 12%,transparent 72%); transform: perspective(600px) rotateX(56deg) scale(1.25) translateY(15%); transform-origin: 50% 70%; animation: copilotGridDrift 10s linear infinite; }
+.copilotOrbit { position: absolute; left: 50%; top: 45%; border: 1px solid color-mix(in srgb, var(--botAccent) 48%, transparent); border-radius: 50%; box-shadow: inset 0 0 22px color-mix(in srgb, var(--botAccent) 7%, transparent), 0 0 18px color-mix(in srgb, var(--botAccent) 8%, transparent); }
+.copilotOrbit.orbitA { width: 330px; height: 210px; margin: -105px 0 0 -165px; transform: rotate(-14deg); animation: copilotOrbitA 13s linear infinite; }
+.copilotOrbit.orbitB { width: 235px; height: 330px; margin: -165px 0 0 -117px; transform: rotate(58deg); border-color: rgba(72,220,245,.28); animation: copilotOrbitB 17s linear infinite reverse; }
+.copilotOrbit i { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--botAccent); box-shadow: 0 0 12px var(--botAccent); filter: blur(.15px); }
+.copilotOrbit i:nth-child(1) { left: 14%; top: 15%; }.copilotOrbit i:nth-child(2) { right: 4%; top: 45%; }.copilotOrbit i:nth-child(3) { left: 42%; bottom: -4px; }
+.copilotBrainCore { position: absolute; left: 50%; top: 45%; z-index: 3; width: 230px; height: 230px; margin: -115px 0 0 -115px; display: grid; place-items: center; text-align: center; }
+.copilotBrainCore img { position: absolute; width: 185px; height: 185px; object-fit: contain; filter: drop-shadow(0 0 17px color-mix(in srgb, var(--botAccent) 46%, transparent)) saturate(1.06); animation: copilotBrainBreathe 2.7s ease-in-out infinite; }
+.copilotBrainCore > svg { position: relative; z-index: 2; color: rgba(230,245,255,.2); filter: drop-shadow(0 0 12px var(--botAccent)); animation: copilotBrainBreathe 2.7s ease-in-out infinite; }
+.copilotBrainHalo { position: absolute; inset: 13px; border: 1px solid color-mix(in srgb, var(--botAccent) 42%, transparent); border-radius: 50%; box-shadow: 0 0 45px color-mix(in srgb, var(--botAccent) 15%, transparent), inset 0 0 38px rgba(64,218,245,.08); animation: copilotHalo 2.7s ease-in-out infinite; }
+.copilotBrainCore b,.copilotBrainCore small { position: absolute; z-index: 5; left: 50%; width: 290px; transform: translateX(-50%); font-family: 'DM Mono',monospace; }
+.copilotBrainCore b { top: 224px; color: #e9f2ff; font-size: 10px; letter-spacing: .09em; }.copilotBrainCore small { top: 244px; color: var(--botAccent); font-size: 7px; letter-spacing: .13em; }
+.copilotSignalGraph { position: absolute; z-index: 2; left: 5%; right: 5%; bottom: 66px; width: 90%; height: 135px; opacity: .72; overflow: visible; }
+.copilotSignalGraph path { fill: none; stroke: url(#copilotGraphStroke); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-dasharray: 9 8; animation: copilotGraphFlow 1.2s linear infinite; }.copilotSignalGraph path.ghost { stroke: rgba(88,232,255,.25); stroke-width: 1; animation-duration: 1.8s; animation-direction: reverse; }
+.copilotMetricRail { position: absolute; z-index: 4; left: 14px; right: 14px; bottom: 14px; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
+.copilotMetricRail span { padding: 8px; border: 1px solid rgba(104,132,177,.22); border-radius: 8px; background: rgba(7,14,31,.82); backdrop-filter: blur(8px); }.copilotMetricRail small,.copilotMetricRail b { display: block; font-family: 'DM Mono',monospace; }.copilotMetricRail small { color: #60718e; font-size: 7px; }.copilotMetricRail b { margin-top: 4px; color: #dbe8fb; font-size: 10px; }
+
+.copilotThinkingReport { display: flex; min-width: 0; flex-direction: column; padding: 22px; background: radial-gradient(circle at 100% 0,color-mix(in srgb,var(--botAccent) 9%,transparent),transparent 34%); }
+.copilotThinkingIdentity { display: flex; align-items: flex-start; gap: 10px; color: var(--botAccent); }.copilotThinkingIdentity small { display: block; color: var(--botAccent); font: 8px 'DM Mono',monospace; letter-spacing: .11em; }.copilotThinkingIdentity p { margin: 7px 0 0; color: #dce7f7; font: 11px/1.55 'DM Mono',monospace; overflow-wrap: anywhere; }
+.copilotContextLine { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0; }.copilotContextLine span { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid #2c3a58; border-radius: 99px; color: #8393ae; font: 7px 'DM Mono',monospace; }.copilotContextLine span:last-child { color: #65dca8; border-color: #2d7057; }
+.copilotPhaseList { display: grid; gap: 7px; }.copilotPhaseList article { display: grid; grid-template-columns: 27px minmax(0,1fr) auto; gap: 9px; align-items: center; min-height: 50px; padding: 8px; border: 1px solid rgba(76,95,130,.2); border-radius: 9px; opacity: .42; transition: opacity .3s,border-color .3s,background .3s,transform .3s; }.copilotPhaseList article.active { opacity: 1; transform: translateX(3px); border-color: color-mix(in srgb,var(--botAccent) 55%,#34405c); background: color-mix(in srgb,var(--botAccent) 8%,transparent); box-shadow: 0 0 24px color-mix(in srgb,var(--botAccent) 7%,transparent); }.copilotPhaseList article.done { opacity: .78; border-color: rgba(63,157,116,.3); }.copilotPhaseList article > span { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid #34435f; border-radius: 50%; color: #6e7f9c; font: 7px 'DM Mono',monospace; }.copilotPhaseList article.active > span { color: var(--botAccent); border-color: var(--botAccent); box-shadow: 0 0 12px color-mix(in srgb,var(--botAccent) 25%,transparent); }.copilotPhaseList article.done > span { color: #64dca7; border-color: #3b8b6a; }.copilotPhaseList b,.copilotPhaseList small { display: block; }.copilotPhaseList b { color: #dce7f7; font: 9px 'DM Mono',monospace; }.copilotPhaseList small { margin-top: 4px; color: #687995; font: 7px 'DM Mono',monospace; }.copilotPhaseList em { display: flex; gap: 3px; padding-right: 4px; }.copilotPhaseList em i { width: 4px; height: 4px; border-radius: 50%; background: var(--botAccent); animation: copilotDots .9s ease-in-out infinite; }.copilotPhaseList em i:nth-child(2){animation-delay:.14s}.copilotPhaseList em i:nth-child(3){animation-delay:.28s}
+.copilotThinkingFooter { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(104,128,166,.17); color: #71819d; }.copilotThinkingFooter svg { flex: 0 0 auto; color: #61dfaa; }.copilotThinkingFooter span { font: 7px/1.5 'DM Mono',monospace; }
+
+@keyframes copilotBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes copilotWindowIn { from { opacity: 0; transform: translateY(22px) scale(.965); } to { opacity: 1; transform: none; } }
+@keyframes copilotPulse { from { opacity: .55; transform: scale(.8); } to { opacity: 1; transform: scale(1.18); } }
+@keyframes copilotBrainBreathe { 0%,100% { transform: scale(.96); filter: drop-shadow(0 0 13px color-mix(in srgb,var(--botAccent) 34%,transparent)) saturate(1); } 50% { transform: scale(1.035); filter: drop-shadow(0 0 25px color-mix(in srgb,var(--botAccent) 58%,transparent)) saturate(1.15); } }
+@keyframes copilotHalo { 0%,100% { opacity: .45; transform: scale(.94); } 50% { opacity: .95; transform: scale(1.03); } }
+@keyframes copilotOrbitA { to { transform: rotate(346deg); } }
+@keyframes copilotOrbitB { to { transform: rotate(418deg); } }
+@keyframes copilotGridDrift { to { background-position: 0 34px,34px 0; } }
+@keyframes copilotGraphFlow { to { stroke-dashoffset: -34; } }
+@keyframes copilotDots { 0%,100% { opacity: .25; transform: translateY(1px); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+@media (max-width: 800px) {
+  .copilotThinkingBackdrop { padding: 10px; align-items: start; }
+  .copilotThinkingWindow { width: 100%; margin: 2vh 0; border-radius: 19px; }
+  .copilotThinkingLayout { grid-template-columns: 1fr; }
+  .copilotNeuralStage { min-height: 390px; border-right: 0; border-bottom: 1px solid rgba(111,136,180,.16); }
+  .copilotBrainCore { top: 42%; transform: scale(.82); }
+  .copilotOrbit { top: 42%; transform: scale(.78); }
+  .copilotMetricRail { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .copilotSignalGraph { bottom: 92px; }
+  .copilotThinkingReport { padding: 16px; }
+}
+
+@media (max-width: 460px) {
+  .copilotThinkingTop { align-items: flex-start; }
+  .copilotThinkingTop span { letter-spacing: .05em; }
+  .copilotNeuralStage { min-height: 350px; }
+  .copilotOrbit.orbitA { width: 290px; height: 180px; margin: -90px 0 0 -145px; }
+  .copilotOrbit.orbitB { width: 190px; height: 280px; margin: -140px 0 0 -95px; }
+  .copilotBrainCore { transform: scale(.72); }
+  .copilotPhaseList article { grid-template-columns: 27px minmax(0,1fr); }
+  .copilotPhaseList em { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copilotAmbientGrid,.copilotOrbit,.copilotBrainCore img,.copilotBrainCore > svg,.copilotBrainHalo,.copilotSignalGraph path,.copilotThinkingTop span > i,.copilotPhaseList em i { animation: none !important; }
+}
+
+@media (max-width: 900px) {
+  .botControlOverlay { padding: 14px; }
+
+  .botControlOverlay .botControlModal {
+    width: 100%;
+    min-height: 0;
+    max-height: 94vh;
+    padding: 18px;
+    border-radius: 19px;
+  }
+
+  .botControlOverlay .botControlHeader {
+    grid-template-columns: 50px minmax(0, 1fr);
+    padding-right: 34px;
+  }
+
+  .botControlOverlay .botControlOrb {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
+
+  .botControlOverlay .botControlPulse {
+    grid-column: 2;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .botControlOverlay .botEdgeBand { grid-template-columns: 1fr 1fr; }
+
+  .botControlOverlay .botEdgeBand p {
+    grid-column: 1 / -1;
+    padding-top: 7px;
+    border-top: 1px solid rgba(100, 120, 165, 0.18);
+  }
+
+  .botControlOverlay .botControlTabs { top: -18px; }
+}
+
+@media (max-width: 650px) {
+  .botControlOverlay {
+    padding: 7px;
+    background: rgba(1, 4, 12, 0.5);
+    backdrop-filter: blur(2px);
+  }
+
+  .botControlOverlay .botControlModal {
+    max-height: calc(100dvh - 14px);
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .botControlOverlay .botControlHeader { grid-template-columns: 44px minmax(0, 1fr); }
+
+  .botControlOverlay .botControlOrb {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .botControlOverlay .botControlHeader h2 { font-size: 17px; }
+  .botControlOverlay .botSafetyRail { grid-template-columns: 1fr 1fr; }
+  .botControlOverlay .botSafetyRail > span:nth-child(3) { display: none; }
+  .botControlOverlay .botControlStats { grid-template-columns: 1fr 1fr; }
+  .botControlOverlay .botControlTabs { top: -15px; margin-left: -4px; margin-right: -4px; }
+}
+
+/* Keep the command cockpit inside the browser fullscreen top layer. */
+.app:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #01040c;
+}
+
+.app:fullscreen .rail {
+  display: none;
+}
+
+.app:fullscreen .workspace {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
+}
+
+.app:fullscreen .workspace > * {
+  display: none !important;
+}
+
+.app:fullscreen .workspace > .brain3dPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: block !important;
+  width: 100vw;
+  height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.app:fullscreen .brain3dHeader {
+  position: absolute;
+  top: 22px;
+  left: 26px;
+  right: 26px;
+  z-index: 8;
+  padding: 12px 14px !important;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(2, 8, 20, 0.72), rgba(2, 8, 20, 0.18) 70%, transparent);
+  pointer-events: none;
+}
+
+.app:fullscreen .brain3dHeader .brain3dLive {
+  pointer-events: auto;
+}
+
+.app:fullscreen .brain3dCanvasShell {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.app:fullscreen .brain3dCanvasShell::before {
+  inset: 12px;
+  border-radius: 16px;
+}
+
+.app:fullscreen .botControlOverlay {
+  z-index: 2000;
+  display: grid !important;
+}
+
+@media (max-width: 700px) {
+  .app:fullscreen .brain3dHeader {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+}

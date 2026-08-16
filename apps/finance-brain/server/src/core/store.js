@@ -23,6 +23,7 @@ const infra=()=>({
   solanaRpc:{provider:'Solana RPC',online:false,lastProbe:null},
   intelligence:{recent:[],comboLeaderboard:[]},
   simulation:{recent:[],passed:0,rejected:0},
+  strategyEvidence:[],
   performance:{updatedAt:null,strategies:[],recent:[]},
   latencyRouter:[],
   polymarket:{configured:true,lastScans:[]},
@@ -32,10 +33,11 @@ const infra=()=>({
   polymarketTrading:{provider:'Polymarket CLOB',enabled:false,connected:false,authenticated:false,pendingSignatures:0,proposals:0},
   marketBots:{lastRunAt:null,bots:{},results:{},connectors:{}},
   kronos:{provider:'Kronos-mini',enabled:false,mode:'DISABLED',serviceUrl:'http://127.0.0.1:8815',lastForecastAt:null},
+  botCopilot:{version:1,presets:[],proposals:[],history:[],lastAnalysisByBot:{}},
   centralAgent:{role:'CENTRAL_FINANCE_BRAIN',mode:'SUPERVISOR',status:'BOOTING',lastRunAt:null,lastReportAt:null,openIncidents:0,incidents:[],reports:[],actions:[],profitSnapshot:{},botDiagnostics:[],marketBotDiagnostics:[],policy:{paperOnly:true,liveAutonomous:false},objective:'Maximizar retorno ajustado a riesgo, preservar capital y reportar cada fallo.'},
   production:{supervisor:{status:'BOOTING',lastCheckAt:null,stale:[],recoveries:0},circuitBreakers:[],replay:{lastRun:null},execution:{paper:true,live:false,signer:'NONE',metamask:'BROWSER_MANUAL_APPROVAL'},vault:{configured:false,provider:'NONE',mode:'REFERENCE_ONLY'},wallet:{address:null,networks:[]}}
 });
-const paperLedger=()=>({version:2,mode:'REAL_MARKET_PAPER',startingEquityUsd:10000,reserveFloorUsd:1000,cashUsd:10000,reservedUsd:1000,equityUsd:10000,realizedPnlUsd:0,unrealizedPnlUsd:0,feesUsd:0,slippageUsd:0,openPositions:[],closedTrades:0,blockedTrades:0,lastMarkAt:null});
+const paperLedger=()=>({version:3,mode:'REAL_MARKET_PAPER',startingEquityUsd:10000,reserveFloorUsd:1000,cashUsd:10000,reservedUsd:1000,equityUsd:10000,realizedPnlUsd:0,unrealizedPnlUsd:0,feesUsd:0,slippageUsd:0,openPositions:[],closedTrades:0,blockedTrades:0,lastMarkAt:null,validated:null});
 const initial=()=>({
   version:'11.0.0',mode:'PAPER',startedAt:new Date().toISOString(),
   treasury:{paperBalanceUsd:10000,reservedUsd:1000},risk:{...DEFAULT_RISK},
@@ -65,7 +67,7 @@ function load(){
     }
     const oi=old.infrastructure||{};
     return {...base,...old,version:'11.0.0',risk:{...base.risk,...(old.risk||{})},paperLedger:{...base.paperLedger,...(old.paperLedger||{}),openPositions:(old.paperLedger?.openPositions||[])},allocator:{...base.allocator,...old.allocator},infrastructure:{...base.infrastructure,...oi,dataQuality:{...base.infrastructure.dataQuality,...(oi.dataQuality||{})},
-      marketData:{...base.infrastructure.marketData,...oi.marketData},futuresMarketData:{...base.infrastructure.futuresMarketData,...oi.futuresMarketData},marketBots:{...base.infrastructure.marketBots,...oi.marketBots,bots:{...base.infrastructure.marketBots.bots,...(oi.marketBots?.bots||{})},results:{...base.infrastructure.marketBots.results,...(oi.marketBots?.results||{})},connectors:{...base.infrastructure.marketBots.connectors,...(oi.marketBots?.connectors||{})}},
+      marketData:{...base.infrastructure.marketData,...oi.marketData},futuresMarketData:{...base.infrastructure.futuresMarketData,...oi.futuresMarketData},marketBots:{...base.infrastructure.marketBots,...oi.marketBots,bots:{...base.infrastructure.marketBots.bots,...(oi.marketBots?.bots||{})},results:{...base.infrastructure.marketBots.results,...(oi.marketBots?.results||{})},connectors:{...base.infrastructure.marketBots.connectors,...(oi.marketBots?.connectors||{})}},botCopilot:{...base.infrastructure.botCopilot,...oi.botCopilot,presets:oi.botCopilot?.presets||[],proposals:oi.botCopilot?.proposals||[],history:oi.botCopilot?.history||[],lastAnalysisByBot:oi.botCopilot?.lastAnalysisByBot||{}},
       liquidation:{...base.infrastructure.liquidation,...oi.liquidation},arbitrage:{...base.infrastructure.arbitrage,...oi.arbitrage},volatility:{...base.infrastructure.volatility,...oi.volatility},
       perpetuals:{...base.infrastructure.perpetuals,...oi.perpetuals},smartMoney:{...base.infrastructure.smartMoney,...oi.smartMoney},momentum:{...base.infrastructure.momentum,...oi.momentum},yield:{...base.infrastructure.yield,...oi.yield},yieldData:{...base.infrastructure.yieldData,...oi.yieldData},fusion:{...base.infrastructure.fusion,...oi.fusion},solana:{...base.infrastructure.solana,...oi.solana},solanaRpc:{...base.infrastructure.solanaRpc,...oi.solanaRpc},intelligence:{...base.infrastructure.intelligence,...oi.intelligence},simulation:{...base.infrastructure.simulation,...oi.simulation},performance:{...base.infrastructure.performance,...oi.performance},latencyRouter:oi.latencyRouter||base.infrastructure.latencyRouter,polymarket:{...base.infrastructure.polymarket,...oi.polymarket},polymarketData:{...base.infrastructure.polymarketData,...oi.polymarketData},binanceTrading:{...base.infrastructure.binanceTrading,...oi.binanceTrading},solanaTrading:{...base.infrastructure.solanaTrading,...oi.solanaTrading},polymarketTrading:{...base.infrastructure.polymarketTrading,...oi.polymarketTrading},centralAgent:{...base.infrastructure.centralAgent,...oi.centralAgent,policy:{...base.infrastructure.centralAgent.policy,...(oi.centralAgent?.policy||{})}},production:{...base.infrastructure.production,...oi.production}}};
   }catch{const s=initial();fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(s,null,2));return s;}
@@ -91,7 +93,7 @@ const publicMarketBotResult=result=>{
   return {...result,data};
 };
 const recent=(value,limit)=>Array.isArray(value)?value.slice(0,limit):[];
-export function publicState(){return {...state,opportunities:recent(state.opportunities,50),executions:recent(state.executions,50),infrastructure:{...state.infrastructure,
+export function publicState(){const {executionIds:validatedExecutionIds,...publicValidated}=(state.paperLedger?.validated||{});return {...state,paperLedger:{...state.paperLedger,validated:publicValidated},opportunities:recent(state.opportunities,50),executions:recent(state.executions,50),infrastructure:{...state.infrastructure,
   liquidation:{...state.infrastructure.liquidation,lastScans:recent(state.infrastructure.liquidation.lastScans,20),lastDiscoveries:recent(state.infrastructure.liquidation.lastDiscoveries,10)},
   arbitrage:{...state.infrastructure.arbitrage,lastScans:recent(state.infrastructure.arbitrage.lastScans,20)},
   volatility:{...state.infrastructure.volatility,lastScans:recent(state.infrastructure.volatility.lastScans,30)},
@@ -103,8 +105,10 @@ export function publicState(){return {...state,opportunities:recent(state.opport
   solana:{...state.infrastructure.solana,lastScans:recent(state.infrastructure.solana.lastScans,20),lastBirths:recent(state.infrastructure.solana.lastBirths,50)},
   intelligence:{...state.infrastructure.intelligence,recent:recent(state.infrastructure.intelligence.recent,20),comboLeaderboard:recent(state.infrastructure.intelligence.comboLeaderboard,20)},
   simulation:{...state.infrastructure.simulation,recent:recent(state.infrastructure.simulation.recent,30)},
+  strategyEvidence:recent(state.infrastructure.strategyEvidence,150),
   performance:{...state.infrastructure.performance,recent:recent(state.infrastructure.performance.recent,30)},
   polymarket:{...state.infrastructure.polymarket,lastScans:recent(state.infrastructure.polymarket.lastScans,20)},
   marketBots:{...state.infrastructure.marketBots,results:Object.fromEntries(Object.entries(state.infrastructure.marketBots.results||{}).map(([id,result])=>[id,publicMarketBotResult(result)]))},
+  botCopilot:{...state.infrastructure.botCopilot,presets:recent(state.infrastructure.botCopilot?.presets,100),proposals:recent(state.infrastructure.botCopilot?.proposals,100),history:recent(state.infrastructure.botCopilot?.history,50)},
   centralAgent:{...state.infrastructure.centralAgent,incidents:recent(state.infrastructure.centralAgent.incidents,40),reports:recent(state.infrastructure.centralAgent.reports,10),actions:recent(state.infrastructure.centralAgent.actions,20)}
 }};}

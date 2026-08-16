@@ -1,7 +1,9 @@
 const PROFILES={
   liquidation:{baseSuccess:.92,costPct:.08,slippageMultiplier:.8},
   arbitrage:{baseSuccess:.86,costPct:.16,slippageMultiplier:1.25},
-  'solana-radar':{baseSuccess:.72,costPct:.22,slippageMultiplier:1.5},
+  // Early-token launches are adverse-selection heavy. This model is only a
+  // conservative PAPER filter; promotion uses realized quote-backed outcomes.
+  'solana-radar':{baseSuccess:.45,costPct:.30,slippageMultiplier:1.8},
   volatility:{baseSuccess:.76,costPct:.12,slippageMultiplier:1.15},
   momentum:{baseSuccess:.79,costPct:.10,slippageMultiplier:1.0},
   perpetuals:{baseSuccess:.83,costPct:.09,slippageMultiplier:.9},

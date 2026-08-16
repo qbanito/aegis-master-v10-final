@@ -1,6 +1,7 @@
 import {binanceMarketData} from '../infrastructure/marketData/binanceMarketData.js';
 import {binanceFuturesMarketData} from '../infrastructure/marketData/binanceFuturesMarketData.js';
 import {alpacaPaper} from '../infrastructure/brokers/demoBrokers.js';
+import {recordValidatedPaperExecution} from './validatedPaperLedger.js';
 
 const clamp=(n,min=0,max=1)=>Math.max(min,Math.min(max,n));
 const num=value=>Number.isFinite(Number(value))?Number(value):0;
@@ -88,30 +89,23 @@ export class RealMarketPaperBroker{
     this.state.paperLedger.blockedTrades=(this.state.paperLedger.blockedTrades||0)+1;
     return execution;
   }
-  modelTradesLastHour(){const cutoff=Date.now()-3600000;return (this.state.executions||[]).filter(item=>item.paperQuality==='MODEL_SIMULATED'&&Date.parse(item.createdAt||0)>=cutoff).length;}
+  modelTradesLastHour(){const cutoff=Date.now()-3600000;return (this.state.executions||[]).filter(item=>['MODEL_SIMULATED','MODEL_RESEARCH'].includes(item.paperQuality)&&Date.parse(item.createdAt||0)>=cutoff).length;}
   modelOpen(opportunity,simulation,reason='MODEL_FALLBACK'){
     if(opportunity.synthetic!==false)return this.blocked(opportunity,'SYNTHETIC_OPPORTUNITY_BLOCKED');
     if(!simulation?.passed)return this.blocked(opportunity,'SIMULATION_REJECTED');
     if(this.modelTradesLastHour()>=this.modelMaxTradesPerHour)return this.blocked(opportunity,'MODEL_PAPER_RATE_LIMIT');
-    const ledger=this.state.paperLedger;
     const requested=Math.max(10,num(opportunity.capitalRequiredUsd));
-    const available=Math.max(0,num(ledger.cashUsd)-num(ledger.reserveFloorUsd||0));
-    const notional=Math.min(requested,available);
-    if(notional<10)return this.blocked(opportunity,'INSUFFICIENT_PAPER_CASH',{availableUsd:available});
+    const notional=requested;
     const fee=notional*this.feeBps/10000;
     const expected= Math.max(0,num(simulation.estimatedNetProfitUsd||opportunity.expectedProfitUsd));
     const grossModeledProfit=expected*num(simulation.successProbability||opportunity.executionProbability||.75);
     const modeledProfit=Number(Math.max(0,grossModeledProfit-fee).toFixed(2));
-    ledger.cashUsd=Number((num(ledger.cashUsd)+modeledProfit).toFixed(8));
-    ledger.realizedPnlUsd=Number((num(ledger.realizedPnlUsd)+modeledProfit).toFixed(8));
-    ledger.feesUsd=Number((num(ledger.feesUsd)+fee).toFixed(8));
-    ledger.equityUsd=Number(num(ledger.cashUsd).toFixed(8));
-    ledger.closedTrades=(ledger.closedTrades||0)+1;
-    ledger.lastMarkAt=now();
-    const execution={id:crypto.randomUUID(),opportunityId:opportunity.id,strategyId:opportunity.strategyId,mode:'PAPER',status:'CLOSED',expectedProfitUsd:opportunity.expectedProfitUsd,simulatedNetProfitUsd:expected,realizedProfitUsd:modeledProfit,modeledProfitUsd:modeledProfit,createdAt:now(),closedAt:now(),closeReason:'MODEL_PAPER_OUTCOME',paperQuality:'MODEL_SIMULATED',modelFallbackReason:reason,actualMarketFill:false,notionalUsd:notional,feeUsd:Number(fee.toFixed(4)),successProbability:simulation.successProbability};
+    const execution={id:crypto.randomUUID(),opportunityId:opportunity.id,strategyId:opportunity.strategyId,mode:'RESEARCH',status:'RESEARCH_ONLY',expectedProfitUsd:opportunity.expectedProfitUsd,simulatedNetProfitUsd:expected,realizedProfitUsd:0,modeledExpectedProfitUsd:modeledProfit,createdAt:now(),paperQuality:'MODEL_RESEARCH',modelFallbackReason:reason,actualMarketFill:false,notionalUsd:notional,estimatedFeeUsd:Number(fee.toFixed(4)),successProbability:simulation.successProbability,notice:'Model output is research only and never mutates the PAPER ledger or validated PNL.'};
     this.state.executions.unshift(execution);this.state.executions=this.state.executions.slice(0,250);
-    const bot=this.state.bots.find(item=>item.id===opportunity.strategyId);if(bot)bot.pnl24h=Number((num(bot.pnl24h)+modeledProfit).toFixed(2));
-    this.state.treasury.paperBalanceUsd=Number(ledger.equityUsd.toFixed(2));this.state.treasury.reservedUsd=Number(ledger.reservedUsd.toFixed(2));
+    this.state.infrastructure??={};
+    const research=this.state.infrastructure.researchLedger||{observations:0,modeledExpectedProfitUsd:0,recent:[]};
+    research.observations+=1;research.modeledExpectedProfitUsd=Number((num(research.modeledExpectedProfitUsd)+modeledProfit).toFixed(2));research.recent=[execution,...(research.recent||[])].slice(0,100);research.updatedAt=now();
+    this.state.infrastructure.researchLedger=research;
     this.persist?.();
     return execution;
   }
@@ -154,7 +148,7 @@ export class RealMarketPaperBroker{
     const realized=gross-position.entryFeeUsd-exitFee;
     ledger.cashUsd=Number((num(ledger.cashUsd)+position.entryNotional+gross-exitFee).toFixed(8));
     ledger.reservedUsd=Number(Math.max(num(ledger.reserveFloorUsd||0),num(ledger.reservedUsd)-position.entryNotional-position.entryFeeUsd).toFixed(8));ledger.realizedPnlUsd=Number((num(ledger.realizedPnlUsd)+realized).toFixed(8));ledger.feesUsd=Number((num(ledger.feesUsd)+position.entryFeeUsd+exitFee).toFixed(8));ledger.slippageUsd=Number((num(ledger.slippageUsd)+position.entrySlippageUsd+Math.abs(exitPrice-((quote.bid+quote.ask)/2))*position.quantity).toFixed(8));ledger.closedTrades=(ledger.closedTrades||0)+1;ledger.openPositions=ledger.openPositions.filter(item=>item.id!==positionId);ledger.equityUsd=Number(num(ledger.cashUsd).toFixed(8));
-    const execution=this.state.executions.find(item=>item.id===context.executionId);if(execution){execution.status='CLOSED';execution.realizedProfitUsd=Number(realized.toFixed(2));execution.closedAt=now();execution.closeReason=reason;execution.exit={price:exitPrice,notionalUsd:exitNotional,feeUsd:exitFee,quote:{provider:quote.provider,bid:quote.bid,ask:quote.ask,observedAt:quote.observedAt}};}
+    const execution=this.state.executions.find(item=>item.id===context.executionId);if(execution){execution.status='CLOSED';execution.realizedProfitUsd=Number(realized.toFixed(2));execution.closedAt=now();execution.closeReason=reason;execution.exit={price:exitPrice,notionalUsd:exitNotional,feeUsd:exitFee,quote:{provider:quote.provider,bid:quote.bid,ask:quote.ask,observedAt:quote.observedAt}};recordValidatedPaperExecution(this.state,execution);}
     const bot=this.state.bots.find(item=>item.id===position.strategyId);if(bot)bot.pnl24h=Number((num(bot.pnl24h)+realized).toFixed(2));this.contexts.delete(positionId);const timer=this.timers.get(positionId);if(timer)clearTimeout(timer);this.timers.delete(positionId);this.persist?.();const result={...execution};this.onClose?.({execution:result,opportunity:context.opportunity,simulation:context.simulation});return result;
   }
   async markToMarket(){const ledger=this.state.paperLedger;let unrealized=0,positionValue=0,closeRequests=[];await Promise.all((ledger.openPositions||[]).map(async position=>{const quote=await this.quote({network:position.network,asset:position.asset,metadata:this.contexts.get(position.id)?.opportunity?.metadata||{},direction:position.direction,synthetic:false});if(!quote)return;const mark=position.direction==='LONG'?quote.bid:quote.ask;position.markPrice=mark;position.peakPrice=position.direction==='LONG'?Math.max(num(position.peakPrice||position.entryPrice),mark):Math.min(num(position.peakPrice||position.entryPrice),mark);position.unrealizedPnlUsd=Number(((position.direction==='LONG'?(mark-position.entryPrice):(position.entryPrice-mark))*position.quantity-position.entryFeeUsd).toFixed(8));const movePct=position.entryPrice?((mark-position.entryPrice)/position.entryPrice*100)*(position.direction==='LONG'?1:-1):0;const stopPrice=position.direction==='LONG'?position.entryPrice*(1-num(position.stopLossPct||0)/100):position.entryPrice*(1+num(position.stopLossPct||0)/100);const takePrice=position.direction==='LONG'?position.entryPrice*(1+num(position.takeProfitPct||0)/100):position.entryPrice*(1-num(position.takeProfitPct||0)/100);if(movePct>=num(position.trailingActivationPct||this.trailingActivationPct)){position.trailingStopPrice=position.direction==='LONG'?position.peakPrice*(1-num(position.trailingStopPct||this.trailingStopPct)/100):position.peakPrice*(1+num(position.trailingStopPct||this.trailingStopPct)/100);}const hitStop=position.stopLossPct>0&&(position.direction==='LONG'?mark<=stopPrice:mark>=stopPrice);const hitTake=position.takeProfitPct>0&&(position.direction==='LONG'?mark>=takePrice:mark<=takePrice);const hitTrail=position.trailingStopPrice!=null&&(position.direction==='LONG'?mark<=position.trailingStopPrice:mark>=position.trailingStopPrice);const hitMaxLoss=position.unrealizedPnlUsd<=-num(position.maxLossUsd||this.state.risk?.maxLossPerTradeUsd||50);if((hitStop||hitMaxLoss||hitTake||hitTrail)&&!position.exitPending){position.exitPending=true;closeRequests.push({id:position.id,reason:hitTake?'TAKE_PROFIT':hitTrail?'TRAILING_STOP':hitMaxLoss?'MAX_LOSS_STOP':'STOP_LOSS'});}unrealized+=position.unrealizedPnlUsd;positionValue+=position.direction==='LONG'?position.quantity*mark:position.entryNotional+position.unrealizedPnlUsd;}));ledger.unrealizedPnlUsd=Number(unrealized.toFixed(8));ledger.equityUsd=Number((num(ledger.cashUsd)+positionValue).toFixed(8));ledger.lastMarkAt=now();this.state.treasury.paperBalanceUsd=Number(ledger.equityUsd.toFixed(2));this.state.treasury.reservedUsd=Number(ledger.reservedUsd.toFixed(2));this.persist?.();for(const request of closeRequests)this.close(request.id,request.reason).catch(()=>{});}

@@ -32,7 +32,15 @@ export default function BotUniverse({ botOrder, botMeta, bots, activeBot, mode, 
     const width = Math.max(80, mount.clientWidth),
       height = Math.max(80, mount.clientHeight);
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0, 0.1, 5.6);
+    const fitCamera = (w, h) => {
+      const aspect = Math.max(0.45, w / Math.max(1, h));
+      const horizontalHalfAngle = THREE.MathUtils.degToRad(camera.fov / 2);
+      const fittedDistance = 2.05 + 2.35 / (Math.tan(horizontalHalfAngle) * aspect);
+      camera.aspect = aspect;
+      camera.position.set(0, 0.1, Math.max(5.6, fittedDistance));
+      camera.updateProjectionMatrix();
+    };
+    fitCamera(width, height);
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
@@ -134,8 +142,7 @@ export default function BotUniverse({ botOrder, botMeta, bots, activeBot, mode, 
     const resize = () => {
       const w = Math.max(80, mount.clientWidth),
         h = Math.max(80, mount.clientHeight);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+      fitCamera(w, h);
       renderer.setSize(w, h, false);
     };
     const observer = new ResizeObserver(resize);
@@ -158,13 +165,17 @@ export default function BotUniverse({ botOrder, botMeta, bots, activeBot, mode, 
         a.dot.scale.setScalar(isHot ? 1.6 + Math.sin(t * 6) * 0.2 : 1);
         vec.copy(a.anchor.position).applyMatrix4(root.matrixWorld);
         const screen = vec.clone().project(camera);
-        const behind = screen.z > 1;
-        const x = (screen.x * 0.5 + 0.5) * w;
-        const y = (-screen.y * 0.5 + 0.5) * h;
+        const behind = screen.z > 1 || screen.z < -1;
+        const rawX = (screen.x * 0.5 + 0.5) * w;
+        const rawY = (-screen.y * 0.5 + 0.5) * h;
+        const edge = Math.min(42, Math.max(27, w * 0.07));
+        const x = THREE.MathUtils.clamp(Number.isFinite(rawX) ? rawX : w / 2, edge, w - edge);
+        const y = THREE.MathUtils.clamp(Number.isFinite(rawY) ? rawY : h / 2, edge, h - edge);
+        const edgeClamped = Math.abs(rawX - x) > 1 || Math.abs(rawY - y) > 1;
         const el = overlayRefs.current[a.id];
         if (el) {
           el.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%) scale(${behind ? 0.7 : 1})`;
-          el.style.opacity = behind ? 0.28 : 1;
+          el.style.opacity = behind ? 0.22 : edgeClamped ? 0.62 : 1;
           el.style.zIndex = behind ? 1 : 5;
           el.style.pointerEvents = behind ? "none" : "auto";
         }

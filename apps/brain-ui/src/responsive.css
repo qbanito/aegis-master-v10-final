@@ -1,0 +1,786 @@
+/* Shared responsive layer for Finance, Commerce, SaaS, Media and Services. */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+.app,
+.workspace,
+.panel,
+.heroCopy,
+.contentGrid > *,
+.lowerGrid > *,
+.centralBrainBody > *,
+.commerceControlPanel,
+.servicesControlPanel,
+.brainAgentControlPanel {
+  min-width: 0;
+}
+
+.panel,
+.botConfigCard,
+.commerceBotModule,
+.servicesGrowthCard,
+.integrationCard,
+.playbookCard {
+  overflow-wrap: anywhere;
+}
+
+@media (hover: none), (pointer: coarse) {
+  button,
+  .brainLink,
+  .railLink,
+  .playbookCard,
+  .commerceBotModule,
+  .botConfigCard,
+  .integrationCard a {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px !important;
+  }
+
+  .brainLink:hover,
+  .railLink:hover,
+  .playbookCard:hover,
+  .botConfigCard:hover,
+  .commerceBotModule:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .rail {
+    width: 190px;
+    flex-basis: 190px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .workspace {
+    max-width: none;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 72px;
+    gap: 14px;
+    padding: 10px 0;
+  }
+
+  .topActions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .hero {
+    padding-right: 1%;
+  }
+
+  .heroOrb {
+    width: 210px;
+    height: 210px;
+    margin-right: 0;
+  }
+
+  .agentGrid,
+  .commerceBotGrid,
+  .botConfigGrid,
+  .centralBotDiagnostics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .integrationGrid,
+  .marketBotGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .automationCatalog,
+  .automationMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .servicesLeadCapture {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .rail {
+    width: 72px;
+    flex-basis: 72px;
+    padding: 16px 8px;
+  }
+
+  .brand {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .brand > span:last-child,
+  .railLabel,
+  .brainLink span,
+  .railLink span,
+  .railBottom {
+    display: none;
+  }
+
+  .brainLink,
+  .railLink {
+    justify-content: center;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .brainLink i {
+    display: none;
+  }
+
+  .workspace {
+    padding: 0 16px 28px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .topActions {
+    gap: 8px;
+  }
+
+  .updated {
+    display: none;
+  }
+
+  .hero {
+    min-height: 260px;
+    padding: 32px 0;
+  }
+
+  .hero h1 {
+    font-size: clamp(42px, 8vw, 64px);
+  }
+
+  .heroOrb {
+    width: 175px;
+    height: 175px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contentGrid,
+  .lowerGrid,
+  .centralBrainBody,
+  .assistantBody,
+  .commerceConnectors,
+  .brokerStrip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .agentGrid,
+  .commerceBotGrid,
+  .botConfigGrid,
+  .centralBotDiagnostics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .brain3dHeader {
+    gap: 14px;
+  }
+
+  .brain3dCanvasShell {
+    min-height: clamp(560px, 72dvh, 700px) !important;
+  }
+
+  .mediaStudioForm,
+  .avatarBuilder,
+  .servicesGrowthGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mediaPrompt,
+  .mediaGenerate {
+    grid-column: auto;
+  }
+
+  .servicesLeadCapture {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .servicesCommandBar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .commerceProductRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .commerceProductRow button {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .app {
+    display: block;
+    min-height: 100dvh;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    overflow: visible;
+  }
+
+  .rail {
+    position: fixed;
+    left: 7px;
+    right: 7px;
+    bottom: calc(7px + env(safe-area-inset-bottom));
+    z-index: 900;
+    width: auto;
+    height: 62px;
+    min-height: 0;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(64, 91, 130, 0.72);
+    border-radius: 15px;
+    background: rgba(5, 9, 20, 0.94);
+    box-shadow: 0 18px 52px rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(18px) saturate(1.15);
+  }
+
+  .rail .brand,
+  .rail .railLabel,
+  .rail .railLink,
+  .rail .railBottom {
+    display: none;
+  }
+
+  .rail .brainLink {
+    flex: 1 1 20%;
+    min-width: 0;
+    min-height: 50px;
+    margin: 0;
+    padding: 5px 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .rail .brainLink span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+    font: 7px 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .workspace {
+    width: 100%;
+    padding: 0 11px 18px;
+  }
+
+  .topbar {
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 0 10px;
+  }
+
+  .crumb {
+    padding: 0 2px;
+  }
+
+  .topActions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 7px;
+    padding-bottom: 3px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .topActions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .topActions > * {
+    flex: 0 0 auto;
+  }
+
+  .hero {
+    display: block;
+    min-height: 0;
+    padding: 32px 0 24px;
+  }
+
+  .heroOrb {
+    display: none;
+  }
+
+  .hero h1 {
+    max-width: 100%;
+    font-size: clamp(38px, 13vw, 54px);
+    line-height: 0.98;
+    overflow-wrap: anywhere;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+
+  .heroButtons {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .heroButtons > * {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .panel {
+    padding: 14px;
+    border-radius: 13px;
+  }
+
+  .panelHead {
+    gap: 8px;
+  }
+
+  .panelHead h2 {
+    font-size: 16px;
+  }
+
+  .panelAction {
+    max-width: 42%;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .stats,
+  .agentGrid,
+  .commerceBotGrid,
+  .botConfigGrid,
+  .centralBotDiagnostics,
+  .integrationGrid,
+  .marketBotGrid,
+  .automationMetrics,
+  .automationCatalog,
+  .playbookGrid,
+  .servicesGrowthGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat {
+    min-height: 76px;
+  }
+
+  .brain3dPanel {
+    padding: 0 !important;
+  }
+
+  .brain3dHeader {
+    display: block;
+    padding: 6px 2px 13px !important;
+  }
+
+  .brain3dHeader h2 {
+    font-size: clamp(22px, 7vw, 28px) !important;
+  }
+
+  .brain3dHeader p {
+    max-width: 100%;
+  }
+
+  .brain3dLive {
+    display: inline-flex;
+    margin-top: 10px;
+    white-space: normal;
+  }
+
+  .brain3dCanvasShell {
+    min-height: clamp(450px, 70dvh, 600px) !important;
+    border-radius: 16px !important;
+  }
+
+  .brain3dCanvasHud {
+    max-width: calc(100% - 100px);
+    font-size: 8px !important;
+  }
+
+  .brain3dCanvasHud small:nth-of-type(2) {
+    display: none;
+  }
+
+  .brain3dControls button {
+    width: 42px;
+    height: 42px;
+  }
+
+  .brainBotFloat {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 10px !important;
+    width: auto !important;
+    max-height: min(46dvh, 330px);
+    padding: 13px;
+    overflow-y: auto;
+  }
+
+  .brainBotFloatTop {
+    align-items: flex-start;
+  }
+
+  .brainBotFloatTop button {
+    min-height: 38px;
+  }
+
+  .brainBotMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .centralBrainHeader,
+  .assistantHeader,
+  .mediaAutomationIntro,
+  .automationActions,
+  .botControlToolbar,
+  .botSectionTitle,
+  .servicesSectionTitle {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .centralBrainStats,
+  .botControlStats,
+  .botControlEdgeStats,
+  .commerceConnectorPills,
+  .servicesOperatingStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .centralBrainActions,
+  .automationActions,
+  .mediaStudioTabs,
+  .botCopilotQuick {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .centralBrainActions button,
+  .automationActions button,
+  .mediaStudioTabs button,
+  .botCopilotQuick button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .assistantComposer {
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+  }
+
+  .commercePipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .commerceProductRow,
+  .commerceLanding,
+  .servicesCommandPlan,
+  .servicesLeadRow,
+  .servicesPublicationRow,
+  .servicesApprovalQueue .servicesPublicationRow,
+  .servicesCampaignQueue .servicesPublicationRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .commerceProductRow button,
+  .servicesLeadRow button,
+  .servicesPublicationRow button {
+    width: 100%;
+  }
+
+  .servicesCrmCapture,
+  .servicesLeadCapture {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .servicesCrmCapture button {
+    grid-column: auto;
+  }
+
+  .activityRow {
+    align-items: flex-start;
+  }
+
+  .activityRow time {
+    display: none;
+  }
+
+  footer {
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  .workspace {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .walletButton {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .brainBotMetrics,
+  .centralBrainStats,
+  .botControlStats,
+  .botControlEdgeStats,
+  .commerceConnectorPills,
+  .servicesOperatingStrip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brainBotFloat p,
+  .brainBotSignal {
+    display: none;
+  }
+
+  .botControlOverlay {
+    padding: 0;
+    place-items: stretch;
+    background: rgba(1, 4, 12, 0.72);
+  }
+
+  .botControlOverlay .botControlModal {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    padding: 14px 11px calc(16px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    animation: none;
+  }
+
+  .botControlBody,
+  .botCockpit,
+  .botCockpit > *,
+  .botEquityCurve,
+  .botSpecialReadout,
+  .botDecisionSection,
+  .botResultList,
+  .botDecisionCard,
+  .botExecutionCard,
+  .botProposal,
+  .botCopilot {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .botCockpit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .botEquityCurve > div,
+  .botSpecialReadout > div,
+  .botControlStats span,
+  .botControlStats b {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .botEquityCurve svg {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .botCopilot {
+    overflow: hidden;
+  }
+
+  .botSectionTitle {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .botSectionTitle > small {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 6px;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .botCopilotQuick {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .botDecisionPipeline {
+    overflow: hidden;
+  }
+
+  .botControlOverlay .botControlHeader {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    padding-right: 34px;
+  }
+
+  .botControlOverlay .botControlPulse {
+    grid-column: 1 / -1;
+  }
+
+  .botControlOverlay .botControlTabs {
+    top: -14px;
+    margin-left: -2px;
+    margin-right: -2px;
+    scroll-snap-type: x proximity;
+  }
+
+  .botControlOverlay .botControlTabs button {
+    min-height: 40px;
+    scroll-snap-align: start;
+  }
+
+  .botSafetyRail,
+  .botControlOverlay .botEdgeBand,
+  .botHumanFacts,
+  .botDecisionNumbers,
+  .botDecisionWhy,
+  .botPolicyGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .botSafetyRail > span:nth-child(2),
+  .botSafetyRail > span:nth-child(3) {
+    display: none;
+  }
+
+  .botEdgeBand p,
+  .botDecisionWhy p {
+    grid-column: 1;
+  }
+
+  .botDecisionPipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .botDecisionPipeline span:nth-child(2n)::after {
+    display: none;
+  }
+
+  .botDecisionCard,
+  .botExecutionCard,
+  .botProposal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .botExecutionCard strong,
+  .botExecutionCard time {
+    justify-self: start;
+  }
+
+  .botCopilotComposer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .botCopilotComposer button,
+  .botSaveButton {
+    min-height: 44px;
+  }
+
+  .botCopilotFindings,
+  .botCopilotQueue > article,
+  .botPresetShelf > article {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .botCopilotQueue > article > div:last-child {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .botPresetShelf button {
+    width: 100%;
+    min-height: 40px;
+  }
+
+  .assistantComposer {
+    grid-template-columns: minmax(0, 1fr) 42px 42px;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .brain3dCanvasShell {
+    min-height: calc(100dvh - 18px) !important;
+  }
+
+  .brain3dHeader {
+    display: none;
+  }
+
+  .botControlOverlay .botControlModal {
+    max-height: calc(100dvh - 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

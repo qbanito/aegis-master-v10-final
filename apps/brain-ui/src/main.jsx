@@ -2,12 +2,15 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {createRoot} from "react-dom/client";
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+import {io as connectSocket} from "socket.io-client";
 import {
   Activity, ArrowUpRight, BarChart3, Bot, Brain, Briefcase, ChevronRight, CircleDollarSign,
   Database, Gauge, Globe2, Layers3, Orbit, Radar, Radio, RefreshCw, Rocket,
   Image as ImageIcon, Mic2, MessageCircle, Music2, Plus, Settings, ShieldCheck, Sparkles, Target, TrendingUp, Video, Volume2, WalletCards, Zap
 } from "lucide-react";
 import "./style.css";
+import "./control-overlay.css";
+import "./responsive.css";
 
 const ports = {finance: 8811, commerce: 8812, saas: 8813, media: 8814, services: 8815};
 const runtimeApi = (local, production) => import.meta.env.DEV ? local : production;
@@ -85,7 +88,8 @@ function App() {
   const [error, setError] = useState("");
   const [updated, setUpdated] = useState(null);
   const [busyBot, setBusyBot] = useState("");
-  const [selectedBotId, setSelectedBotId] = useState(null);
+  const [selectedBotId, setSelectedBotId] = useState(() => new URLSearchParams(window.location.search).get("bot"));
+  const [streamConnected, setStreamConnected] = useState(false);
   const [brainSpeaking, setBrainSpeaking] = useState(false);
   const [voiceAgentReply, setVoiceAgentReply] = useState("");
   const [voiceAgentBusy, setVoiceAgentBusy] = useState(false);
@@ -111,7 +115,7 @@ function App() {
       const lab = kind === "finance" ? await get("/api/liquidation/lab").catch(() => null) : null;
       const central = kind === "finance" ? await get("/api/central-agent/status").catch(() => null) : null;
       const liveContext = kind === "finance" ? await get("/api/agent/context").catch(() => null) : null;
-      setKpis(kind === "finance" ? {opportunities: extra.opportunities?.length || 0, executions: extra.executions?.length || 0, balance: extra.treasury?.paperBalanceUsd || 0, health: 96, lab} : kind === "saas" ? extra : extra);
+      setKpis(kind === "finance" ? {opportunities: extra.opportunities?.length || 0, executions: extra.executions?.length || 0, balance: h.paperEquityUsd ?? extra.infrastructure?.dataQuality?.validatedPaper?.equityUsd ?? 0, health: 96, lab} : kind === "saas" ? extra : extra);
       setCentralAgent(central ? {...central, liveContext} : liveContext);
       setUpdated(new Date());
       return true;
@@ -120,6 +124,24 @@ function App() {
   }, []);
 
   useEffect(() => { refresh(); const timer = setInterval(refresh, 15000); return () => clearInterval(timer); }, [refresh]);
+
+  useEffect(()=>{
+    const url=new URL(window.location.href);if(selectedBotId)url.searchParams.set("bot",selectedBotId);else url.searchParams.delete("bot");window.history.replaceState({},"",url);
+    if(kind==="finance"&&selectedBotId){const timer=setTimeout(()=>document.querySelector(".brain3dPanel")?.scrollIntoView({behavior:"smooth",block:"start"}),60);return()=>clearTimeout(timer);}
+    return undefined;
+  },[selectedBotId]);
+
+  useEffect(() => {
+    if (kind !== "finance") return undefined;
+    const external=/^https?:\/\//i.test(API),origin=external?API:window.location.origin,path=external?"/socket.io":`${API.replace(/\/$/,"")}/socket.io`;
+    const socket=connectSocket(origin,{path,transports:["websocket","polling"],reconnection:true,reconnectionDelay:1000,reconnectionDelayMax:5000});
+    socket.on("connect",()=>setStreamConnected(true));
+    socket.on("disconnect",()=>setStreamConnected(false));
+    socket.on("state",live=>{setSummary(live);setUpdated(new Date());setFeed([...(live?.opportunities||[]),...(live?.executions||[])]);});
+    socket.on("opportunity",row=>setFeed(currentFeed=>[row,...currentFeed.filter(item=>item.id!==row?.id)].slice(0,100)));
+    socket.on("heartbeat",row=>setSummary(currentState=>currentState?{...currentState,bots:(currentState.bots||[]).map(bot=>bot.id===row?.id?{...bot,heartbeat:row.heartbeat,status:row.status}:bot)}:currentState));
+    return()=>{socket.disconnect();setStreamConnected(false);};
+  },[]);
 
   useEffect(() => {
     if (!window.ethereum) return undefined;
@@ -131,6 +153,11 @@ function App() {
 
   const agentList = kind === "finance" ? (summary?.bots || []) : (summary?.agents || health?.agentsTotal ? (summary?.agents || Array.from({length: health?.agentsTotal || 10}, (_, i) => ({id: i + 1, name: `Agent ${String(i + 1).padStart(2, "0")}`, enabled: true}))) : []);
   const financeBots = summary?.bots || [];
+  const financeTelemetry = useMemo(() => {
+    const readiness = new Map((summary?.infrastructure?.readiness?.bots || []).map(row => [row.id, row]));
+    const promotion = new Map((summary?.infrastructure?.performance?.promotion?.strategies || []).map(row => [row.strategyId, row]));
+    return financeBots.map(bot => ({...bot, readiness:readiness.get(bot.id) || null, promotion:promotion.get(bot.id) || null, uiBusy:busyBot===bot.id, globalKillSwitch:Boolean(summary?.risk?.globalKillSwitch)}));
+  }, [financeBots, summary?.infrastructure?.readiness, summary?.infrastructure?.performance?.promotion, summary?.risk?.globalKillSwitch, busyBot]);
   const agentsTotal = health?.agentsTotal ?? financeBots.length;
   const agentsOnline = health?.agentsOnline ?? financeBots.filter(bot => bot.active && !["PAUSED", "ERROR", "OFFLINE"].includes(String(bot.status || "").toUpperCase())).length;
   const processed = health?.processed ?? health?.eventsProcessed ?? ((summary?.opportunities?.length || 0) + (summary?.executions?.length || 0));
@@ -229,7 +256,7 @@ function App() {
     </aside>
 
     <main className="workspace">
-      <header className="topbar"><div className="crumb"><span>AEGIS /</span> {current.name.toUpperCase()}</div><div className="topActions"><span className="mode"><i/> PAPER MODE</span><span className="updated">{updated ? `SYNC ${updated.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})}` : "SYNCING"}</span>{kind === "finance" && <button className="walletButton" onClick={connectMetaMask} disabled={walletBusy}><WalletCards size={14}/>{wallet.address ? `${shortAddress(wallet.address)} · ${wallet.chainName}` : walletBusy ? "CONNECTING…" : "CONNECT METAMASK"}</button>}<button className="refresh" onClick={refresh} disabled={loading}><RefreshCw size={15} className={loading ? "spin" : ""}/> Refresh</button></div></header>
+      <header className="topbar"><div className="crumb"><span>AEGIS /</span> {current.name.toUpperCase()}</div><div className="topActions"><span className="mode"><i/> PAPER MODE</span>{kind==="finance"&&<span className={`streamBadge ${streamConnected?"connected":"fallback"}`}><i/>{streamConnected?"LIVE STREAM":"POLL BACKUP"}</span>}<span className="updated">{updated ? `SYNC ${updated.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})}` : "SYNCING"}</span>{kind === "finance" && <button className="walletButton" onClick={connectMetaMask} disabled={walletBusy}><WalletCards size={14}/>{wallet.address ? `${shortAddress(wallet.address)} · ${wallet.chainName}` : walletBusy ? "CONNECTING…" : "CONNECT METAMASK"}</button>}<button className="refresh" onClick={refresh} disabled={loading}><RefreshCw size={15} className={loading ? "spin" : ""}/> Refresh</button></div></header>
 
       <section className="hero"><div className="heroCopy"><div className="eyebrow"><span/><b>{current.kicker}</b><em>/{kind.toUpperCase()}</em></div><h1>{current.name}<br/><span>thinks in signals.</span></h1><p>{current.desc}</p><div className="heroButtons"><button className="primary" onClick={refresh}><Radio size={16}/> Sync intelligence <ArrowUpRight size={14}/></button><a href="/" className="ghost">Master Command <ChevronRight size={15}/></a></div></div><div className="heroOrb"><div className="orbit o1"/><div className="orbit o2"/><div className="orbit o3"/><div className="core"><Icon size={35}/></div><span className="orbLabel">{status}<small>CORE STATUS</small></span></div></section>
 
@@ -237,7 +264,7 @@ function App() {
 
       <section className="stats"><Stat icon={Gauge} label="CORE STATUS" value={status} sub={`${agentsOnline}/${agentsTotal} agents online`} live={status === "ONLINE"}/><Stat icon={current.icon} label={current.metric} value={metric} sub={kind === "saas" ? `${kpis.growthRate || 0}% growth velocity` : kind === "finance" ? "capital in paper mode" : "updated from live API"}/><Stat icon={Bot} label="AGENT THROUGHPUT" value={processed} sub="events processed"/><Stat icon={ShieldCheck} label="RISK POSTURE" value={riskPosture} sub={riskSub}/>)</section>
 
-      <section className="contentGrid"><div className="panel signalPanel"><PanelHead eyebrow="01 / SIGNAL FIELD" title="The system is watching." action="LIVE FEED"/><div className="signalChart"><div className="chartGrid"/>{Array.from({length: 36}, (_, i) => <i key={i} style={{height: `${18 + ((i * 17 + (i % 5) * 13) % 65)}%`, animationDelay: `${i * 0.04}s`}}/>)}<div className="chartLine"/></div><div className="chartFoot"><span><i className="legend purple"/> Signal density</span><span><i className="legend mint"/> Opportunity flow</span><b>{loading ? "SCANNING" : "NOMINAL"}</b></div></div><div className="panel pulsePanel"><PanelHead eyebrow="02 / VITALS" title="Pulse"/><div className="pulseList"><Pulse label="Availability" value={status === "ONLINE" ? "99.9%" : "0%"} color="mint"/><Pulse label="Agents online" value={`${health?.agentsOnline || 0}/${health?.agentsTotal || 0}`} color="purple"/><Pulse label="Event velocity" value={`${Math.max(1, feed.length * 3)}/m`} color="orange"/><Pulse label="Mode" value="PAPER" color="pink"/>{kind === "finance" && <Pulse label="Liquidation Lab" value={`${kpis.lab?.lab?.candidates || 0} candidates`} color="orange"/>}</div><div className="pulseFoot"><Globe2 size={14}/> Local intelligence mesh <span>●</span></div></div></section>
+      <section className="contentGrid"><div className="panel signalPanel"><PanelHead eyebrow="01 / SIGNAL FIELD" title="The system is watching." action="LIVE FEED"/><div className="signalChart"><div className="chartGrid"/>{Array.from({length: 36}, (_, i) => <i key={i} style={{height: `${18 + ((i * 17 + (i % 5) * 13) % 65)}%`, animationDelay: `${i * 0.04}s`}}/>)}<div className="chartLine"/></div><div className="chartFoot"><span><i className="legend purple"/> Signal density</span><span><i className="legend mint"/> Opportunity flow</span><b>{loading ? "SCANNING" : "NOMINAL"}</b></div></div><div className="panel pulsePanel"><PanelHead eyebrow="02 / VITALS" title="Pulse"/><div className="pulseList"><Pulse label="Availability" value={status === "ONLINE" ? "99.9%" : "0%"} color="mint"/><Pulse label="Agents online" value={`${health?.agentsOnline || 0}/${health?.agentsTotal || 0}`} color="purple"/><Pulse label="Event velocity" value={`${Math.max(1, feed.length * 3)}/m`} color="orange"/><Pulse label="Mode" value="PAPER" color="pink"/>{kind === "finance" && <><Pulse label="Paper readiness" value={`${health?.readiness?.score || 0}/100`} color="mint"/><Pulse label="Liquidation Lab" value={`${kpis.lab?.lab?.candidates || 0} candidates`} color="orange"/></>}</div><div className="pulseFoot"><Globe2 size={14}/> {kind === "finance" ? `${health?.readiness?.label || "VALIDATING"} · real-quote evidence gate` : "Local intelligence mesh"} <span>●</span></div></div></section>
 
       <section className="panel meshPanel"><PanelHead eyebrow="03 / AGENT MESH" title="A constellation of specialized minds." action={`${agentList.length || 0} NODES`}/><div className="agentGrid">{agentList.slice(0, 12).map((agent, i) => <div className={`agentNode ${agent.enabled === false ? "paused" : ""}`} key={agent.id || i}><span className="nodeIcon"><Bot size={15}/></span><div><b>{agent.name || `Agent ${i + 1}`}</b><small>{agent.enabled === false ? "paused" : i % 3 === 0 ? "scanning signal" : "standing by"}</small></div><i className="nodeStatus"/></div>)}</div></section>
 
@@ -254,7 +281,7 @@ function App() {
       {kind === "services" && <ServicesControlPanel api={API} agents={summary?.agents || []} summary={summary} selectedAgentId={selectedBotId} onSelect={setSelectedBotId}/>} 
 
       {kind === "finance" && <CentralFinanceBrainPanel data={centralAgent} busy={centralBusy} onRun={runCentralAgent} mediaApi="http://localhost:8804" onSpeakingChange={setBrainSpeaking}/>} 
-      {kind === "finance" && <FinanceBrainOrbit bots={summary?.bots || []} central={centralAgent} speaking={brainSpeaking} onSelect={setSelectedBotId}/>} 
+      {kind === "finance" && <FinanceBrainOrbit bots={financeTelemetry} central={centralAgent} speaking={brainSpeaking} streamConnected={streamConnected} selectedBotId={selectedBotId} onSelect={setSelectedBotId}/>}
       {kind === "finance" && <FinanceBotConfiguration bots={summary?.bots || []} state={summary} busyBot={busyBot} onAction={financeAction} onSelect={setSelectedBotId}/>} 
       {kind === "finance" && <FinanceIntegrationsPanel api={API}/>} 
 
@@ -262,7 +289,7 @@ function App() {
 
       <footer><span><i className="onlineDot"/> AEGIS INTER-BRAIN PROTOCOL · {current.name}</span><span>SAFE BY DEFAULT <ShieldCheck size={13}/></span></footer>
     </main>
-    {kind === "finance" && selectedBotId && <BotControlErrorBoundary onClose={() => setSelectedBotId(null)}><BotControlModal api={API} bot={(summary?.bots || []).find(item => item.id === selectedBotId) || {id:selectedBotId,name:selectedBotId,active:false,status:"UNKNOWN"}} onClose={() => setSelectedBotId(null)} onScan={id => financeAction(id, "scan")} /></BotControlErrorBoundary>}
+    {kind === "finance" && selectedBotId && <BotControlErrorBoundary onClose={() => setSelectedBotId(null)}><BotControlModal api={API} bot={financeTelemetry.find(item => item.id === selectedBotId) || {id:selectedBotId,name:selectedBotId,active:false,status:"UNKNOWN"}} onClose={() => setSelectedBotId(null)} onScan={id => financeAction(id, "scan")} onToggle={id => financeAction(id, "toggle")}/></BotControlErrorBoundary>}
   </div>
 }
 
@@ -438,8 +465,8 @@ async function speakBrainReply(text,{brain="finance",mediaApi="http://localhost:
 
 const BRAIN_PREVIEW_URL = import.meta.env.VITE_FINANCE_BRAIN_PREVIEW_URL || "https://cdn.muapi.ai/outputs/generated/2fc3c576b7d84c0a85e6046aec421db6.png";
 
-function FinanceBrainOrbit({bots = [], central, speaking, onSelect}) {
-  return <section className={"panel brain3dPanel " + (speaking ? "speaking" : "")}><div className="brain3dHeader"><div><small>03.6 / FINANCE BRAIN · COMMAND CHAMBER</small><h2>El sistema operativo de capital.</h2><p>Un núcleo neural coordina dieciséis módulos especializados conectados por rutas de señal. Arrastra para explorar, usa el botón derecho para desplazar y la rueda para acercar.</p></div><span className="brain3dLive"><i/>{speaking ? "VOICE STREAMING" : "NEURAL CORE · ONLINE"}</span></div><Brain3DViewport bots={bots} central={central} onSelect={onSelect}/></section>;
+function FinanceBrainOrbit({bots = [], central, speaking, streamConnected, selectedBotId, onSelect}) {
+  return <section className={"panel brain3dPanel " + (speaking ? "speaking" : "")}><div className="brain3dHeader"><div><small>03.6 / FINANCE BRAIN · COMMAND CHAMBER</small><h2>El sistema operativo de capital.</h2><p>Un núcleo neural coordina dieciséis módulos especializados conectados por rutas de señal. Selecciona un nodo para fijarlo, enfocar sus conexiones y abrir su cockpit operativo.</p></div><span className={`brain3dLive ${streamConnected?"streaming":""}`}><i/>{speaking ? "VOICE STREAMING" : selectedBotId ? "CONTROL LINK · LOCKED" : streamConnected ? "TELEMETRY STREAM · LIVE" : "NEURAL CORE · POLLING"}</span></div><Brain3DViewport bots={bots} central={central} selectedBotId={selectedBotId} onSelect={onSelect}/></section>;
 }
 
 function CommerceBrainOrbit({bots = [], speaking, onSelect}) {
@@ -653,17 +680,20 @@ function botProfit24h(bot) {
   return Number(bot?.pnl24h ?? bot?.profit24hUsd ?? bot?.realizedPnl24h ?? 0) || 0;
 }
 
-function Brain3DViewport({bots = [], central, onSelect}) {
-  const mountRef = useRef(null), shellRef = useRef(null), cameraRef = useRef(null), controlsRef = useRef(null), selectRef = useRef(onSelect), hoverRef = useRef(null);
-  const [loadStatus, setLoadStatus] = useState("online"), [fullscreen, setFullscreen] = useState(false), [hovered, setHovered] = useState(null);
-  selectRef.current = onSelect;
+function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect}) {
+  const mountRef = useRef(null), shellRef = useRef(null), cameraRef = useRef(null), controlsRef = useRef(null), selectRef = useRef(onSelect), hoverRef = useRef(null), selectedRef = useRef(selectedBotId), botsRef = useRef(bots), focusDistanceRef = useRef(3.25);
+  const [loadStatus, setLoadStatus] = useState("online"), [fullscreen, setFullscreen] = useState(false), [hovered, setHovered] = useState(null), [focusedBotId, setFocusedBotId] = useState(selectedBotId);
+  const effectiveFocusedBotId = focusedBotId || selectedBotId;
+  selectRef.current = onSelect; selectedRef.current = effectiveFocusedBotId; botsRef.current = bots;
+  const botSignature = bots.map(bot => bot.id).join("|");
+  useEffect(() => { if (selectedBotId) { setFocusedBotId(selectedBotId); focusDistanceRef.current = 3.25; } }, [selectedBotId]);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return undefined;
-    const records = bots.length ? bots : Array.from({length: 16}, (_, index) => ({id: "bot-" + (index + 1), name: "BOT " + String(index + 1).padStart(2, "0"), status: "WAITING", active: false}));
+    const records = botsRef.current.length ? botsRef.current : Array.from({length: 16}, (_, index) => ({id: "bot-" + (index + 1), name: "BOT " + String(index + 1).padStart(2, "0"), status: "WAITING", active: false}));
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2("#01040b", .026);
+    scene.fog = new THREE.FogExp2("#01040b", .021);
     const camera = new THREE.PerspectiveCamera(35, 1, .1, 100);
     camera.position.set(0, .18, 9.6);
     cameraRef.current = camera;
@@ -673,8 +703,9 @@ function Brain3DViewport({bots = [], central, onSelect}) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
+    renderer.toneMappingExposure = 1.06;
     renderer.domElement.className = "brain3dCanvas";
+    renderer.domElement.tabIndex = 0;
     renderer.domElement.setAttribute("aria-label", `${brainTheme.name} 3D command chamber with ${records.length} connected modules`);
     mount.appendChild(renderer.domElement);
 
@@ -683,15 +714,15 @@ function Brain3DViewport({bots = [], central, onSelect}) {
     controls.dampingFactor = .075;
     controls.enablePan = true;
     controls.screenSpacePanning = true;
-    controls.minDistance = 3.15;
+    controls.minDistance = 2.35;
     controls.maxDistance = 16;
     controls.target.set(0, .05, 0);
     controlsRef.current = controls;
-    scene.add(new THREE.HemisphereLight("#c9faff", "#030719", 1.45));
-    const key = new THREE.PointLight("#36eaff", 18, 16, 2);
+    scene.add(new THREE.HemisphereLight("#c9faff", "#030719", 1.05));
+    const key = new THREE.PointLight("#36eaff", 12, 16, 2);
     key.position.set(3.4, 4.2, 4.5);
     scene.add(key);
-    const fill = new THREE.PointLight("#785dff", 12, 15, 2);
+    const fill = new THREE.PointLight("#785dff", 8, 15, 2);
     fill.position.set(-4, -1.8, 2.5);
     scene.add(fill);
     const warm = new THREE.PointLight("#ff9e6b", 5, 10, 2);
@@ -715,8 +746,8 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       gradient.addColorStop(1, "rgba(0, 12, 35, 0)");
       context.fillStyle = gradient; context.fillRect(0, 0, 256, 256);
       const texture = new THREE.CanvasTexture(canvas);
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false}));
-      sprite.scale.set(size, size, 1); sprite.userData.texture = texture;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false}));
+      sprite.scale.set(size, size, 1); sprite.userData.texture = texture; sprite.userData.baseOpacity = opacity;
       return sprite;
     };
     const aura = makeAura(brainTheme.color, 3.4, .55);
@@ -742,6 +773,18 @@ function Brain3DViewport({bots = [], central, onSelect}) {
     glow.position.y = -1.81;
     world.add(glow);
 
+    const softParticleCanvas = document.createElement("canvas");
+    softParticleCanvas.width = 64; softParticleCanvas.height = 64;
+    const softParticleContext = softParticleCanvas.getContext("2d");
+    const softParticleGradient = softParticleContext.createRadialGradient(32, 32, 1, 32, 32, 31);
+    softParticleGradient.addColorStop(0, "rgba(255,255,255,.88)");
+    softParticleGradient.addColorStop(.2, "rgba(255,255,255,.5)");
+    softParticleGradient.addColorStop(.55, "rgba(255,255,255,.13)");
+    softParticleGradient.addColorStop(1, "rgba(255,255,255,0)");
+    softParticleContext.fillStyle = softParticleGradient;
+    softParticleContext.fillRect(0, 0, 64, 64);
+    const softParticleTexture = new THREE.CanvasTexture(softParticleCanvas);
+
     const stars = new THREE.BufferGeometry();
     const starPositions = new Float32Array(900 * 3);
     for (let index = 0; index < starPositions.length; index += 3) {
@@ -753,7 +796,32 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       starPositions[index + 2] = radius * Math.sin(phi) * Math.sin(theta);
     }
     stars.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    scene.add(new THREE.Points(stars, new THREE.PointsMaterial({color: "#6beaff", size: .014, transparent: true, opacity: .62, blending: THREE.AdditiveBlending})));
+    scene.add(new THREE.Points(stars, new THREE.PointsMaterial({map: softParticleTexture, color: "#6beaff", size: .075, transparent: true, opacity: .26, alphaTest: .01, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true})));
+
+    const volumeGroup = new THREE.Group();
+    world.add(volumeGroup);
+    [
+      {color: brainTheme.color, size: 5.4, opacity: .075, position: [-.65, .35, -.75]},
+      {color: "rgba(104, 79, 255, .9)", size: 4.7, opacity: .065, position: [.9, -.35, -.35]},
+      {color: "rgba(37, 220, 244, .85)", size: 4.2, opacity: .055, position: [.15, .9, .5]}
+    ].forEach(layer => {
+      const mist = makeAura(layer.color, layer.size, layer.opacity);
+      mist.position.set(...layer.position);
+      volumeGroup.add(mist);
+    });
+    const volumeDustGeometry = new THREE.BufferGeometry();
+    const volumeDustPositions = new Float32Array(240 * 3);
+    for (let index = 0; index < volumeDustPositions.length; index += 3) {
+      const radius = 1.35 + Math.random() * 2.5;
+      const theta = Math.random() * Math.PI * 2;
+      const vertical = (Math.random() - .5) * 2.8;
+      volumeDustPositions[index] = Math.cos(theta) * radius;
+      volumeDustPositions[index + 1] = vertical;
+      volumeDustPositions[index + 2] = Math.sin(theta) * radius * .72;
+    }
+    volumeDustGeometry.setAttribute("position", new THREE.BufferAttribute(volumeDustPositions, 3));
+    const volumeDust = new THREE.Points(volumeDustGeometry, new THREE.PointsMaterial({map: softParticleTexture, color: "#65dff2", size: .095, transparent: true, opacity: .12, alphaTest: .005, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true}));
+    volumeGroup.add(volumeDust);
 
     const lanes = new THREE.Group();
     lanes.rotation.x = .18;
@@ -774,7 +842,7 @@ function Brain3DViewport({bots = [], central, onSelect}) {
     const rayTargets = [];
     const nodeRecords = [];
     const palette = ["#55e8ff", "#a88aff", "#66e4ae", "#ffb36d", "#ff7db3", "#7bafff"];
-    const statusColor = bot => { const status = String(bot.status || (bot.active ? "ACTIVE" : "PAUSED")).toLowerCase(); if (status.includes("attention") || status.includes("block") || status.includes("error") || status.includes("degraded") || status.includes("review")) return "#ff789b"; return status.includes("scan") || status.includes("ready") || status.includes("active") ? "#5be6b0" : "#f2bd69"; };
+    const statusColor = bot => { if(bot?.uiBusy)return "#55e8ff";const status = String(bot.readiness?.runtime?.stage || bot.readiness?.stage || bot.status || (bot.active ? "ACTIVE" : "PAUSED")).toLowerCase(); if (status.includes("recovery") || status.includes("attention") || status.includes("block") || status.includes("error") || status.includes("degraded") || status.includes("review")) return "#ff789b"; return status.includes("running") || status.includes("paper_ready") || status.includes("proven") || status.includes("scan") || status.includes("ready") || status.includes("active") ? "#5be6b0" : "#f2bd69"; };
     const ICON_TYPE = {
       liquidation: "bolt", arbitrage: "cycle", "solana-radar": "solana", volatility: "wave",
       momentum: "trend", perpetuals: "percent", polymarket: "polymarket", "smart-money": "pulse",
@@ -875,46 +943,52 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       const type = ICON_TYPE[bot.id] || "hub";
       const canvas = document.createElement("canvas"); canvas.width = 220; canvas.height = 220;
       const ctx = canvas.getContext("2d"); const cx = 110, cy = 110;
-      const glow = ctx.createRadialGradient(cx, cy, 8, cx, cy, 105);
-      glow.addColorStop(0, color + "55"); glow.addColorStop(1, color + "00");
-      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, 105, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.globalAlpha = .85;
+      const plateGradient = ctx.createRadialGradient(cx - 22, cy - 28, 6, cx, cy, 96);
+      plateGradient.addColorStop(0, "rgba(25, 38, 58, .98)");
+      plateGradient.addColorStop(.55, "rgba(6, 14, 30, .98)");
+      plateGradient.addColorStop(1, "rgba(2, 7, 18, .96)");
+      ctx.fillStyle = plateGradient;
       ctx.beginPath();
-      for (let i = 0; i < 6; i += 1) { const a = Math.PI / 6 + i * Math.PI / 3; const x = cx + Math.cos(a) * 92, y = cy + Math.sin(a) * 92; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      for (let i = 0; i < 6; i += 1) { const a = Math.PI / 6 + i * Math.PI / 3; const x = cx + Math.cos(a) * 87, y = cy + Math.sin(a) * 87; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.globalAlpha = .82;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i += 1) { const a = Math.PI / 6 + i * Math.PI / 3; const x = cx + Math.cos(a) * 88, y = cy + Math.sin(a) * 88; i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
       ctx.closePath(); ctx.stroke(); ctx.globalAlpha = 1;
-      ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 24;
-      drawBotIcon(ctx, cx, cy, 58, type, color);
-      ctx.restore();
-      ctx.save(); ctx.shadowColor = "#ffffff"; ctx.shadowBlur = 7; ctx.globalAlpha = .92;
-      drawBotIcon(ctx, cx, cy, 50, type, "#f8feff");
+      ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 7;
+      drawBotIcon(ctx, cx, cy, 52, type, color);
       ctx.restore();
       const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending}));
-      sprite.scale.set(.3, .3, 1); sprite.userData.texture = texture;
+      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, depthWrite: false, blending: THREE.NormalBlending, toneMapped: false}));
+      sprite.scale.set(.31, .31, 1); sprite.userData.texture = texture;
       return sprite;
     };
-    const createArtifact = (index, color, bot) => {
+    const createArtifact = (index, identityColor, stateColor, bot) => {
       const artifact = new THREE.Group();
-      const halo = new THREE.Mesh(new THREE.TorusGeometry(.17, .004, 8, 64), new THREE.MeshBasicMaterial({color, transparent: true, opacity: .6, blending: THREE.AdditiveBlending}));
+      const halo = new THREE.Mesh(new THREE.TorusGeometry(.17, .004, 8, 64), new THREE.MeshBasicMaterial({color: identityColor, transparent: true, opacity: .42, blending: THREE.AdditiveBlending, depthWrite: false}));
       halo.rotation.x = Math.PI / 2; halo.position.y = -.16; artifact.add(halo);
-      const core = makeAura(color, .36, .7); core.position.y = .02; artifact.add(core);
-      const frame = new THREE.Mesh(new THREE.TorusGeometry(.155, .007, 8, 56), new THREE.MeshBasicMaterial({color, transparent: true, opacity: .85, blending: THREE.AdditiveBlending})); artifact.add(frame);
-      const frame2 = new THREE.Mesh(new THREE.TorusGeometry(.195, .004, 8, 48), new THREE.MeshBasicMaterial({color: palette[(index + 2) % palette.length], transparent: true, opacity: .5, blending: THREE.AdditiveBlending})); frame2.rotation.x = Math.PI / 2.4; artifact.add(frame2);
-      const plate = makeIconPlate(bot, color); plate.position.y = .01; artifact.add(plate);
-      for (let spoke = 0; spoke < 3; spoke += 1) { const dot = new THREE.Mesh(new THREE.SphereGeometry(.013, 8, 8), new THREE.MeshBasicMaterial({color, transparent: true, opacity: .9, blending: THREE.AdditiveBlending})); const a = spoke * Math.PI * 2 / 3; dot.position.set(Math.cos(a) * .17, .01 + Math.sin(a * 2) * .035, Math.sin(a) * .17); artifact.add(dot); }
-      artifact.userData.frame = frame; artifact.userData.frame2 = frame2; artifact.userData.plate = plate;
+      const core = makeAura(identityColor, .34, .16); core.position.y = .02; artifact.add(core);
+      const frameGlow = new THREE.Mesh(new THREE.TorusGeometry(.158, .014, 8, 64), new THREE.MeshBasicMaterial({color: stateColor, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false})); artifact.add(frameGlow);
+      const frame = new THREE.Mesh(new THREE.TorusGeometry(.158, .006, 8, 64), new THREE.MeshBasicMaterial({color: stateColor, transparent: true, opacity: .82, blending: THREE.AdditiveBlending, depthWrite: false})); artifact.add(frame);
+      const frame2Glow = new THREE.Mesh(new THREE.TorusGeometry(.203, .011, 8, 56), new THREE.MeshBasicMaterial({color: identityColor, transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false})); frame2Glow.rotation.x = Math.PI / 2.4; artifact.add(frame2Glow);
+      const frame2 = new THREE.Mesh(new THREE.TorusGeometry(.203, .0045, 8, 56), new THREE.MeshBasicMaterial({color: identityColor, transparent: true, opacity: .66, blending: THREE.AdditiveBlending, depthWrite: false})); frame2.rotation.x = Math.PI / 2.4; artifact.add(frame2);
+      const plate = makeIconPlate(bot, identityColor); plate.position.y = .01; artifact.add(plate);
+      for (let spoke = 0; spoke < 3; spoke += 1) { const dot = new THREE.Mesh(new THREE.SphereGeometry(.011, 8, 8), new THREE.MeshBasicMaterial({color: identityColor, transparent: true, opacity: .72, blending: THREE.AdditiveBlending})); const a = spoke * Math.PI * 2 / 3; dot.position.set(Math.cos(a) * .17, .01 + Math.sin(a * 2) * .035, Math.sin(a) * .17); artifact.add(dot); }
+      artifact.userData.frame = frame; artifact.userData.frameGlow = frameGlow; artifact.userData.frame2 = frame2; artifact.userData.frame2Glow = frame2Glow; artifact.userData.plate = plate;
       return artifact;
     };
     const makePnlLabel = (amount) => {
+      const positive = amount > .005,negative=amount < -.005,color=positive?"#6dffc1":negative?"#ff789b":"#9fb0c9",border=positive?"rgba(92, 255, 191, .9)":negative?"rgba(255, 120, 155, .9)":"rgba(151, 171, 201, .65)",background=positive?"rgba(3, 31, 30, .88)":negative?"rgba(43, 9, 25, .9)":"rgba(10, 20, 38, .9)";
       const canvas = document.createElement("canvas");
       canvas.width = 360; canvas.height = 80;
       const context = canvas.getContext("2d");
       context.clearRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = "rgba(3, 31, 30, .88)"; context.strokeStyle = "rgba(92, 255, 191, .9)"; context.lineWidth = 2; context.beginPath(); context.roundRect(3, 3, 354, 74, 18); context.fill(); context.stroke();
-      context.fillStyle = "#6dffc1"; context.font = "700 26px DM Mono, monospace";
+      context.fillStyle = background; context.strokeStyle = border; context.lineWidth = 2; context.beginPath(); context.roundRect(3, 3, 354, 74, 18); context.fill(); context.stroke();
+      context.fillStyle = color; context.font = "700 26px DM Mono, monospace";
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.fillText("+" + amount.toFixed(2) + " USD", 180, 40);
+      context.fillText(`${positive ? "+" : ""}${amount.toFixed(2)} USD`, 180, 40);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map: texture, transparent: true, opacity: .98, depthWrite: false, blending: THREE.AdditiveBlending}));
@@ -944,13 +1018,12 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       node.position.copy(position);
       node.userData.bot = bot;
       node.userData.phase = index * .63; node.userData.anchor = position.clone();
-      const color = statusColor(bot); const artifact = createArtifact(index, color, bot); node.add(artifact); node.add(makeNameLabel(bot, color));
-      const pnl = botProfit24h(bot);
-      if (pnl > .005) node.add(makePnlLabel(pnl));
+      const color = statusColor(bot), identityColor = palette[index % palette.length]; const artifact = createArtifact(index, identityColor, color, bot); node.add(artifact); node.add(makeNameLabel(bot, color));
+      const pnl = botProfit24h(bot),pnlLabel=makePnlLabel(pnl);node.add(pnlLabel);node.userData.lastPnl=pnl;
       const routePoints = [new THREE.Vector3(0, .12, 0), new THREE.Vector3(position.x * .42, position.y * .7 + .12, position.z * .42), position.clone().setY(position.y - .08)];
       const route = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), new THREE.LineBasicMaterial({color, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false})); routeGroup.add(route);
-      const pulse = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 8), new THREE.MeshBasicMaterial({color, transparent: true, opacity: .95, blending: THREE.AdditiveBlending})); routeGroup.add(pulse);
-      lanes.add(node); nodeRecords.push({node, artifact, routePoints, pulse, speed: .08 + (index % 4) * .018, color});
+      const pulse = new THREE.Sprite(new THREE.SpriteMaterial({map: softParticleTexture, color, transparent: true, opacity: .68, blending: THREE.AdditiveBlending, depthWrite: false})); pulse.scale.set(.11, .11, 1); routeGroup.add(pulse);
+      lanes.add(node); nodeRecords.push({botId:bot.id,node,artifact,pnlLabel,route,routePoints,pulse,speed: .08 + (index % 4) * .018,color,identityColor});
       node.traverse(child => { if (child.isMesh || child.isSprite) { child.userData.bot = bot; rayTargets.push(child); } });
       nodePositions.push({position, color});
     });
@@ -987,15 +1060,18 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       const key = i < nearest ? `${i}-${nearest}` : `${nearest}-${i}`;
       if (boltPairs.has(key)) return;
       boltPairs.add(key);
-      const material = new THREE.LineBasicMaterial({color: "#cdf4ff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false});
+      const material = new THREE.LineBasicMaterial({color: "#e3faff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false});
       const line = new THREE.Line(new THREE.BufferGeometry(), material);
-      boltGroup.add(line);
-      bolts.push({line, a: entry.position, b: nodePositions[nearest].position, flashAt: Math.random() * 3, fadeEnd: 0});
+      const boltGlow = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({color: i % 2 ? "#806cff" : "#39dcff", transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false}));
+      boltGlow.visible = false;
+      boltGroup.add(boltGlow, line);
+      bolts.push({line, glow:boltGlow, a: entry.position, b: nodePositions[nearest].position, flashAt: Math.random() * 3, fadeEnd: 0});
     });
 
     const pointer = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
-    const lastPointer = {x: 0, y: 0};
+    const lastPointer = {x: 0, y: 0},pointerDown={x:0,y:0};
+    let lastClickedBot = null;
     const handlePointerMove = event => {
       lastPointer.x = event.clientX;
       lastPointer.y = event.clientY;
@@ -1004,22 +1080,51 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
       const hit = raycaster.intersectObjects(rayTargets, false)[0];
-      const bot = hit?.object?.userData?.bot || null;
+      const hitBot = hit?.object?.userData?.bot || null;
+      const bot = botsRef.current.find(item => item.id === hitBot?.id) || hitBot;
       hoverRef.current = bot;
       setHovered(current => current?.id === bot?.id ? current : bot);
     };
     const handlePointerLeave = () => { hoverRef.current = null; setHovered(null); };
-    const handleClick = () => {
+    const handlePointerDown=event=>{pointerDown.x=event.clientX;pointerDown.y=event.clientY;};
+    const pickBot = event => {
       const rect = renderer.domElement.getBoundingClientRect();
-      pointer.x = ((lastPointer.x - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((lastPointer.y - rect.top) / rect.height) * 2 + 1;
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const bot = raycaster.intersectObjects(rayTargets, false)[0]?.object?.userData?.bot;
-      if (bot?.id) selectRef.current?.(bot.id);
+      return raycaster.intersectObjects(rayTargets, false)[0]?.object?.userData?.bot || null;
+    };
+    const handleClick = event => {
+      if(Math.hypot(event.clientX-pointerDown.x,event.clientY-pointerDown.y)>7)return;
+      const bot = pickBot(event);
+      lastClickedBot = bot;
+      setFocusedBotId(bot?.id || null);
+      selectedRef.current = bot?.id || null;
+      if (bot?.id) focusDistanceRef.current = 3.25;
+    };
+    const handleDoubleClick = event => {
+      event.preventDefault();
+      const bot = pickBot(event) || lastClickedBot;
+      if (!bot?.id) return;
+      setFocusedBotId(bot.id);
+      selectedRef.current = bot.id;
+      focusDistanceRef.current = 3.25;
+      selectRef.current?.(bot.id);
+    };
+    const handleKeyDown = event => {
+      if (!['ArrowLeft','ArrowRight','Enter',' '].includes(event.key)) return;
+      event.preventDefault();
+      const rows=botsRef.current.length?botsRef.current:records,currentIndex=Math.max(0,rows.findIndex(bot=>bot.id===selectedRef.current));
+      if(event.key==='Enter'||event.key===' '){if(rows[currentIndex]?.id)selectRef.current?.(rows[currentIndex].id);return;}
+      const step=event.key==='ArrowRight'?1:-1,next=(currentIndex+step+rows.length)%rows.length;
+      if(rows[next]?.id){setFocusedBotId(rows[next].id);selectedRef.current=rows[next].id;focusDistanceRef.current=3.25;}
     };
     renderer.domElement.addEventListener("pointermove", handlePointerMove);
+    renderer.domElement.addEventListener("pointerdown", handlePointerDown);
     renderer.domElement.addEventListener("pointerleave", handlePointerLeave);
     renderer.domElement.addEventListener("click", handleClick);
+    renderer.domElement.addEventListener("dblclick", handleDoubleClick);
+    renderer.domElement.addEventListener("keydown", handleKeyDown);
 
     const resize = () => {
       const width = Math.max(320, mount.clientWidth);
@@ -1029,9 +1134,11 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       renderer.setSize(width, height, false);
     };
     window.addEventListener("resize", resize);
+    const resizeObserver=new ResizeObserver(resize);resizeObserver.observe(mount);
     resize();
     let frame;
     const clock = new THREE.Clock();
+    const focusPoint = new THREE.Vector3(), focusDirection = new THREE.Vector3(), desiredCamera = new THREE.Vector3(), chamberCenter = new THREE.Vector3(0, .05, 0);
     const animate = () => {
       frame = requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
@@ -1040,31 +1147,62 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       brainCore.material.opacity = .92 + Math.sin(elapsed * 1.1) * .06;
       const coreBreath = 1 + Math.sin(elapsed * .7) * .012;
       brainCore.scale.set(3 * coreBreath, 3 * coreBreath, 1);
-      lanes.rotation.y = elapsed * .045;
+      volumeGroup.rotation.y = -elapsed * .018;
+      volumeDust.rotation.y = elapsed * .026;
+      volumeDust.material.opacity = .09 + Math.sin(elapsed * .42) * .02;
+      volumeGroup.children.forEach((layer,index) => {
+        if (!layer.isSprite) return;
+        const base = layer.userData.baseOpacity || .05;
+        layer.material.opacity = base * (1 + Math.sin(elapsed * (.28 + index * .035) + index) * .18);
+      });
+      lanes.rotation.y = elapsed * .024;
       bolts.forEach(bolt => {
         if (elapsed >= bolt.flashAt) {
+          const points = buildBoltPoints(bolt.a, bolt.b, 8, .17);
           bolt.line.geometry.dispose();
-          bolt.line.geometry = new THREE.BufferGeometry().setFromPoints(buildBoltPoints(bolt.a, bolt.b, 7, .16));
-          bolt.fadeEnd = elapsed + .22;
+          bolt.line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+          bolt.glow.geometry.dispose();
+          bolt.glow.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 20, .013, 4, false);
+          bolt.fadeEnd = elapsed + .3;
           bolt.flashAt = elapsed + 1.3 + Math.random() * 2.6;
         }
         const remaining = bolt.fadeEnd - elapsed;
-        bolt.line.material.opacity = remaining > 0 ? Math.max(0, remaining / .22) * .85 : 0;
+        const flash = remaining > 0 ? Math.max(0, remaining / .3) : 0;
+        bolt.line.material.opacity = flash * .72;
+        bolt.glow.material.opacity = flash * .16;
+        bolt.glow.visible = flash > 0;
       });
-      nodeRecords.forEach(({node, artifact, routePoints, pulse, speed, phase}) => {
-        const selected = hoverRef.current?.id && node.userData.bot?.id === hoverRef.current.id;
+      const focusRecord=nodeRecords.find(record=>record.botId===selectedRef.current);
+      nodeRecords.forEach(record => {const {botId,node,artifact,route,routePoints,pulse,speed}=record;
+        const liveBot=botsRef.current.find(bot=>bot.id===botId)||node.userData.bot;node.userData.bot=liveBot;
+        const livePnl=botProfit24h(liveBot);if(Math.abs(livePnl-node.userData.lastPnl)>.004){node.remove(record.pnlLabel);record.pnlLabel.material.map?.dispose();record.pnlLabel.material.dispose();record.pnlLabel=makePnlLabel(livePnl);node.add(record.pnlLabel);node.userData.lastPnl=livePnl;}
+        const selected = (selectedRef.current&&botId===selectedRef.current)||(hoverRef.current?.id&&botId===hoverRef.current.id);
+        const liveColor=statusColor(liveBot);artifact.userData.frame.material.color.set(liveColor);artifact.userData.frameGlow.material.color.set(liveColor);route.material.color.set(liveColor);pulse.material.color.set(liveColor);route.material.opacity=selected ? .72 : .18;
         node.position.y = node.userData.anchor.y + Math.sin(elapsed * 1.05 + node.userData.phase) * .045;
-        node.rotation.y = elapsed * .28 + node.userData.phase;
+        node.rotation.y = elapsed * .17 + node.userData.phase;
         node.scale.setScalar(selected ? 1.26 : 1 + Math.sin(elapsed * 1.8 + node.userData.phase) * .035);
         artifact.rotation.z = Math.sin(elapsed * .8 + node.userData.phase) * .12;
-        artifact.userData.frame.rotation.z += selected ? .025 : .009;
-        artifact.userData.frame2.rotation.x += selected ? .018 : .006;
+        artifact.userData.frame.rotation.z += selected ? .011 : .0035;
+        artifact.userData.frame2.rotation.x += selected ? .007 : .002;
+        artifact.userData.frameGlow.rotation.z = artifact.userData.frame.rotation.z;
+        artifact.userData.frame2Glow.rotation.x = artifact.userData.frame2.rotation.x;
+        artifact.userData.frameGlow.material.opacity = selected ? .3 : .14 + Math.sin(elapsed * 1.15 + node.userData.phase) * .035;
+        artifact.userData.frame2Glow.material.opacity = selected ? .25 : .11 + Math.sin(elapsed * .9 + node.userData.phase) * .025;
         const routeT = (elapsed * (speed || .1) + (node.userData.phase % 1)) % 1;
         pulse.position.copy(new THREE.CatmullRomCurve3(routePoints).getPoint(routeT));
       });
-      platform.rotation.z = elapsed * .08; platformInner.rotation.z = -elapsed * .16;
+      if(focusRecord){
+        focusRecord.node.getWorldPosition(focusPoint);
+        focusDirection.subVectors(camera.position,controls.target);
+        if(focusDirection.lengthSq()<.001)focusDirection.set(0,.18,1);
+        focusDirection.normalize();
+        desiredCamera.copy(focusPoint).addScaledVector(focusDirection,focusDistanceRef.current);
+        controls.target.lerp(focusPoint,.105);
+        camera.position.lerp(desiredCamera,.075);
+      }else controls.target.lerp(chamberCenter,.035);
+      platform.rotation.z = elapsed * .035; platformInner.rotation.z = -elapsed * .07;
       glow.material.opacity = .08 + Math.sin(elapsed * 1.4) * .025;
-      aura.material.opacity = .66 + Math.sin(elapsed * 1.1) * .12;
+      aura.material.opacity = .5 + Math.sin(elapsed * 1.1) * .08;
       controls.update();
       renderer.render(scene, camera);
     };
@@ -1075,23 +1213,27 @@ function Brain3DViewport({bots = [], central, onSelect}) {
       window.cancelAnimationFrame(frame);
       document.removeEventListener("fullscreenchange", fullscreenChange);
       window.removeEventListener("resize", resize);
+      resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointermove", handlePointerMove);
+      renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
       renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
       renderer.domElement.removeEventListener("click", handleClick);
+      renderer.domElement.removeEventListener("dblclick", handleDoubleClick);
+      renderer.domElement.removeEventListener("keydown", handleKeyDown);
       controls.dispose();
+      scene.traverse(object=>{object.geometry?.dispose?.();const materials=Array.isArray(object.material)?object.material:[object.material];materials.filter(Boolean).forEach(material=>{material.map?.dispose?.();material.dispose?.();});});
       renderer.dispose();
-      aura.userData.texture?.dispose();
-      brainCore.userData.texture?.dispose();
       mount.replaceChildren();
     };
-  }, [bots, central]);
+  }, [botSignature]);
 
-  const zoom = factor => { const camera = cameraRef.current; if (!camera) return; camera.position.multiplyScalar(factor); controlsRef.current?.update(); };
-  const toggleFullscreen = async () => { const target = shellRef.current; if (!target) return; if (document.fullscreenElement) await document.exitFullscreen(); else await target.requestFullscreen?.(); };
-  const selected = hovered;
+  const zoom = factor => { const camera = cameraRef.current, controls = controlsRef.current; if (!camera || !controls) return; if (effectiveFocusedBotId) focusDistanceRef.current = Math.min(9, Math.max(2.4, focusDistanceRef.current * factor)); else { const offset = camera.position.clone().sub(controls.target).multiplyScalar(factor); camera.position.copy(controls.target).add(offset); } controls.update(); };
+  const toggleFullscreen = async () => { const target = shellRef.current?.closest(".app") || shellRef.current; if (!target) return; if (document.fullscreenElement) await document.exitFullscreen(); else await target.requestFullscreen?.(); };
+  const selected = hovered || bots.find(bot => bot.id === effectiveFocusedBotId) || null;
   const status = String(selected?.status || ((selected?.active ?? selected?.enabled) ? "ACTIVE" : "PAUSED")).toUpperCase();
   const moduleCount = bots.length || 16;
-  return <div className="brain3dCanvasShell" ref={shellRef}>{loadStatus === "fallback" && <img className="brain3dFallback" src={brainCoreUrl} alt={`${brainTheme.name} preview`}/>}<div className="brain3dCanvasMount" ref={mountRef}/><div className="brain3dCanvasHud"><span><i className={"brain3dStatusDot " + loadStatus}/>{loadStatus === "online" ? "COMMAND CHAMBER · ONLINE" : "3D FALLBACK · WEBGL UNAVAILABLE"}</span><small>{moduleCount} MODULES · SIGNAL ROUTES ACTIVE</small><small>LEFT DRAG EXPLORE · RIGHT DRAG PAN · WHEEL ZOOM · HOVER MODULE</small></div><div className="brain3dControls"><button onClick={() => zoom(.82)} aria-label="Zoom in">+</button><button onClick={() => zoom(1.22)} aria-label="Zoom out">−</button><button onClick={toggleFullscreen} aria-label="Toggle fullscreen">{fullscreen ? "×" : "⛶"}</button></div>{selected && <div className="brainBotFloat" role="dialog" aria-label={"Reporte de " + (selected.name || selected.id)}><div className="brainBotFloatTop"><span><i className="brain3dStatusDot online"/>{status} · LIVE MODULE REPORT</span><button onClick={() => onSelect?.(selected.id)}>OPEN CONTROL</button></div><h3>{selected.name || selected.id}</h3><p>{botDescription(selected)}</p><div className="brainBotMetrics">{kind === "finance" ? <><span><small>NETWORK</small><b>{botMetric(selected, "network", "MULTI")}</b></span><span><small>PAPER PNL</small><b>{Number(botMetric(selected, "pnl24h", 0)).toFixed(2)} USD</b></span><span><small>OPPS</small><b>{botMetric(selected, "opportunities", 0)}</b></span></> : <><span><small>STATUS</small><b>{selected.status || (selected.enabled === false ? "PAUSED" : "ACTIVE")}</b></span><span><small>SIGNALS</small><b>{selected.metrics?.signals ?? selected.signals ?? "—"}</b></span><span><small>CONFIDENCE</small><b>{selected.metrics?.confidence ? `${selected.metrics.confidence}%` : "—"}</b></span></>}</div><div className="brainBotSignal"><small>{selected.lastError || selected.lastAction || selected.readiness?.blockers?.[0] || selected.status || "Observando señales y esperando el siguiente ciclo."}</small></div></div>}</div>;
+  const selectedEvidence=selected?.readiness?.validation,selectedRuntime=selected?.readiness?.runtime?.stage||selected?.readiness?.stage;
+  return <div className={`brain3dCanvasShell ${effectiveFocusedBotId ? "hasPinnedBot" : ""}`} ref={shellRef}>{loadStatus === "fallback" && <img className="brain3dFallback" src={brainCoreUrl} alt={`${brainTheme.name} preview`}/>}<div className="brain3dCanvasMount" ref={mountRef}/><div className="brain3dCanvasHud"><span><i className={"brain3dStatusDot " + loadStatus}/>{loadStatus === "online" ? effectiveFocusedBotId ? "BOT LINK · FOCUSED" : "COMMAND CHAMBER · ONLINE" : "3D FALLBACK · WEBGL UNAVAILABLE"}</span><small>{moduleCount} MODULES · SIGNAL ROUTES ACTIVE</small><small>CLICK FOCUS · DOUBLE CLICK CONTROL · WHEEL ZOOM · ARROWS SELECT</small></div><div className="brain3dControls"><button onClick={() => zoom(.82)} aria-label="Zoom in">+</button><button onClick={() => zoom(1.22)} aria-label="Zoom out">−</button><button onClick={toggleFullscreen} aria-label="Toggle fullscreen">{fullscreen ? "×" : "⛶"}</button></div>{selected && <div className="brainBotFloat" role="dialog" aria-label={"Reporte de " + (selected.name || selected.id)}><div className="brainBotFloatTop"><span><i className={"brain3dStatusDot " + String(selectedRuntime || status).toLowerCase()}/>{selectedRuntime?.replaceAll("_"," ") || status} · LIVE MODULE REPORT</span><button onClick={() => onSelect?.(selected.id)}>{selectedBotId === selected.id ? "CONTROL OPEN" : "OPEN CONTROL"}</button></div><h3>{selected.name || selected.id}</h3><p>{botDescription(selected)}</p><div className="brainBotMetrics">{kind === "finance" ? <><span><small>READINESS</small><b>{Number(selected.readiness?.score||0).toFixed(0)}/100</b></span><span><small>VALIDATION</small><b>{selectedEvidence?.stage?.replaceAll("_"," ")||"SYNCING"}</b></span><span><small>EVIDENCE</small><b>{selectedEvidence?.target?`${selectedEvidence.evidence||0}/${selectedEvidence.target}`:"N/A"}</b></span></> : <><span><small>STATUS</small><b>{selected.status || (selected.enabled === false ? "PAUSED" : "ACTIVE")}</b></span><span><small>SIGNALS</small><b>{selected.metrics?.signals ?? selected.signals ?? "—"}</b></span><span><small>CONFIDENCE</small><b>{selected.metrics?.confidence ? `${selected.metrics.confidence}%` : "—"}</b></span></>}</div><div className="brainBotSignal"><small>{selected.lastError || selected.lastAction || selected.readiness?.blockers?.[0] || selected.readiness?.warnings?.[0] || selected.readiness?.nextAction || selected.status || "Observando señales y esperando el siguiente ciclo."}</small></div></div>}</div>;
 }
 
 
@@ -1148,7 +1290,7 @@ class BotControlErrorBoundary extends React.Component {
   componentDidCatch(error) { console.error("Bot control render error", error); }
   render() {
     if (!this.state.error) return this.props.children;
-    return <div className="botControlOverlay" onClick={this.props.onClose}><section className="botControlModal botControlCrash" onClick={event => event.stopPropagation()}><button className="botControlClose" onClick={this.props.onClose}>×</button><div className="botControlHeader"><span className="botControlOrb"><ShieldCheck size={26}/></span><div><small>BOT CONTROL · RECOVERABLE ERROR</small><h2>No se pudo abrir este bot</h2><p>El Brain sigue operativo. El panel se protegió para evitar bloquear toda la pantalla.</p></div></div><div className="botControlMessage">{this.state.error?.message || "Respuesta de datos incompatible"}</div><button className="botSaveButton" onClick={this.props.onClose}>CERRAR Y CONTINUAR</button></section></div>;
+    return <div className={this.props.embedded ? "botControlDock" : "botControlOverlay"} onClick={this.props.embedded ? undefined : this.props.onClose}><section className="botControlModal botControlCrash" onClick={event => event.stopPropagation()}><button className="botControlClose" onClick={this.props.onClose}>×</button><div className="botControlHeader"><span className="botControlOrb"><ShieldCheck size={26}/></span><div><small>BOT CONTROL · RECOVERABLE ERROR</small><h2>No se pudo abrir este bot</h2><p>El Brain sigue operativo. El panel se protegió para evitar bloquear toda la pantalla.</p></div></div><div className="botControlMessage">{this.state.error?.message || "Respuesta de datos incompatible"}</div><button className="botSaveButton" onClick={this.props.onClose}>CERRAR Y CONTINUAR</button></section></div>;
   }
 }
 
@@ -1158,56 +1300,106 @@ function botLaunchLabel(row) {
   return launches[0]?.symbol || discoveries.find(item => item && typeof item === "object" && item.symbol)?.symbol || row?.symbol || row?.asset || row?.token || row?.question || "Scanner result";
 }
 
-function BotControlModal({api, bot, onClose, onScan}) {
-  const [tab, setTab] = useState("results");
-  const [data, setData] = useState(null);
-  const [configValue, setConfigValue] = useState({enabled:true,maxAllocationPct:20,minConfidence:"",notes:""});
-  const [busy, setBusy] = useState("");
-  const [message, setMessage] = useState("");
-  const [connector, setConnector] = useState(null);
-  const [proposals, setProposals] = useState([]);
-  const meta = botMeta(bot.id);
-  const BotIcon = meta.Icon;
-  const load = useCallback(async () => {
-    const [result, strategy, market] = await Promise.all([fetch(`${api}/api/bots/${bot.id}/results?limit=40`).then(r => r.json()), fetch(`${api}/api/strategies/config`).then(r => r.json()), bot.marketBotId ? fetch(`${api}/api/market-bots/${bot.marketBotId}`).then(r => r.json()).catch(() => null) : Promise.resolve(null)]);
-    setData(market?.result ? {...result, scans:[market.result,...(result.scans||[]).filter(row => row.scannedAt !== market.result.scannedAt)], marketResult:market.result} : result);
-    setConfigValue({enabled:strategy[bot.id]?.enabled !== false,maxAllocationPct:strategy[bot.id]?.maxAllocationPct ?? 20,minConfidence:strategy[bot.id]?.minConfidence ?? "",notes:strategy[bot.id]?.notes || ""});
-    if (bot.id === "polymarket" && !bot.marketBotId) { setConnector(await fetch(`${api}/api/integrations/polymarket/status`).then(r => r.json())); setProposals(await fetch(`${api}/api/integrations/polymarket/proposals`).then(r => r.json())); }
-  }, [api, bot.id]);
-  useEffect(() => { load().catch(error => setMessage(error.message)); }, [load]);
-  async function scan() {
-    setBusy("scan"); setMessage("");
-    try { await onScan(bot.id); await load(); setMessage("Scan completado y resultados actualizados."); }
-    catch (error) { setMessage(error.message); }
-    finally { setBusy(""); }
-  }
-  async function save() {
-    setBusy("save"); setMessage("");
-    try {
-      const body={...configValue,maxAllocationPct:Number(configValue.maxAllocationPct),minConfidence:configValue.minConfidence===""?null:Number(configValue.minConfidence)};
-      await request(`/api/strategies/${bot.id}/config`,{method:"PATCH",body:JSON.stringify(body)});
-      await load(); setMessage("Parámetros guardados.");
-    } catch (error) { setMessage(error.message); }
-    finally { setBusy(""); }
-  }
-  async function resolveProposal(id, action) {
-    setBusy(`${action}:${id}`); setMessage("");
-    try { await request(`/api/integrations/polymarket/proposals/${id}/${action}`, {method:"POST"}); await load(); setMessage(action === "approve" ? "Orden enviada al CLOB." : "Propuesta rechazada."); }
-    catch (error) { setMessage(error.message); }
-    finally { setBusy(""); }
-  }
-  const scans=data?.scans||[], opportunities=data?.opportunities||[], executions=data?.executions||[];
-  return <div className="botControlOverlay" onClick={onClose}><section className="botControlModal" onClick={event => event.stopPropagation()} style={{"--botAccent":meta.accent}}>
-    <button className="botControlClose" onClick={onClose}>×</button>
-    <div className="botControlHeader"><span className="botControlOrb"><BotIcon size={26}/></span><div><small>BOT {meta.n} · LIVE TELEMETRY</small><h2>{meta.label}</h2><p>{bot.network || "MULTI"} · {bot.status || "UNKNOWN"} · {bot.active ? "ACTIVE" : "PAUSED"}</p></div><div className="botControlPulse"><i/> HEARTBEAT<br/><b>{bot.heartbeat ? new Date(bot.heartbeat).toLocaleTimeString() : "—"}</b></div></div>
-    <div className="botControlStats"><span><small>OPPORTUNITIES</small><b>{bot.opportunities || opportunities.length}</b></span><span><small>RESULTS</small><b>{scans.length}</b></span><span><small>EXECUTIONS</small><b>{executions.length}</b></span><span><small>PNL PAPER</small><b>{Number(bot.pnl24h || 0).toFixed(2)} USD</b></span></div>
-    <div className="botControlTabs"><button className={tab==="results"?"active":""} onClick={() => setTab("results")}>RESULTS / SCANS</button><button className={tab==="opportunities"?"active":""} onClick={() => setTab("opportunities")}>OPPORTUNITIES</button>{bot.id === "polymarket" && !bot.marketBotId && <button className={tab==="live"?"active":""} onClick={() => setTab("live")}>LIVE PROPOSALS</button>}<button className={tab==="config"?"active":""} onClick={() => setTab("config")}>MANUAL PARAMETERS</button></div>
-    {tab !== "config" && tab !== "live" && <div className="botControlToolbar"><span>{tab === "results" ? "Resultados propios del scanner" : "Señales emitidas al Opportunity Bus"}</span><button onClick={scan} disabled={busy === "scan"}><Radio size={14}/>{busy === "scan" ? "SCANNING…" : "RUN SCAN NOW"}</button></div>}
-    {tab === "results" && <div className="botResultList">{scans.length ? scans.map((row,index) => <article className={`botResultRow ${row.error ? "hasError" : ""}`} key={row.scannedAt || row.createdAt || index}><div><b>{botLaunchLabel(row)}</b><small>{row.kpis ? `${row.kpis.candidates || 0} launches · ${row.kpis.qualified || 0} qualified` : row.scannedAt || row.at || row.createdAt || "—"}</small></div><strong>{row.error ? `ERROR · ${row.error}` : row.kpis ? `${row.kpis.qualified || 0} QUALIFIED · ${row.kpis.blocked || 0} BLOCKED` : row.triggered === true ? "TRIGGERED" : Array.isArray(row.discoveries) ? `${row.discoveries.length} discoveries` : row.netProfitUsd != null ? `${Number(row.netProfitUsd).toFixed(2)} USD net` : row.confidence != null ? `${Math.round(Number(row.confidence)*100)}% confidence` : "RESULT RECEIVED"}</strong><details><summary>DETAILS</summary><pre>{JSON.stringify(row,null,2)}</pre></details></article>) : <div className="botControlEmpty">No hay resultados de este bot todavía. Pulsa RUN SCAN NOW.</div>}</div>}
-    {tab === "opportunities" && <div className="botResultList">{opportunities.length ? opportunities.map((row,index) => <article className="botResultRow" key={row.id || index}><div><b>{row.asset || row.strategy}</b><small>{row.createdAt || "—"} · {row.source || "Opportunity Bus"}</small></div><strong>{row.brain?.decision || "WATCH"} · {Number(row.expectedProfitUsd || 0).toFixed(2)} USD</strong><details><summary>DETAILS</summary><pre>{JSON.stringify(row,null,2)}</pre></details></article>) : <div className="botControlEmpty">Este bot todavía no ha emitido oportunidades.</div>}</div>}
-    {tab === "live" && <div className="botLivePanel"><div className={`botLiveState ${connector?.enabled && connector?.authenticated ? "armed" : "locked"}`}><b>{connector?.enabled && connector?.authenticated ? "POLYMARKET LIVE READY" : "POLYMARKET LIVE LOCKED"}</b><small>{connector?.enabled ? connector.authenticated ? `Wallet ${shortAddress(connector.address)} autenticada · Polygon` : "Conecta MetaMask para autenticar el CLOB" : "Activa POLYMARKET_LIVE_ENABLED en el servidor y reinicia para habilitar órdenes."}</small></div>{proposals.length ? proposals.map(proposal => <article className="botProposal" key={proposal.id}><div><b>{proposal.question || proposal.marketId}</b><small>{proposal.side} · {proposal.size} USD · {proposal.status}</small></div><span>{proposal.price}</span>{proposal.status === "pending" && <div className="botProposalActions"><button onClick={() => resolveProposal(proposal.id,"approve")} disabled={busy === `approve:${proposal.id}`}>APPROVE</button><button onClick={() => resolveProposal(proposal.id,"reject")} disabled={busy === `reject:${proposal.id}`}>REJECT</button></div>}</article>) : <div className="botControlEmpty">No hay propuestas LIVE pendientes. Las señales elegibles aparecerán aquí antes de enviar una orden.</div>}</div>}
-    {tab === "config" && <div className="botManualForm"><label className="botToggle"><input type="checkbox" checked={configValue.enabled} onChange={event => setConfigValue(current => ({...current,enabled:event.target.checked}))}/><span/> ENABLE STRATEGY</label><label>MAX ALLOCATION %<input type="number" min="0" max="50" step="0.5" value={configValue.maxAllocationPct} onChange={event => setConfigValue(current => ({...current,maxAllocationPct:event.target.value}))}/></label><label>MIN CONFIDENCE (0–1)<input type="number" min="0" max="1" step="0.01" placeholder="Global risk" value={configValue.minConfidence} onChange={event => setConfigValue(current => ({...current,minConfidence:event.target.value}))}/></label><label>OPERATOR NOTES<textarea value={configValue.notes} onChange={event => setConfigValue(current => ({...current,notes:event.target.value}))} placeholder="Describe the manual operating policy for this bot..."/></label><button className="botSaveButton" onClick={save} disabled={busy === "save"}><Settings size={15}/>{busy === "save" ? "SAVING…" : "SAVE PARAMETERS"}</button><div className="botLiveNotice">These controls affect strategy enablement, risk threshold and capital allocation. Market-specific credentials and LIVE signing remain separate safety gates.</div></div>}
-    {message && <div className="botControlMessage">{message}</div>}
+const money=value=>`${Number(value||0).toFixed(2)} USD`;
+const controlTime=value=>value?new Date(value).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—";
+function BotEquityCurve({executions=[]}){
+  const rows=[...executions].filter(row=>row.status==="CLOSED"&&row.paperQuality==="REAL_MARKET_QUOTE").sort((a,b)=>Date.parse(a.closedAt||a.createdAt||0)-Date.parse(b.closedAt||b.createdAt||0));
+  let cumulative=0;const values=[0,...rows.map(row=>(cumulative+=Number(row.realizedProfitUsd||0)))];
+  const min=Math.min(...values),max=Math.max(...values),range=Math.max(1,max-min),points=values.map((value,index)=>`${(index/Math.max(1,values.length-1))*100},${46-((value-min)/range)*40}`).join(" ");
+  return <div className="botEquityCurve"><div><span><small>VALIDATED EQUITY CURVE</small><b>{rows.length} REAL-QUOTE CLOSES</b></span><strong className={cumulative>=0?"positive":"negative"}>{cumulative>=0?"+":""}{money(cumulative)}</strong></div><svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-label="Validated cumulative PNL curve"><defs><linearGradient id="botCurveFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--botAccent)" stopOpacity=".34"/><stop offset="1" stopColor="var(--botAccent)" stopOpacity="0"/></linearGradient></defs><polyline points={`0,50 ${points} 100,50`} fill="url(#botCurveFill)" stroke="none"/><polyline points={points} fill="none" stroke="var(--botAccent)" strokeWidth="1.7" vectorEffect="non-scaling-stroke"/></svg></div>;
+}
+function BotDecisionPipeline({scans=[],opportunities=[],executions=[]}){
+  const latest=opportunities[0],execution=executions[0];
+  const steps=[{label:"DETECTED",done:scans.length>0},{label:"AUDITED",done:Boolean(latest?.metadata?.security||latest?.metadata?.audit||latest?.risk)},{label:"SCORED",done:Boolean(latest?.brain)},{label:"APPROVED",done:latest?.risk?.approved===true},{label:"PAPER FILL",done:Boolean(execution&&["OPEN","CLOSED","FILLED"].includes(execution.status))},{label:"CLOSED",done:execution?.status==="CLOSED"}];
+  const current=Math.max(0,steps.findIndex(step=>!step.done));
+  return <div className="botDecisionPipeline">{steps.map((step,index)=><span className={step.done?"done":index===current?"current":"waiting"} key={step.label}><i>{step.done?"✓":String(index+1).padStart(2,"0")}</i><b>{step.label}</b></span>)}</div>;
+}
+function botSpecificReadout(bot,scans,opportunities){
+  const scan=scans[0]||{},source=scan.data||scan,result=opportunities[0]||{},meta=result.metadata||{},kpis=scan.kpis||{};
+  const common=[{label:"CANDIDATES",value:kpis.candidates??source.candidates?.length??source.discoveries?.length??0},{label:"QUALIFIED",value:kpis.qualified??source.qualified?.length??(result.id?1:0)},{label:"BLOCKED",value:kpis.blocked??source.blocked?.length??0}];
+  const map={
+    "solana-radar":[{label:"BIRTHS",value:kpis.births??source.births?.length??source.launches?.length??0},{label:"LIQUIDITY",value:meta.liquidityUsd?`$${Number(meta.liquidityUsd).toLocaleString()}`:"GATED"},{label:"HOLDER AUDIT",value:meta.holderConcentrationPct!=null?`${Number(meta.holderConcentrationPct).toFixed(1)}% top`:"WAITING"}],
+    "solana-meme-momentum":[{label:"MOMENTUM",value:meta.momentumScore??result.brain?.score??"—"},{label:"VOLUME",value:meta.volume24h?`$${Number(meta.volume24h).toLocaleString()}`:"—"},{label:"ANTI-RUG",value:meta.securityVerified?"VERIFIED":"GATED"}],
+    "polygon-meme-momentum":[{label:"MOMENTUM",value:meta.momentumScore??result.brain?.score??"—"},{label:"BUY TAX",value:meta.buyTax!=null?`${meta.buyTax}%`:"—"},{label:"HONEYPOT",value:meta.honeypot===false?"CLEAR":"GATED"}],
+    arbitrage:[{label:"SPREAD",value:result.spreadBps!=null?`${Number(result.spreadBps).toFixed(1)} BPS`:"—"},{label:"NET EDGE",value:money(result.expectedProfitUsd)},{label:"ROUTE",value:meta.route||result.network||"MULTI-DEX"}],
+    liquidation:[{label:"BORROWERS",value:kpis.candidates??source.candidates?.length??0},{label:"HEALTH FACTOR",value:meta.healthFactor??"—"},{label:"BONUS",value:meta.liquidationBonusPct?`${meta.liquidationBonusPct}%`:"—"}],
+    volatility:[{label:"REGIME",value:meta.regime||source.regime||"OBSERVING"},{label:"EXPANSION",value:meta.expansionScore??result.brain?.score??"—"},{label:"ATR",value:meta.atrPct!=null?`${Number(meta.atrPct).toFixed(2)}%`:"—"}],
+    momentum:[{label:"TREND",value:meta.trend||result.direction||"WATCH"},{label:"MOMENTUM",value:meta.momentumScore??result.brain?.score??"—"},{label:"VOLUME",value:meta.volumeRatio!=null?`${Number(meta.volumeRatio).toFixed(2)}×`:"—"}],
+    perpetuals:[{label:"FUNDING",value:meta.fundingRate!=null?`${(Number(meta.fundingRate)*100).toFixed(3)}%`:"—"},{label:"BASIS",value:meta.basisPct!=null?`${Number(meta.basisPct).toFixed(2)}%`:"—"},{label:"DIRECTION",value:result.direction||"WATCH"}],
+    polymarket:[{label:"MARKETS",value:kpis.candidates??source.markets?.length??source.candidates?.length??0},{label:"PROBABILITY",value:meta.probability!=null?`${(Number(meta.probability)*100).toFixed(1)}%`:"—"},{label:"EDGE",value:meta.edgePct!=null?`${Number(meta.edgePct).toFixed(2)}%`:"—"}],
+    "smart-money":[{label:"WALLETS",value:source.wallets?.length??source.discoveries?.length??0},{label:"FLOW",value:meta.flowUsd?`$${Number(meta.flowUsd).toLocaleString()}`:"—"},{label:"DIRECTION",value:result.direction||"WATCH"}],
+    yield:[{label:"APY",value:meta.apy!=null?`${Number(meta.apy).toFixed(2)}%`:"—"},{label:"TVL",value:meta.tvlUsd?`$${Number(meta.tvlUsd).toLocaleString()}`:"—"},{label:"PROTOCOL",value:meta.project||meta.protocol||"DEFI"}],
+    allocator:[{label:"RESERVE",value:meta.reservePct!=null?`${meta.reservePct}%`:"10%"},{label:"ALLOCATED",value:money(meta.allocatedUsd||result.capitalRequiredUsd)},{label:"POLICY",value:"RISK ADJUSTED"}],
+    "fx-macro-momentum":[{label:"PAIR",value:result.asset||meta.instrument||"MULTI-FX"},{label:"MACRO SCORE",value:meta.macroScore??result.brain?.score??"—"},{label:"DIRECTION",value:result.direction||"WATCH"}],
+    "options-defined-risk":[{label:"STRUCTURE",value:meta.structure||result.asset||"DEFINED RISK"},{label:"MAX LOSS",value:money(meta.maxLossUsd)},{label:"CONFIDENCE",value:`${Math.round(Number(result.confidence||0)*100)}%`}],
+    "crude-oil-regime":[{label:"REGIME",value:meta.regime||"OBSERVING"},{label:"SYMBOL",value:result.asset||meta.symbol||"USO"},{label:"MOVE",value:meta.movePct!=null?`${Number(meta.movePct).toFixed(2)}%`:"—"}],
+    "nyse-news-impact":[{label:"HEADLINES",value:source.news?.length??source.articles?.length??0},{label:"IMPACT",value:meta.impactScore!=null?`${Math.round(Number(meta.impactScore)*100)}%`:"—"},{label:"SYMBOL",value:result.asset||meta.symbol||"—"}],
+  };
+  return map[bot.id]||common;
+}
+function HumanFacts({row}){
+  const preferred=["provider","network","symbol","asset","direction","confidence","riskScore","expectedProfitUsd","netProfitUsd","latencyMs","scannedAt","createdAt"],facts=[];
+  for(const key of preferred){const value=row?.[key];if(value!==undefined&&value!==null&&typeof value!=="object")facts.push([key,value]);}
+  for(const [key,value] of Object.entries(row?.kpis||{})){if(facts.length>=8)break;if(typeof value!=="object")facts.push([key,value]);}
+  return <div className="botHumanFacts">{facts.slice(0,8).map(([label,value])=><span key={label}><small>{label.replaceAll("_"," ").toUpperCase()}</small><b>{typeof value==="number"?Number(value.toFixed?.(4)??value):String(value)}</b></span>)}</div>;
+}
+function CopilotThinkingOverlay({bot,copilot,data,question}){
+  const phases=[
+    {label:"Conectando el modelo de razonamiento",detail:`${copilot?.status?.provider||"OpenAI"} · ${copilot?.status?.model||"GPT-5.6 Sol"}`},
+    {label:"Sincronizando telemetría del bot",detail:"Scanner, señales y estado operativo"},
+    {label:"Leyendo decisiones recientes",detail:"Oportunidades, bloqueos y evidencia"},
+    {label:"Contrastando rendimiento",detail:"PnL validado, expectancy y drawdown"},
+    {label:"Evaluando el envelope de riesgo",detail:"Readiness, límites y circuit breakers"},
+    {label:"Construyendo respuesta auditable",detail:"Hallazgos, recomendaciones y propuestas"}
+  ];
+  const [phase,setPhase]=useState(0),[elapsed,setElapsed]=useState(0);
+  useEffect(()=>{setPhase(0);setElapsed(0);const phaseTimer=setInterval(()=>setPhase(current=>Math.min(phases.length-1,current+1)),2600),clock=setInterval(()=>setElapsed(current=>current+1),1000);return()=>{clearInterval(phaseTimer);clearInterval(clock);};},[question]);
+  const scans=data?.scans?.length||0,opportunities=data?.opportunities?.length||0,executions=data?.executions?.length||0,readiness=Math.round(Number(data?.readiness?.score||bot?.readiness?.score||0)),coverage=copilot?.contextCoverage;
+  return <div className="copilotThinkingBackdrop" role="dialog" aria-modal="true" aria-live="polite" aria-label={`Copilot analizando ${bot.name||bot.id}`}><section className="copilotThinkingWindow" style={{"--botAccent":botMeta(bot.id).accent}}><div className="copilotThinkingTop"><span><i/> QUANT COPILOT · LIVE ANALYSIS</span><small>{String(elapsed).padStart(2,"0")}s · PAPER SAFE</small></div><div className="copilotThinkingLayout"><div className="copilotNeuralStage"><div className="copilotAmbientGrid"/><div className="copilotOrbit orbitA"><i/><i/><i/></div><div className="copilotOrbit orbitB"><i/><i/></div><div className="copilotBrainCore"><span className="copilotBrainHalo"/><img src={brainCoreUrl} alt="Finance Brain analizando"/><Brain size={50}/><b>{botMeta(bot.id).label}</b><small>CONTEXT LOCKED</small></div><svg className="copilotSignalGraph" viewBox="0 0 420 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="copilotGraphStroke" x1="0" x2="1"><stop offset="0" stopColor="var(--botAccent)" stopOpacity="0"/><stop offset=".45" stopColor="var(--botAccent)"/><stop offset="1" stopColor="#58e8ff" stopOpacity=".15"/></linearGradient></defs><path d="M0 112 C35 95 55 126 88 84 S142 58 174 91 S232 119 264 66 S325 34 352 70 S392 102 420 44"/><path className="ghost" d="M0 124 C54 138 64 71 115 102 S186 135 224 85 S295 79 328 104 S380 63 420 82"/></svg><div className="copilotMetricRail"><span><small>SCANS</small><b>{scans}</b></span><span><small>DECISIONS</small><b>{opportunities}</b></span><span><small>EXECUTIONS</small><b>{executions}</b></span><span><small>READINESS</small><b>{readiness}/100</b></span></div></div><div className="copilotThinkingReport"><div className="copilotThinkingIdentity"><Sparkles size={18}/><div><small>ANALYZANDO TU PREGUNTA</small><p>{question||"Preparando contexto del bot…"}</p></div></div><div className="copilotContextLine"><span><Database size={13}/>{coverage?`${coverage.connected}/${coverage.total} fuentes conectadas`:"Sincronizando fuentes"}</span><span><ShieldCheck size={13}/> Sin acceso a LIVE</span></div><div className="copilotPhaseList">{phases.map((item,index)=><article className={index<phase?"done":index===phase?"active":"waiting"} key={item.label}><span>{index<phase?"✓":String(index+1).padStart(2,"0")}</span><div><b>{item.label}</b><small>{item.detail}</small></div>{index===phase&&<em><i/><i/><i/></em>}</article>)}</div><div className="copilotThinkingFooter"><Activity size={14}/><span>El modelo está trabajando con datos reales. No se aplicará ningún cambio sin tu aprobación.</span></div></div></div></section></div>;
+}
+function BotCopilotPanel({bot,copilot,analysis,busy,prompt,setPrompt,onAsk,onReview,onActivate,confirmId,setConfirmId}){
+  const current=analysis||copilot?.lastAnalysis,pending=(copilot?.proposals||[]).filter(row=>row.status==="PENDING"),presets=copilot?.presets||[],status=copilot?.status,coverage=copilot?.contextCoverage;
+  return <section className="botCopilot"><div className="botSectionTitle"><span><MessageCircle size={14}/> QUANT COPILOT · {bot.id}</span><small>Todos los datos · PAPER approval gate</small></div><div className="botCopilotStatus"><span className={status?.configured?"ready":"fallback"}><i/>{status?.provider||"CONNECTING"} · {status?.model||"MODEL"}</span><span>{coverage?`${coverage.connected}/${coverage.total} DATA SOURCES`:"CONTEXT SYNC"}</span><span>{current?.dataFreshness||"WAITING"}</span></div><div className="botCopilotQuick">{["¿Por qué está bloqueado o en recuperación?","Resume las operaciones con evidencia real.","Propón un ajuste conservador en PAPER.","Genera un preset nuevo basado en el rendimiento."].map(question=><button key={question} onClick={()=>onAsk(question)} disabled={busy}>{question}</button>)}</div>{current&&<div className="botCopilotAnalysis"><p>{current.reply}</p>{current.findings?.length>0&&<div className="botCopilotFindings">{current.findings.map((row,index)=><article className={row.severity} key={`${row.title}-${index}`}><b>{row.title}</b><small>{row.evidence}</small></article>)}</div>}{current.recommendations?.length>0&&<div className="botCopilotRecommendations">{current.recommendations.map((row,index)=><article key={`${row.title}-${index}`}><span>{row.priority}</span><div><b>{row.title}</b><small>{row.rationale} · {row.expectedImpact}</small></div></article>)}</div>}</div>}<div className="botCopilotComposer"><input value={prompt} onChange={event=>setPrompt(event.target.value)} onKeyDown={event=>{if(event.key==="Enter")onAsk();}} placeholder="Pregunta, solicita análisis o pide un preset…"/><button onClick={()=>onAsk()} disabled={busy||!prompt.trim()}>{busy?"ANALYZING…":"ASK COPILOT"}</button></div>{pending.length>0&&<div className="botCopilotQueue"><div className="botCopilotSubhead"><b>HUMAN APPROVAL QUEUE</b><small>{pending.length} pendientes · PAPER ONLY</small></div>{pending.map(row=><article key={row.id}><div><span>{row.kind.replaceAll("_"," ")}</span><b>{row.title}</b><p>{row.rationale}</p><small>{Object.entries(row.changes||{}).map(([key,value])=>`${key}: ${value}`).join(" · ")}</small></div><div><button className={confirmId===row.id?"confirm":""} onClick={()=>confirmId===row.id?onReview(row.id,"approve"):setConfirmId(row.id)}>{confirmId===row.id?"CONFIRM PAPER":"REVIEW & APPLY"}</button><button onClick={()=>onReview(row.id,"reject")}>REJECT</button></div></article>)}</div>}{presets.length>0&&<div className="botPresetShelf"><div className="botCopilotSubhead"><b>STRATEGY PRESETS</b><small>{presets.length} guardados</small></div>{presets.slice(0,6).map(row=><article className={row.active?"active":""} key={row.id}><div><b>{row.name}</b><small>{row.description||"Reusable PAPER strategy"}</small></div><button className={confirmId===`preset:${row.id}`?"confirm":""} disabled={row.active} onClick={()=>confirmId===`preset:${row.id}`?onActivate(row.id):setConfirmId(`preset:${row.id}`)}>{row.active?"ACTIVE":confirmId===`preset:${row.id}`?"CONFIRM PAPER":"ACTIVATE"}</button></article>)}</div>}</section>;
+}
+function BotControlModal({api, bot, onClose, onScan, onToggle, embedded=false}) {
+  const [tab,setTab]=useState("cockpit"),[data,setData]=useState(null),[configValue,setConfigValue]=useState({enabled:true,maxAllocationPct:20,minConfidence:"",maxRiskScore:.65,minExpectedProfitUsd:5,maxSlippageBps:75,notes:""}),[busy,setBusy]=useState(""),[message,setMessage]=useState(""),[connector,setConnector]=useState(null),[proposals,setProposals]=useState([]),[lastSync,setLastSync]=useState(null),[confirmProposal,setConfirmProposal]=useState(null),[copilotPrompt,setCopilotPrompt]=useState(""),[copilotQuestion,setCopilotQuestion]=useState(""),[copilotAnalysis,setCopilotAnalysis]=useState(null),[copilotData,setCopilotData]=useState(null),[copilotMessages,setCopilotMessages]=useState([]),[confirmCopilotProposal,setConfirmCopilotProposal]=useState(null),[copilotBusy,setCopilotBusy]=useState(false);
+  const configInitialized=useRef(false),meta=botMeta(bot.id),BotIcon=meta.Icon;
+  useEffect(()=>{configInitialized.current=false;setData(null);setCopilotData(null);setCopilotAnalysis(null);setCopilotMessages([]);setCopilotQuestion("");setConfirmCopilotProposal(null);setTab("cockpit");setMessage("");},[bot.id]);
+  const load=useCallback(async()=>{
+    const fetchJson=async url=>{const response=await fetch(url);const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||`API ${response.status}`);return body;};
+    const [result,strategy,market,copilot]=await Promise.all([fetchJson(`${api}/api/bots/${bot.id}/results?limit=60`),fetchJson(`${api}/api/strategies/config`),bot.marketBotId?fetchJson(`${api}/api/market-bots/${bot.marketBotId}`).catch(()=>null):Promise.resolve(null),fetchJson(`${api}/api/bots/${bot.id}/copilot`).catch(()=>null)]);
+    setData(market?.result?{...result,scans:[market.result,...(result.scans||[]).filter(row=>row.scannedAt!==market.result.scannedAt)],marketResult:market.result}:result);
+    if(copilot)setCopilotData(copilot);
+    if(!configInitialized.current){setConfigValue({enabled:strategy[bot.id]?.enabled!==false,maxAllocationPct:strategy[bot.id]?.maxAllocationPct??20,minConfidence:strategy[bot.id]?.minConfidence??"",maxRiskScore:strategy[bot.id]?.maxRiskScore??.65,minExpectedProfitUsd:strategy[bot.id]?.minExpectedProfitUsd??5,maxSlippageBps:strategy[bot.id]?.maxSlippageBps??75,notes:strategy[bot.id]?.notes||""});configInitialized.current=true;}
+    if(bot.id==="polymarket"&&!bot.marketBotId){setConnector(await fetchJson(`${api}/api/integrations/polymarket/status`));setProposals(await fetchJson(`${api}/api/integrations/polymarket/proposals`));}
+    setLastSync(new Date());
+  },[api,bot.id,bot.marketBotId]);
+  useEffect(()=>{load().catch(error=>setMessage(error.message));const timer=setInterval(()=>load().catch(()=>{}),5000);return()=>clearInterval(timer);},[load]);
+  useEffect(()=>{const close=event=>{if(event.key==="Escape")onClose();};window.addEventListener("keydown",close);return()=>window.removeEventListener("keydown",close);},[onClose]);
+  async function scan(){setBusy("scan");setMessage("");try{await onScan(bot.id);await load();setMessage("Scanner completado. El nodo 3D y el cockpit ya reflejan los nuevos datos.");}catch(error){setMessage(error.message);}finally{setBusy("");}}
+  async function toggle(){setBusy("toggle");setMessage("");try{await onToggle?.(bot.id);await load();setMessage(bot.active?"Bot pausado de forma segura.":"Bot activado en modo PAPER.");}catch(error){setMessage(error.message);}finally{setBusy("");}}
+  async function save(){setBusy("save");setMessage("");try{const body={...configValue,maxAllocationPct:Number(configValue.maxAllocationPct),minConfidence:configValue.minConfidence===""?null:Number(configValue.minConfidence),maxRiskScore:Number(configValue.maxRiskScore),minExpectedProfitUsd:Number(configValue.minExpectedProfitUsd),maxSlippageBps:Number(configValue.maxSlippageBps)};await request(`/api/strategies/${bot.id}/config`,{method:"PATCH",body:JSON.stringify(body)});configInitialized.current=false;await load();setMessage("Política operativa guardada y sincronizada.");}catch(error){setMessage(error.message);}finally{setBusy("");}}
+  async function resolveProposal(id,action){setBusy(`${action}:${id}`);setMessage("");try{await request(`/api/integrations/polymarket/proposals/${id}/${action}`,{method:"POST"});await load();setMessage(action==="approve"?"Orden enviada al CLOB.":"Propuesta rechazada.");}catch(error){setMessage(error.message);}finally{setBusy("");}}
+  async function askCopilot(value){const question=String(value||copilotPrompt).trim();if(!question||copilotBusy)return;setCopilotQuestion(question);setCopilotBusy(true);try{const response=await fetch(`${api}/api/bots/${bot.id}/copilot/chat`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({message:question,conversation:copilotMessages}),signal:AbortSignal.timeout(115000)});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||`API ${response.status}`);setCopilotAnalysis(body);setCopilotMessages(current=>[...current,{role:"user",content:question},{role:"assistant",content:body.reply}].slice(-12));setCopilotPrompt("");await load();}catch(error){setCopilotAnalysis({reply:error.name==="TimeoutError"?"El análisis excedió el tiempo disponible. No se modificó ninguna estrategia.":`No se pudo consultar al copiloto: ${error.message}`,dataFreshness:"INSUFFICIENT",findings:[],recommendations:[]});}finally{setCopilotBusy(false);setCopilotQuestion("");}}
+  async function reviewCopilotProposal(id,action){setBusy(`copilot:${action}:${id}`);try{const response=await fetch(`${api}/api/bots/${bot.id}/copilot/proposals/${id}/${action}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({confirmPaper:action==="approve"})});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||`API ${response.status}`);setConfirmCopilotProposal(null);configInitialized.current=false;await load();setMessage(action==="approve"?(body.applied?"Ajuste del copiloto aplicado y guardado en PAPER.":"Preset generado y guardado. Aún no está activo."):"Propuesta del copiloto rechazada.");}catch(error){setMessage(error.message);}finally{setBusy("");}}
+  async function activateCopilotPreset(id){setBusy(`preset:${id}`);try{const response=await fetch(`${api}/api/bots/${bot.id}/copilot/presets/${id}/activate`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({confirmPaper:true})});const body=await response.json().catch(()=>({}));if(!response.ok)throw new Error(body.error||`API ${response.status}`);setConfirmCopilotProposal(null);configInitialized.current=false;await load();setMessage("Preset activado y sincronizado con los filtros PAPER.");}catch(error){setMessage(error.message);}finally{setBusy("");}}
+  const scans=data?.scans||[],opportunities=data?.opportunities||[],executions=data?.executions||[],promotion=data?.promotion||bot.promotion,readiness=data?.readiness||bot.readiness,validation=readiness?.validation||{},runtimeStage=readiness?.runtime?.stage||readiness?.stage||"LOADING",edge=promotion?.metrics||{},limits=promotion?.limits||{},edgeStage=validation.stage||"SYNCING",factor=edge.profitFactor==null?(edge.wins>0?"∞":"—"):Number(edge.profitFactor||0).toFixed(2),readouts=botSpecificReadout(bot,scans,opportunities),latestOpportunity=opportunities[0];
+  const tabs=[['cockpit','COCKPIT'],['scanner','SCANNER'],['opportunities','DECISIONS'],['executions','EXECUTIONS'],...(bot.id==="polymarket"&&!bot.marketBotId?[['live','LIVE QUEUE']]:[]),['config','POLICY'],['debug','DEBUG']];
+  return <div className={embedded?"botControlDock":"botControlOverlay"} onClick={embedded?undefined:onClose}><section className="botControlModal" onClick={event=>event.stopPropagation()} style={{"--botAccent":meta.accent}}>
+    <button className="botControlClose" onClick={onClose} aria-label="Close bot control">×</button>
+    <div className="botControlHeader"><span className="botControlOrb"><BotIcon size={26}/></span><div><small>BOT {String(meta.n).padStart(2,"0")} · COMMAND COCKPIT</small><h2>{meta.label}</h2><p>{bot.network||"MULTI"} · {bot.status||"UNKNOWN"}</p></div><div className="botControlPulse"><span><i/> AUTO-SYNC 5S</span><b>{controlTime(lastSync)}</b><em>PAPER · LIVE LOCKED</em></div></div>
+    <div className="botSafetyRail"><span className="paper"><ShieldCheck size={13}/> PAPER EXECUTION</span><span><i className={readiness?.provider?.ready?"online":"blocked"}/>{readiness?.provider?.name||"PROVIDER"}</span><span>{bot.globalKillSwitch?"GLOBAL KILL SWITCH ACTIVE":readiness?.provider?.ageMs!=null?`DATA AGE ${Math.round(readiness.provider.ageMs/1000)}s`:"GLOBAL RISK SAFE"}</span><button onClick={toggle} disabled={busy==="toggle"}><Zap size={12}/>{busy==="toggle"?"UPDATING":bot.active?"PAUSE BOT":"ACTIVATE PAPER"}</button><button className="scan" onClick={scan} disabled={busy==="scan"}><Radio size={12}/>{busy==="scan"?"SCANNING":"RUN SCAN"}</button></div>
+    <div className={`botEdgeBand ${String(edgeStage).toLowerCase()}`}><div><small>PAPER VALIDATION</small><b>{edgeStage.replaceAll("_"," ")}</b></div><span><small>RUNTIME</small><b>{runtimeStage.replaceAll("_"," ")}</b></span><span><small>{validation.mode==="REAL_MARKET_QUOTE_CLOSES"?"REAL-QUOTE EVIDENCE":"VERIFIED EVIDENCE"}</small><b>{validation.target?`${validation.evidence||0}/${validation.target}`:"N/A"}</b></span><p>{readiness?.blockers?.[0]||validation.nextAction||readiness?.nextAction||promotion?.nextGate||"Collecting verified PAPER evidence."}</p></div>
+    <div className="botControlTabs">{tabs.map(([id,label])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}>{label}</button>)}</div>
+    {tab==="cockpit"&&<div className="botCockpit"><BotEquityCurve executions={executions}/><div className="botControlStats botControlEdgeStats"><span><small>VALIDATED PNL</small><b className={Number(edge.realizedPnlUsd||0)>=0?"positive":"negative"}>{money(edge.realizedPnlUsd)}</b></span><span><small>EXPECTANCY</small><b>{money(edge.expectancyUsd)}</b></span><span><small>PROFIT FACTOR</small><b>{factor}</b></span><span><small>WIN RATE</small><b>{Number(edge.winRate||0).toFixed(1)}%</b></span><span><small>MAX DRAWDOWN</small><b>{money(edge.maxDrawdownUsd)}</b></span><span><small>LOSS STREAK</small><b>{edge.maxConsecutiveLosses||0}</b></span><span><small>OPEN POSITIONS</small><b>{edge.openPositions||0}/{limits.maxOpenPositions??"—"}</b></span><span><small>MAX NOTIONAL</small><b>{money(limits.maxNotionalUsd)}</b></span></div><section className="botSpecialReadout"><div className="botSectionTitle"><span><Radar size={14}/> LIVE SCANNER READOUT</span><small>{botDescription(bot)}</small></div><div>{readouts.map(item=><span key={item.label}><small>{item.label}</small><b>{item.value}</b></span>)}</div></section><section className="botDecisionSection"><div className="botSectionTitle"><span><Brain size={14}/> DECISION PIPELINE</span><small>{latestOpportunity?.asset||"Waiting for the next candidate"}</small></div><BotDecisionPipeline scans={scans} opportunities={opportunities} executions={executions}/>{latestOpportunity&&<div className="botDecisionWhy"><div><small>DECISION</small><b>{latestOpportunity.brain?.decision||"WATCH"} · SCORE {latestOpportunity.brain?.score||"—"}</b></div><div><small>DIRECTION / CONFIDENCE</small><b>{latestOpportunity.direction||"—"} · {Math.round(Number(latestOpportunity.confidence||0)*100)}%</b></div><p>{latestOpportunity.risk?.reasons?.[0]||latestOpportunity.promotion?.reasons?.[0]||latestOpportunity.brain?.reason||"Signal is progressing through PAPER validation gates."}</p></div>}</section><BotCopilotPanel bot={bot} copilot={copilotData} analysis={copilotAnalysis} busy={copilotBusy} prompt={copilotPrompt} setPrompt={setCopilotPrompt} onAsk={askCopilot} onReview={reviewCopilotProposal} onActivate={activateCopilotPreset} confirmId={confirmCopilotProposal} setConfirmId={setConfirmCopilotProposal}/></div>}
+    {tab==="scanner"&&<div className="botControlBody"><div className="botControlToolbar"><span>Lectura humana del scanner · raw payload permanece en DEBUG</span><button onClick={scan} disabled={busy==="scan"}><RefreshCw size={13}/>{busy==="scan"?"SCANNING…":"SCAN NOW"}</button></div><div className="botResultList modern">{scans.length?scans.map((row,index)=><article className={`botScanCard ${row.error?"hasError":""}`} key={row.scannedAt||row.createdAt||index}><div className="botScanCardHead"><span><i className={row.error?"blocked":"online"}/><b>{botLaunchLabel(row)}</b><small>{controlTime(row.scannedAt||row.at||row.createdAt)} · {row.provider||row.source||"SCANNER"}</small></span><strong>{row.error?"BLOCKED":row.kpis?`${row.kpis.qualified||0} QUALIFIED`:row.triggered?"TRIGGERED":"OBSERVED"}</strong></div>{row.error?<p>{row.error}</p>:<HumanFacts row={row}/>}</article>):<div className="botControlEmpty">No hay resultados todavía. Ejecuta RUN SCAN para iniciar el flujo.</div>}</div></div>}
+    {tab==="opportunities"&&<div className="botControlBody"><div className="botResultList modern">{opportunities.length?opportunities.map((row,index)=><article className="botDecisionCard" key={row.id||index}><div><span className={`decisionBadge ${String(row.brain?.decision||"watch").toLowerCase()}`}>{row.brain?.decision||"WATCH"}</span><b>{row.asset||row.strategy}</b><small>{row.direction||"—"} · {row.source||"Opportunity Bus"} · {controlTime(row.createdAt)}</small></div><div className="botDecisionNumbers"><span><small>SCORE</small><b>{row.brain?.score||"—"}</b></span><span><small>CONFIDENCE</small><b>{Math.round(Number(row.confidence||0)*100)}%</b></span><span><small>EXPECTED</small><b>{money(row.expectedProfitUsd)}</b></span><span><small>RISK</small><b>{row.risk?.approved?"APPROVED":"GATED"}</b></span></div><p>{row.risk?.reasons?.[0]||row.promotion?.reasons?.[0]||row.brain?.reason||"No blocking reason reported."}</p></article>):<div className="botControlEmpty">Este bot todavía no ha emitido decisiones al Opportunity Bus.</div>}</div></div>}
+    {tab==="executions"&&<div className="botControlBody"><div className="botResultList modern">{executions.length?executions.map((row,index)=><article className="botExecutionCard" key={row.id||index}><span className={`executionState ${String(row.status).toLowerCase()}`}>{row.status}</span><div><b>{row.asset||row.strategyId||bot.id}</b><small>{row.paperQuality||row.mode} · {row.quote?.provider||row.exit?.quote?.provider||row.reason||"EXECUTION ENGINE"}</small></div><strong className={Number(row.realizedProfitUsd||0)>=0?"positive":"negative"}>{row.status==="CLOSED"?money(row.realizedProfitUsd):money(row.entry?.notionalUsd||row.notionalUsd)}</strong><time>{controlTime(row.closedAt||row.createdAt)}</time></article>):<div className="botControlEmpty">No hay ejecuciones registradas para este bot.</div>}</div></div>}
+    {tab==="live"&&<div className="botLivePanel"><div className={`botLiveState ${connector?.enabled&&connector?.authenticated?"armed":"locked"}`}><b>{connector?.enabled&&connector?.authenticated?"POLYMARKET LIVE READY · MANUAL APPROVAL":"POLYMARKET LIVE LOCKED"}</b><small>{connector?.enabled?connector.authenticated?`Wallet ${shortAddress(connector.address)} autenticada · cada orden exige revisión y confirmación explícita.`:"Conecta MetaMask para autenticar el CLOB.":"LIVE permanece deshabilitado por configuración del servidor."}</small></div>{proposals.length?proposals.map(proposal=><article className="botProposal" key={proposal.id}><div><b>{proposal.question||proposal.marketId}</b><small>{proposal.side} · {proposal.size} USD · {proposal.status}</small></div><span>{proposal.price}</span>{proposal.status==="pending"&&<div className="botProposalActions"><button className={confirmProposal===proposal.id?"confirm":""} onClick={()=>confirmProposal===proposal.id?resolveProposal(proposal.id,"approve"):setConfirmProposal(proposal.id)} disabled={busy===`approve:${proposal.id}`}>{confirmProposal===proposal.id?"CONFIRM SEND":"REVIEW ORDER"}</button><button onClick={()=>{setConfirmProposal(null);resolveProposal(proposal.id,"reject");}} disabled={busy===`reject:${proposal.id}`}>REJECT</button></div>}</article>):<div className="botControlEmpty">No hay propuestas pendientes.</div>}</div>}
+    {tab==="config"&&<div className="botManualForm"><div className="botPolicyBanner"><ShieldCheck size={18}/><div><b>RISK ENVELOPE · PAPER ONLY</b><small>Los parámetros alimentan el Opportunity Bus. El copiloto solo puede proponerlos y requieren confirmación.</small></div></div><label className="botToggle"><input type="checkbox" checked={configValue.enabled} onChange={event=>setConfigValue(current=>({...current,enabled:event.target.checked}))}/><span/> ENABLE STRATEGY</label><div className="botPolicyGrid"><label>MAX ALLOCATION %<input type="number" min="0" max="50" step="0.5" value={configValue.maxAllocationPct} onChange={event=>setConfigValue(current=>({...current,maxAllocationPct:event.target.value}))}/></label><label>MIN CONFIDENCE (0–1)<input type="number" min="0.5" max="0.99" step="0.01" placeholder="Global risk" value={configValue.minConfidence} onChange={event=>setConfigValue(current=>({...current,minConfidence:event.target.value}))}/></label><label>MAX RISK SCORE<input type="number" min="0.05" max="0.9" step="0.01" value={configValue.maxRiskScore} onChange={event=>setConfigValue(current=>({...current,maxRiskScore:event.target.value}))}/></label><label>MIN EXPECTED PROFIT USD<input type="number" min="0" step="0.5" value={configValue.minExpectedProfitUsd} onChange={event=>setConfigValue(current=>({...current,minExpectedProfitUsd:event.target.value}))}/></label><label>MAX SLIPPAGE BPS<input type="number" min="1" max="500" step="1" value={configValue.maxSlippageBps} onChange={event=>setConfigValue(current=>({...current,maxSlippageBps:event.target.value}))}/></label></div><label>OPERATOR NOTES<textarea value={configValue.notes} onChange={event=>setConfigValue(current=>({...current,notes:event.target.value}))} placeholder="Describe la política manual y el criterio de recuperación del bot..."/></label><button className="botSaveButton" onClick={save} disabled={busy==="save"}><Settings size={15}/>{busy==="save"?"SAVING…":"SAVE & SYNC POLICY"}</button><div className="botLiveNotice">Promotion gate: {promotion?.nextGate||"Collect validated PAPER evidence before any capital increase."}</div></div>}
+    {tab==="debug"&&<div className="botDebugPanel"><div><Database size={15}/><span><b>RAW TELEMETRY</b><small>Datos técnicos para auditoría; no forman parte de la lectura operativa principal.</small></span></div><pre>{JSON.stringify(data,null,2)}</pre></div>}
+    {message&&<div className="botControlMessage">{message}</div>}
+    {copilotBusy&&<CopilotThinkingOverlay bot={bot} copilot={copilotData} data={data} question={copilotQuestion}/>}
   </section></div>;
 }
 
@@ -1216,8 +1408,8 @@ function botMeta(id) { const map={liquidation:{n:1,label:"LIQUIDATION HUNTER",ac
 function FinanceBotConfiguration({bots, state, busyBot, onAction, onSelect}) {
   const order = ["liquidation", "arbitrage", "solana-radar", "volatility", "momentum", "perpetuals", "polymarket", "smart-money", "yield", "allocator", "solana-meme-momentum", "polygon-meme-momentum", "fx-macro-momentum", "options-defined-risk", "crude-oil-regime", "nyse-news-impact"];
   const fallback = id => ({id, name: id.replaceAll("-", " "), active: false, status: "NOT LOADED", network: "MULTI", wallet: "PAPER_SLOT"});
-  return <section className="panel botConfigPanel"><PanelHead eyebrow="04 / BOT CONTROL" title="All ten core bots + six market bots. One control surface." action={`${order.length}/${order.length} VISIBLE · PAPER`}/><p className="botControlIntro">Los diez bots existentes se conservan. Los seis bots de mercado se añaden en la misma grilla, con el mismo control de resultados, parámetros y ejecución PAPER.</p><div className="botConfigGrid">{order.map(id => { const bot = bots.find(item => item.id === id) || fallback(id); const readiness = financeBotReadiness(id, state, bot); return <article className="botConfigCard" key={id}><button className="botConfigOpen" onClick={() => onSelect(id)}><div className="botConfigTop"><span className="botConfigIndex">{String(order.indexOf(id) + 1).padStart(2, "0")}</span><span className="botConfigIcon"><Bot size={17}/></span><div><b>{bot.name || id}</b><small>{bot.active ? bot.status : "PAUSED"}</small></div><i className={readiness.tone}/></div></button><div className="botConfigMeta"><span><small>NETWORK</small>{bot.network || "MULTI"}</span><span><small>WALLET</small>{bot.wallet || "PAPER_SLOT"}</span><span><small>HEARTBEAT</small>{bot.heartbeat ? new Date(bot.heartbeat).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}) : "WAITING"}</span></div><div className="botConfigReadiness"><span className={readiness.tone}>{readiness.label}</span><button onClick={() => onSelect(id)}><Settings size={12}/> CONTROL</button></div><div className="botConfigActions"><button disabled={busyBot === id} onClick={() => onAction(id, "scan")}><Radio size={12}/> {busyBot === id ? "RUNNING" : "SCAN"}</button><button onClick={() => onAction(id, "toggle")}><Zap size={12}/> {bot.active ? "PAUSE" : "ACTIVATE"}</button></div></article> })}</div></section>;
+  return <section className="panel botConfigPanel"><PanelHead eyebrow="04 / BOT CONTROL" title="All ten core bots + six market bots. One control surface." action={`${order.length}/${order.length} VISIBLE · PAPER`}/><p className="botControlIntro">Cada bot muestra ahora evidencia con cotización real, readiness y el siguiente bloqueo que debe resolver antes de recibir más capital.</p><div className="botConfigGrid">{order.map(id => { const bot = bots.find(item => item.id === id) || fallback(id); const readiness = financeBotReadiness(id, state, bot); return <article className="botConfigCard" key={id}><button className="botConfigOpen" onClick={() => onSelect(id)}><div className="botConfigTop"><span className="botConfigIndex">{String(order.indexOf(id) + 1).padStart(2, "0")}</span><span className="botConfigIcon"><Bot size={17}/></span><div><b>{bot.name || id}</b><small>{bot.active ? bot.status : "PAUSED"}</small></div><i className={readiness.tone}/></div></button><div className="botConfigMeta"><span><small>NETWORK</small>{bot.network || "MULTI"}</span><span><small>EDGE SCORE</small>{readiness.score}/100</span><span><small>EVIDENCE</small>{readiness.evidence}</span></div><div className="botConfigReadiness"><span className={readiness.tone}>{readiness.label}</span><button onClick={() => onSelect(id)}><Settings size={12}/> CONTROL</button></div><small className="botConfigNext">{readiness.nextAction}</small><div className="botConfigActions"><button disabled={busyBot === id} onClick={() => onAction(id, "scan")}><Radio size={12}/> {busyBot === id ? "RUNNING" : "SCAN"}</button><button onClick={() => onAction(id, "toggle")}><Zap size={12}/> {bot.active ? "PAUSE" : "ACTIVATE"}</button></div></article> })}</div></section>;
 }
-function financeBotReadiness(id, state, bot) { if (!bot?.active) return {label: "PAUSED", tone: "needs"}; if (id === "allocator") return {label: "ACTIVE · PAPER", tone: "ready"}; const marketStatus=bot.marketBotId ? state?.infrastructure?.marketBots?.bots?.[bot.marketBotId]?.status : null; const status = String(marketStatus || bot.status || "STARTING"); if (["SCANNING", "SCANNING_REAL", "ALLOCATING", "READY"].includes(status)) return {label: `ACTIVE · ${status}`, tone: "ready"}; if (["BLOCKED","DEGRADED","SCAN_ERROR"].includes(status)) return {label: `ACTIVE · ${status}`, tone: "needs"}; return {label: `ACTIVE · ${status}`, tone: "needs"}; }
+function financeBotReadiness(id,state,bot){const report=state?.infrastructure?.readiness?.bots?.find(item=>item.id===id);if(report){const runtime=report.runtime?.stage||report.stage,validation=report.validation||{},tone=["RUNNING","SCANNING"].includes(runtime)?(validation.stage==="RECOVERY_PAPER"?"recovery":"ready"):"needs";return {label:runtime.replaceAll("_"," "),tone,score:Number(report.score||0).toFixed(0),evidence:validation.target?`${validation.evidence||0}/${validation.target}`:"N/A",nextAction:report.blockers?.[0]||validation.nextAction||report.nextAction||"RUNNING"};}if(!bot?.active)return {label:"PAUSED",tone:"needs",score:"0",evidence:"N/A",nextAction:"BOT_PAUSED"};return {label:`ACTIVE · ${String(bot.status||"STARTING")}`,tone:"needs",score:"—",evidence:"—",nextAction:"WAITING_FOR_READINESS_SYNC"};}
 
 createRoot(document.getElementById("root")).render(<App/>);
