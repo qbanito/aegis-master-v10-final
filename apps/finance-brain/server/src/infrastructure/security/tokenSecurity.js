@@ -18,6 +18,9 @@ export class HeliusConnector{
     if(body?.error)throw new Error(body.error.message||'HELIUS_RPC_ERROR');
     return body?.result;
   }
+  accountInfo(address){return this.rpc('getAccountInfo',[address,{encoding:'jsonParsed',commitment:'confirmed'}]);}
+  tokenSupply(address){return this.rpc('getTokenSupply',[address,{commitment:'confirmed'}]);}
+  tokenLargestAccounts(address){return this.rpc('getTokenLargestAccounts',[address,{commitment:'confirmed'}]);}
   async probe(){
     if(!this.configured())return {...this.status(),online:false,readiness:'BLOCKED',error:'HELIUS_API_KEY_MISSING',checkedAt:now()};
     const started=Date.now();

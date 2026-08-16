@@ -32,6 +32,7 @@ import {SignalFusionEngine} from './core/signalFusion.js';
 import {IntelligenceLayer} from './core/intelligenceLayer.js';
 import {SolanaEarlyTokenScanner} from './bots/solana/earlyTokenScanner.js';
 import {solanaRpc} from './infrastructure/solana/solanaRpc.js';
+import {helius} from './infrastructure/security/tokenSecurity.js';
 import {journal} from './storage/journal.js';
 import {simulationEngine} from './core/simulationEngine.js';
 import {performanceDb} from './storage/performanceDatabase.js';
@@ -164,7 +165,7 @@ const yieldScanner=new YieldScanner({data:defiLlamaYields,bus:opportunityBus,onS
 state.infrastructure.yield={...state.infrastructure.yield,...yieldScanner.config()};yieldScanner.start();
 
 const solanaBot=state.bots.find(b=>b.id==='solana-radar');
-const solanaScanner=new SolanaEarlyTokenScanner({rpc:solanaRpc,bus:opportunityBus,onStatus:status=>{if(solanaBot){solanaBot.heartbeat=new Date().toISOString();solanaBot.status=solanaBot.active?status:'PAUSED';}broadcast();},onScan:scan=>{cap(state.infrastructure.solana.lastScans,scan,30);state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};journal.solana(scan);broadcast();}});
+const solanaScanner=new SolanaEarlyTokenScanner({rpc:solanaRpc,auditRpc:helius.configured()?helius:solanaRpc,bus:opportunityBus,onStatus:status=>{if(solanaBot){solanaBot.heartbeat=new Date().toISOString();solanaBot.status=solanaBot.active?status:'PAUSED';}broadcast();},onScan:scan=>{cap(state.infrastructure.solana.lastScans,scan,30);state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};journal.solana(scan);broadcast();}});
 state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};solanaScanner.start();
 
 const polymarketBot=state.bots.find(b=>b.id==='polymarket');
