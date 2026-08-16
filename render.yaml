@@ -83,6 +83,24 @@ services:
         sync: false
       - key: SOLANA_RPC_URL_2
         sync: false
+      - key: SOLANA_MARKET_WORKER_URL
+        value: https://aegis-solana-market-worker.onrender.com
+
+  - type: web
+    name: aegis-solana-market-worker
+    plan: free
+    runtime: python
+    rootDir: apps/solana-market-worker
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: SOLANA_WORKER_TIMEOUT_SECONDS
+        value: "8"
 
   - type: web
     name: aegis-commerce-brain

@@ -22,6 +22,10 @@ export const probeYieldData=()=>call('/api/infrastructure/yield-data/probe',{met
 export const probeSolana=()=>call('/api/infrastructure/solana/probe',{method:'POST'});
 export const scanSolanaRadar=()=>call('/api/solana-radar/scan',{method:'POST'});
 export const demoScanSolanaRadar=()=>call('/api/solana-radar/demo',{method:'POST'});
+export const getSolanaWorkerStatus=()=>call('/api/solana-worker/status');
+export const analyzeSolanaCandidates=candidates=>call('/api/solana-worker/analyze',{method:'POST',body:JSON.stringify({candidates})});
+export const simulateSolanaTransaction=transactionBase64=>call('/api/solana-worker/simulate',{method:'POST',body:JSON.stringify({transactionBase64})});
+export const setCryptoExecutionMode=(id,body)=>call(`/api/crypto-bots/${id}/execution-mode`,{method:'POST',body:JSON.stringify(body)});
 export const getIntelligence=()=>call('/api/intelligence');
 
 export const probeLatencyRouter=()=>call('/api/infrastructure/rpc/latency-probe',{method:'POST'});

@@ -10,11 +10,16 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "@polymarket/clob-client-v2": "^1.1.0",
+    "bullmq": "^6.1.2",
+    "ccxt": "^4.5.73",
     "cors": "latest",
     "dotenv": "latest",
     "ethers": "latest",
     "express": "latest",
+    "ioredis": "^6.0.0",
+    "p-queue": "^9.3.3",
     "socket.io": "latest",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
   }
 }

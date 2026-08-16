@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {ethers} from 'ethers';
 import {io} from 'socket.io-client';
+import {createChart,AreaSeries,HistogramSeries} from 'lightweight-charts';
 import {
   Activity,BarChart3,Bell,BookOpen,Brain,CircleDollarSign,Database,FlaskConical,
   Gauge,HelpCircle,Landmark,LayoutDashboard,MessageSquare,Mic,Network,Percent,
@@ -12,7 +13,8 @@ import {
   API,getState,toggleBot,rebalanceCapital,scanLiquidations,scanArbitrage,scanVolatility,
   scanPerpetuals,scanSmartMoney,scanMomentum,scanYield,scanSolanaRadar,demoScanSolanaRadar,scanPolymarket,
   getAgentStatus,chatAgent,getLiquidationLab,connectPolymarketWallet,
-  getPolymarketPendingSignature,resolvePolymarketSignature
+  getPolymarketPendingSignature,resolvePolymarketSignature,getSolanaWorkerStatus,
+  analyzeSolanaCandidates,setCryptoExecutionMode
 } from './api.js';
 import BotUniverse from './BotUniverse.jsx';
 import './style.css';
@@ -35,7 +37,9 @@ const BOT_META={
   polymarket:{n:7,label:'POLYMARKET INTELLIGENCE',sub:'Analizando mercados...',accent:'#9b62ff',Icon:Target},
   'smart-money':{n:8,label:'WHALE & SMART-MONEY TRACKER',sub:'Siguiendo smart money...',accent:'#ff7c3e',Icon:Activity},
   yield:{n:9,label:'DEFI YIELD / POOL OPPORTUNITY',sub:'Buscando pools rentables...',accent:'#39d36d',Icon:Landmark},
-  allocator:{n:10,label:'META STRATEGY / CAPITAL ALLOCATOR',sub:'Optimizando asignación de capital...',accent:'#e8bd42',Icon:Target}
+  allocator:{n:10,label:'META STRATEGY / CAPITAL ALLOCATOR',sub:'Optimizando asignación de capital...',accent:'#e8bd42',Icon:Target},
+  'solana-meme-momentum':{n:11,label:'SOLANA MEME MOMENTUM',sub:'Filtrando liquidez, flow y riesgo...',accent:'#b16cff',Icon:Zap},
+  'polygon-meme-momentum':{n:12,label:'POLYGON MEME MOMENTUM',sub:'Validando contrato, tax y momentum...',accent:'#8d75ff',Icon:TrendingUp}
 };
 const BOT_ORDER=['liquidation','arbitrage','solana-radar','volatility','momentum','perpetuals','polymarket','smart-money','yield','allocator'];
 const TOOL_TO_BOT={scan_liquidations:'liquidation',scan_arbitrage:'arbitrage',scan_volatility:'volatility',scan_perpetuals:'perpetuals',scan_solana:'solana-radar',scan_polymarket:'polymarket',scan_smart_money:'smart-money',scan_momentum:'momentum',scan_yield:'yield',rebalance:'allocator'};
@@ -50,6 +54,9 @@ function App(){
   const [selected,setSelected]=useState(null);
   const [agent,setAgent]=useState({provider:'mock',model:'AEGIS local demo',configured:true});
   const [liquidationLab,setLiquidationLab]=useState(null);
+  const [solanaWorker,setSolanaWorker]=useState(null);
+  const [solanaAnalysis,setSolanaAnalysis]=useState(null);
+  const [solanaBusy,setSolanaBusy]=useState(false);
   const [messages,setMessages]=useState([{role:'agent',text:'AEGIS online. Estoy conectado al cerebro central y listo para coordinar los agentes en modo PAPER.',time:nowTime()}]);
   const [input,setInput]=useState('');
   const [brainMode,setBrainMode]=useState('IDLE');
@@ -71,6 +78,7 @@ function App(){
     window.ethereum?.on?.('accountsChanged',onAccountsChanged);window.ethereum?.on?.('chainChanged',onChainChanged);
     return()=>{alive=false;socket.close();clearInterval(timer);window.ethereum?.removeListener?.('accountsChanged',onAccountsChanged);window.ethereum?.removeListener?.('chainChanged',onChainChanged)};
   },[]);
+  useEffect(()=>{getSolanaWorkerStatus().then(setSolanaWorker).catch(()=>setSolanaWorker({online:false,configured:false,error:'WORKER_NOT_CONNECTED'}));},[]);
   useEffect(()=>chatEnd.current?.scrollIntoView({behavior:'smooth'}),[messages,sending]);
 
   const totalPnl=useMemo(()=>state?.bots?.reduce((a,b)=>a+Number(b.pnl24h||0),0)||0,[state]);
@@ -118,6 +126,13 @@ function App(){
     setBrainMode('EXECUTING');setActiveBot('solana-radar');
     try{const result=await demoScanSolanaRadar();const kpis=result.scan?.kpis||{};setToast(`SOLANA RADAR DEMO: ${kpis.candidates||0} candidatos · ${kpis.audited||0} auditados · ${kpis.qualified||0} calificados · sin ejecución.`);}catch(e){setToast(e.message)}
     finally{setTimeout(()=>{setBrainMode('IDLE');setActiveBot(null)},1000)}
+  }
+  async function runSolanaAnalysis(){
+    setSolanaBusy(true);
+    try{const result=await analyzeSolanaCandidates();setSolanaAnalysis(result);setSolanaWorker(current=>({...current,online:true,lastAnalysis:result}));setToast(`SOLANA RESEARCH: ${result.paperReady||0} candidatos aptos para PAPER de ${result.candidateCount||0}.`);}catch(error){setToast(error.message)}finally{setSolanaBusy(false)}
+  }
+  async function setCryptoMode(botId,mode){
+    try{const result=await setCryptoExecutionMode(botId,{mode,wallet:account});setToast(mode==='ARMED_LIVE'?'LIVE armado: requiere simulación fresca y firma manual.':'Modo PAPER activado.');setState(current=>({...current,infrastructure:{...current.infrastructure,cryptoExecution:{...(current.infrastructure?.cryptoExecution||{}),[botId]:result}}}));}catch(error){setToast(error.message)}
   }
 
   async function toggleFromConfig(botId){
@@ -197,7 +212,7 @@ function App(){
       <MarketConnectorsPanel/>
       <div className="networkFooter"><span><i/> Conectado a {connectedNetworks(state)} Redes</span><div className="chainDots"><span>Ξ</span><span>◈</span><span>◎</span><span>◉</span><span>◆</span><span>∞</span></div></div>
     </main>
-    {selected&&<BotDrawer bot={selected} state={state} onClose={()=>setSelected(null)} onRun={()=>runBot(selected.id)} onToggle={async()=>{await toggleBot(selected.id);setSelected(null)}}/>}
+    {selected&&<BotDrawer bot={selected} state={state} onClose={()=>setSelected(null)} onRun={()=>runBot(selected.id)} onToggle={async()=>{await toggleBot(selected.id);setSelected(null)}} onAnalyze={runSolanaAnalysis} solanaWorker={solanaWorker} solanaAnalysis={solanaAnalysis} solanaBusy={solanaBusy} onSetCryptoMode={setCryptoMode}/>}
   </div>
 }
 
@@ -236,7 +251,11 @@ function MarketConnectorsPanel(){
   return <section className="walletPanel panel connectorPanel"><div className="panelTitle">CONECTORES DE MERCADO <span>SAFE BY DEFAULT</span></div><p>Binance, Solana y Polymarket están conectados al backend. Las operaciones LIVE requieren configuración y aprobación explícita.</p><div className="connectorGrid">{card('BINANCE SPOT / FUTURES',rows.binance)}{card('SOLANA · JUPITER / JITO',rows.solana)}{card('POLYMARKET CLOB',rows.polymarket)}</div>{error&&<small className="connectorError">{error}</small>}</section>;
 }
 
-function BotDrawer({bot,state,onClose,onRun,onToggle}){const m=BOT_META[bot.id]||BOT_META.liquidation,Icon=m.Icon;return <div className="drawerOverlay" onClick={onClose}><aside className="drawer" onClick={e=>e.stopPropagation()} style={{'--accent':m.accent}}><button className="close" onClick={onClose}>×</button><div className="drawerHead"><span><Icon size={34}/></span><div><small>AGENTE {m.n}</small><h2>{m.label}</h2><em>● {bot.active?'ACTIVO':'PAUSADO'}</em></div></div><div className="drawerStats"><Metric label="PNL PAPER 24H" value={fmt(bot.pnl24h)} positive/><Metric label="OPORTUNIDADES" value={bot.opportunities}/><Metric label="NETWORK" value={bot.network||'MULTI'}/><Metric label="HEARTBEAT" value={bot.heartbeat?new Date(bot.heartbeat).toLocaleTimeString():'—'}/></div><ScannerInsight botId={bot.id} state={state}/><p>Este módulo usa datos reales en lectura y permanece en PAPER. El JSON técnico queda disponible para auditoría sin ocupar la vista principal.</p><button className="drawerPrimary" onClick={onRun}><Radio size={16}/> EJECUTAR SCAN AHORA</button><button className="drawerSecondary" onClick={onToggle}><Power size={16}/> {bot.active?'PAUSAR AGENTE':'ACTIVAR AGENTE'}</button></aside></div>}
+function BotDrawer({bot,state,onClose,onRun,onToggle,onAnalyze,solanaWorker,solanaAnalysis,solanaBusy,onSetCryptoMode}){const m=BOT_META[bot.id]||BOT_META.liquidation,Icon=m.Icon,isSolana=['solana-radar','solana-meme-momentum'].includes(bot.id),isCrypto=isSolana||bot.id==='polygon-meme-momentum',crypto=state.infrastructure?.cryptoExecution?.[bot.id];return <div className="drawerOverlay" onClick={onClose}><aside className="drawer" onClick={e=>e.stopPropagation()} style={{'--accent':m.accent}}><button className="close" onClick={onClose}>×</button><div className="drawerHead"><span><Icon size={34}/></span><div><small>AGENTE {m.n}</small><h2>{m.label}</h2><em>● {bot.active?'ACTIVO':'PAUSADO'}</em></div></div><div className="drawerStats"><Metric label="PNL PAPER 24H" value={fmt(bot.pnl24h)} positive/><Metric label="OPORTUNIDADES" value={bot.opportunities}/><Metric label="NETWORK" value={bot.network||'MULTI'}/><Metric label="HEARTBEAT" value={bot.heartbeat?new Date(bot.heartbeat).toLocaleTimeString():'—'}/></div><ScannerInsight botId={bot.id} state={state}/>{isSolana&&<SolanaResearchPanel worker={solanaWorker} analysis={solanaAnalysis||state.infrastructure?.solanaWorker?.lastAnalysis} busy={solanaBusy} onAnalyze={onAnalyze}/>}<p>Los datos se leen en tiempo real; PAPER usa cotizaciones y ledger. LIVE solo se arma para revisión y exige simulación fresca, límites y firma manual de wallet.</p>{isCrypto&&<button className="drawerSecondary" onClick={()=>onSetCryptoMode(bot.id,crypto?.mode==='ARMED_LIVE'?'PAPER':'ARMED_LIVE')}><Shield size={16}/> {crypto?.mode==='ARMED_LIVE'?'VOLVER A PAPER':'ARMAR LIVE · FIRMA MANUAL'}</button>}<button className="drawerPrimary" onClick={onRun}><Radio size={16}/> EJECUTAR SCAN AHORA</button><button className="drawerSecondary" onClick={onToggle}><Power size={16}/> {bot.active?'PAUSAR AGENTE':'ACTIVAR AGENTE'}</button></aside></div>}
+
+function SolanaResearchPanel({worker,analysis,busy,onAnalyze}){const reports=analysis?.reports||[];return <section className="solanaResearch"><div className="solanaResearchHead"><div><span>SOLANA PYTHON RESEARCH</span><b>{worker?.online?'● WORKER ONLINE':'● WORKER PENDING'}</b></div><button onClick={onAnalyze} disabled={busy}>{busy?'ANALIZANDO…':'EJECUTAR ANÁLISIS'}</button></div><div className="solanaResearchMeta"><span>RPC {worker?.rpc?.online?'ONLINE':'PENDING'}</span><span>{analysis?`${analysis.paperReady||0} PAPER READY`:'SIN EVIDENCIA AÚN'}</span><span>NO SIGNING</span></div>{reports.length>0?<><SolanaScoreChart reports={reports}/><div className="solanaResearchRows">{reports.slice(0,3).map((row,index)=><div key={row.mint||index}><b>{row.symbol||row.mint?.slice(0,8)||'TOKEN'}</b><span>SCORE {Number(row.score||0).toFixed(1)}</span><em>{row.readyForPaper?'PAPER READY':(row.blockers?.[0]||'BLOCKED')}</em></div>)}</div></>:<small className="solanaResearchEmpty">Conecta el worker en Render y ejecuta un scan; aquí aparecerán los filtros reales de liquidez, autoridades y concentración.</small>}</section>}
+
+function SolanaScoreChart({reports}){const ref=useRef(null);useEffect(()=>{const el=ref.current;if(!el||!reports.length)return;const chart=createChart(el,{width:el.clientWidth,height:132,layout:{background:{type:'solid',color:'transparent'},textColor:'#8fb2c8'},grid:{vertLines:{color:'rgba(38,93,125,.2)'},horzLines:{color:'rgba(38,93,125,.2)'}},rightPriceScale:{borderColor:'#1b4c69'},timeScale:{borderColor:'#1b4c69',visible:false}});const score=chart.addSeries(AreaSeries,{lineColor:'#a36cff',topColor:'rgba(163,108,255,.35)',bottomColor:'rgba(163,108,255,.01)',lineWidth:2});const blockers=chart.addSeries(HistogramSeries,{priceFormat:{type:'volume'},priceScaleId:'',lastValueVisible:false});const start=Math.floor(Date.now()/1000)-reports.length*60;score.setData(reports.map((row,index)=>({time:start+index*60,value:Number(row.score||0)})));blockers.setData(reports.map((row,index)=>({time:start+index*60,value:row.readyForPaper?8:-Math.max(4,(row.blockers||[]).length*5),color:row.readyForPaper?'#45dd87':'#ff6c88'})));chart.timeScale().fitContent();const observer=new ResizeObserver(()=>chart.applyOptions({width:el.clientWidth}));observer.observe(el);return()=>{observer.disconnect();chart.remove();};},[reports]);return <div className="solanaScoreChart" ref={ref}/>}
 
 const SCAN_INFRA={liquidation:'liquidation',arbitrage:'arbitrage',volatility:'volatility',perpetuals:'perpetuals','smart-money':'smartMoney',momentum:'momentum',yield:'yield','solana-radar':'solana',polymarket:'polymarket'};
 function latestScan(botId,state){const market=state?.infrastructure?.marketBots?.results?.[botId];if(market)return market;const key=SCAN_INFRA[botId],rows=key?state?.infrastructure?.[key]?.lastScans:[];return Array.isArray(rows)&&rows.length?rows[0]:null;}
