@@ -26,6 +26,63 @@ services:
         sync: false
       - key: MUAPI_API_KEY
         sync: false
+      # Core scanner connectivity. Values are managed in Render, never committed.
+      - key: ARBITRUM_RPC_URL
+        sync: false
+      - key: ARBITRUM_RPC_URL_2
+        sync: false
+      - key: ETHEREUM_RPC_URL
+        sync: false
+      - key: POLYGON_RPC_URL
+        sync: false
+      - key: BASE_RPC_URL
+        sync: false
+      - key: AAVE_V3_POOL_ADDRESS
+        sync: false
+      - key: AAVE_DISCOVERY_ENABLED
+        sync: false
+      - key: ARB_NETWORK
+        sync: false
+      - key: ARB_ROUTER_A
+        sync: false
+      - key: ARB_ROUTER_A_NAME
+        sync: false
+      - key: ARB_ROUTER_B
+        sync: false
+      - key: ARB_ROUTER_B_NAME
+        sync: false
+      - key: ARB_TOKEN_IN
+        sync: false
+      - key: ARB_TOKEN_IN_SYMBOL
+        sync: false
+      - key: ARB_TOKEN_IN_DECIMALS
+        sync: false
+      - key: ARB_TOKEN_OUT
+        sync: false
+      - key: ARB_TOKEN_OUT_SYMBOL
+        sync: false
+      - key: ARB_TOKEN_OUT_DECIMALS
+        sync: false
+      - key: ARB_MAX_SANITY_SPREAD_BPS
+        sync: false
+      - key: WHALE_TOKEN_CONFIG
+        sync: false
+      - key: GOPLUS_API_URL
+        sync: false
+      - key: GOPLUS_ENABLED
+        sync: false
+      - key: ZEROX_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        sync: false
+      - key: ALPACA_API_KEY
+        sync: false
+      - key: ALPACA_API_SECRET
+        sync: false
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: SOLANA_RPC_URL_2
+        sync: false
 
   - type: web
     name: aegis-commerce-brain

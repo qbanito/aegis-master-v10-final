@@ -79,3 +79,10 @@ test('public provider adapters expose safe read-only status',()=>{
   assert.equal(new GoPlusConnector().status().mode,'READ_ONLY');
   assert.equal(new OkxDerivativesMarketData().instrument('BTCUSDT'),'BTC-USDT-SWAP');
 });
+
+test('market bots degrade when a provider returns an empty options chain or insufficient oil bars',()=>{
+  const registry=new MarketBotRegistry({state:makeState(),persist:()=>{}});
+  assert.deepEqual(registry.dataReadiness('options-defined-risk',{contracts:{option_contracts:[]}}),['OPTIONS_CHAIN_EMPTY']);
+  assert.deepEqual(registry.dataReadiness('crude-oil-regime',{bars:{bars:{USO:[]}}}),['MARKET_BARS_INSUFFICIENT']);
+  assert.deepEqual(registry.dataReadiness('nyse-news-impact',{news:{news:[]}}),['NEWS_FEED_EMPTY']);
+});

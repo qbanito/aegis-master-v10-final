@@ -47,17 +47,17 @@ export class DexArbitrageScanner {
     const amountIn=parseUnits(String(this.tradeSize),this.tokenInDecimals);
     try{
       const path=[this.tokenIn,this.tokenOut];
-      const [outA,outB]=await Promise.all([this.quote(this.routerA,amountIn,path),this.quote(this.routerB,amountIn,path)]);
+      const quoteStarted=Date.now(); const [outA,outB]=await Promise.all([this.quote(this.routerA,amountIn,path),this.quote(this.routerB,amountIn,path)]);
       const qa=Number(formatUnits(outA,this.tokenOutDecimals)); const qb=Number(formatUnits(outB,this.tokenOutDecimals));
-      const high=Math.max(qa,qb),low=Math.min(qa,qb),mid=(high+low)/2;
-      const spreadBps=mid>0?((high-low)/mid)*10000:0;
-      const grossSpreadPct=mid>0?((high-low)/mid)*100:0;
-      const grossProfitUsd=this.tradeSize*(spreadBps/10000);
+      const buyOnA=qa<=qb;const buyRouter=buyOnA?this.routerA:this.routerB;const sellRouter=buyOnA?this.routerB:this.routerA;const buyDex=buyOnA?this.routerAName:this.routerBName;const sellDex=buyOnA?this.routerBName:this.routerAName;const buyAmount=buyOnA?outA:outB;
+      const roundTripRaw=await this.quote(sellRouter,buyAmount,[this.tokenOut,this.tokenIn]);const roundTripReturn=Number(formatUnits(roundTripRaw,this.tokenInDecimals));
+      const mid=(qa+qb)/2;const grossProfitUsd=roundTripReturn-this.tradeSize;
+      const spreadBps=this.tradeSize>0?(grossProfitUsd/this.tradeSize)*10000:0;
+      const grossSpreadPct=this.tradeSize>0?(grossProfitUsd/this.tradeSize)*100:0;
       const feeUsd=this.tradeSize*(this.feeBps/10000);
       const netProfitUsd=grossProfitUsd-feeUsd-this.gasEstimateUsd;const quoteGuard=spreadBps>this.maxSanitySpreadBps;
-      const buyDex=qa<=qb?this.routerAName:this.routerBName; const sellDex=qa<=qb?this.routerBName:this.routerAName;
-      const scan={network:this.network,pair:`${this.tokenInSymbol}/${this.tokenOutSymbol}`,tradeSize:this.tradeSize,quoteA:qa,quoteB:qb,routerAName:this.routerAName,routerBName:this.routerBName,
-        spreadBps:Number(spreadBps.toFixed(2)),grossSpreadPct:Number(grossSpreadPct.toFixed(4)),grossProfitUsd:quoteGuard?null:Number(grossProfitUsd.toFixed(2)),feeUsd:Number(feeUsd.toFixed(2)),gasEstimateUsd:this.gasEstimateUsd,netProfitUsd:quoteGuard?null:Number(netProfitUsd.toFixed(2)),quoteGuard:quoteGuard?'REJECTED_SUSPICIOUS_SPREAD':null,maxSanitySpreadBps:this.maxSanitySpreadBps,buyDex,sellDex,scannedAt:new Date().toISOString()};
+      const scan={network:this.network,pair:`${this.tokenInSymbol}/${this.tokenOutSymbol}`,tradeSize:this.tradeSize,quoteA:qa,quoteB:qb,roundTripReturn:Number(roundTripReturn.toFixed(8)),routerAName:this.routerAName,routerBName:this.routerBName,
+        spreadBps:Number(spreadBps.toFixed(2)),grossSpreadPct:Number(grossSpreadPct.toFixed(4)),grossProfitUsd:quoteGuard?null:Number(grossProfitUsd.toFixed(2)),feeUsd:Number(feeUsd.toFixed(2)),gasEstimateUsd:this.gasEstimateUsd,netProfitUsd:quoteGuard?null:Number(netProfitUsd.toFixed(2)),quoteGuard:quoteGuard?'REJECTED_SUSPICIOUS_SPREAD':null,maxSanitySpreadBps:this.maxSanitySpreadBps,buyDex,sellDex,quoteLatencyMs:Date.now()-quoteStarted,scannedAt:new Date().toISOString()};
       this.onScan?.(scan);
       if(quoteGuard) return this.onStatus?.('QUOTE_GUARD');
       if(netProfitUsd < this.minNetProfitUsd) return this.onStatus?.('SCANNING_REAL');
@@ -67,7 +67,7 @@ export class DexArbitrageScanner {
       this.bus.emit('raw-opportunity',{strategyId:'arbitrage',strategy:'DEX Arbitrage Hunter',network:this.network,asset:`${this.tokenInSymbol}/${this.tokenOutSymbol}`,
         confidence,executionProbability,expectedProfitUsd:Number(netProfitUsd.toFixed(2)),capitalRequiredUsd:this.tradeSize,estimatedSlippageBps:Math.max(3,Math.round(spreadBps*.08)),riskScore,
         source:'DEX_ROUTER_REAL_QUOTES',synthetic:false,expiresAt:new Date(Date.now()+this.scanEveryMs).toISOString(),metadata:{routerA:this.routerA,routerB:this.routerB,routerAName:this.routerAName,routerBName:this.routerBName,
-          quoteA:qa,quoteB:qb,spreadBps:Number(spreadBps.toFixed(2)),buyDex,sellDex,feeUsd:Number(feeUsd.toFixed(2)),gasEstimateUsd:this.gasEstimateUsd,model:'QUOTE_COMPARISON_ONLY_NO_EXECUTION'}});
+          quoteA:qa,quoteB:qb,roundTripReturn:Number(roundTripReturn.toFixed(8)),spreadBps:Number(spreadBps.toFixed(2)),buyDex,sellDex,feeUsd:Number(feeUsd.toFixed(2)),gasEstimateUsd:this.gasEstimateUsd,quoteLatencyMs:Date.now()-quoteStarted,model:'ROUND_TRIP_QUOTES_NET_OF_FEES_GAS'}});
       this.onStatus?.('SCANNING_REAL');
     }catch(error){ this.onScan?.({network:this.network,error:error?.shortMessage||error?.message||'ARB_SCAN_ERROR',scannedAt:new Date().toISOString()}); this.onStatus?.('SCAN_ERROR'); }
     finally{this.running=false;}

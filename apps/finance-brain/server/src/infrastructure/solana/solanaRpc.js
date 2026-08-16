@@ -21,7 +21,8 @@ export class SolanaRpc {
   }
   async ping(){const started=Date.now();try{const [version,slot]=await Promise.all([this.call('getVersion'),this.call('getSlot',[{commitment:'processed'}])]);return {provider:'Solana RPC',online:true,url:this.url,endpoints:this.urls.length,slot,version:version?.['solana-core']||null,latencyMs:Date.now()-started,checkedAt:new Date().toISOString()};}catch(error){return {provider:'Solana RPC',online:false,url:this.url,endpoints:this.urls.length,error:error?.message||'SOLANA_RPC_ERROR',latencyMs:Date.now()-started,checkedAt:new Date().toISOString()};}}
   signatures(address,limit=30){return this.call('getSignaturesForAddress',[address,{limit,commitment:'confirmed'}]);}
-  transaction(signature){return this.call('getTransaction',[signature,{encoding:'jsonParsed',maxSupportedTransactionVersion:0,commitment:'confirmed'}]);}
+  transaction(signature,commitment='confirmed'){return this.call('getTransaction',[signature,{encoding:'jsonParsed',maxSupportedTransactionVersion:0,commitment}]);}
+  signatureStatus(signature,commitment='confirmed'){return this.call('getSignatureStatuses',[[signature],{searchTransactionHistory:false,commitment}]).then(result=>({value:result?.value?.[0]||null}));}
   accountInfo(address){return this.call('getAccountInfo',[address,{encoding:'jsonParsed',commitment:'confirmed'}]);}
   tokenSupply(address){return this.call('getTokenSupply',[address,{commitment:'confirmed'}]);}
   tokenLargestAccounts(address){return this.call('getTokenLargestAccounts',[address,{commitment:'confirmed'}]);}

@@ -21,6 +21,7 @@ export const probeYieldData=()=>call('/api/infrastructure/yield-data/probe',{met
 
 export const probeSolana=()=>call('/api/infrastructure/solana/probe',{method:'POST'});
 export const scanSolanaRadar=()=>call('/api/solana-radar/scan',{method:'POST'});
+export const demoScanSolanaRadar=()=>call('/api/solana-radar/demo',{method:'POST'});
 export const getIntelligence=()=>call('/api/intelligence');
 
 export const probeLatencyRouter=()=>call('/api/infrastructure/rpc/latency-probe',{method:'POST'});

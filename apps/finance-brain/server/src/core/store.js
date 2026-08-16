@@ -19,7 +19,7 @@ const infra=()=>({
   yield:{configured:true,lastScans:[]},
   yieldData:{provider:'DefiLlama Yields',online:false,lastProbe:null},
   fusion:{recent:[]},
-  solana:{configured:false,lastScans:[]},
+  solana:{configured:false,lastScans:[],lastBirths:[]},
   solanaRpc:{provider:'Solana RPC',online:false,lastProbe:null},
   intelligence:{recent:[],comboLeaderboard:[]},
   simulation:{recent:[],passed:0,rejected:0},
@@ -90,20 +90,21 @@ const publicMarketBotResult=result=>{
   else if(data.news&&Array.isArray(data.news.news))data.news={...data.news,news:data.news.news.slice(0,20)};
   return {...result,data};
 };
-export function publicState(){return {...state,opportunities:state.opportunities.slice(0,50),executions:state.executions.slice(0,50),infrastructure:{...state.infrastructure,
-  liquidation:{...state.infrastructure.liquidation,lastScans:(state.infrastructure.liquidation.lastScans||[]).slice(0,20),lastDiscoveries:(state.infrastructure.liquidation.lastDiscoveries||[]).slice(0,10)},
-  arbitrage:{...state.infrastructure.arbitrage,lastScans:(state.infrastructure.arbitrage.lastScans||[]).slice(0,20)},
-  volatility:{...state.infrastructure.volatility,lastScans:(state.infrastructure.volatility.lastScans||[]).slice(0,30)},
-  perpetuals:{...state.infrastructure.perpetuals,lastScans:(state.infrastructure.perpetuals.lastScans||[]).slice(0,30)},
-  smartMoney:{...state.infrastructure.smartMoney,lastScans:(state.infrastructure.smartMoney.lastScans||[]).slice(0,30)},
-  momentum:{...state.infrastructure.momentum,lastScans:(state.infrastructure.momentum.lastScans||[]).slice(0,30)},
-  yield:{...state.infrastructure.yield,lastScans:(state.infrastructure.yield.lastScans||[]).slice(0,20)},
-  fusion:{...state.infrastructure.fusion,recent:(state.infrastructure.fusion.recent||[]).slice(0,20)},
-  solana:{...state.infrastructure.solana,lastScans:(state.infrastructure.solana.lastScans||[]).slice(0,20)},
-  intelligence:{...state.infrastructure.intelligence,recent:(state.infrastructure.intelligence.recent||[]).slice(0,20),comboLeaderboard:(state.infrastructure.intelligence.comboLeaderboard||[]).slice(0,20)},
-  simulation:{...state.infrastructure.simulation,recent:(state.infrastructure.simulation.recent||[]).slice(0,30)},
-  performance:{...state.infrastructure.performance,recent:(state.infrastructure.performance.recent||[]).slice(0,30)},
-  polymarket:{...state.infrastructure.polymarket,lastScans:(state.infrastructure.polymarket.lastScans||[]).slice(0,20)},
+const recent=(value,limit)=>Array.isArray(value)?value.slice(0,limit):[];
+export function publicState(){return {...state,opportunities:recent(state.opportunities,50),executions:recent(state.executions,50),infrastructure:{...state.infrastructure,
+  liquidation:{...state.infrastructure.liquidation,lastScans:recent(state.infrastructure.liquidation.lastScans,20),lastDiscoveries:recent(state.infrastructure.liquidation.lastDiscoveries,10)},
+  arbitrage:{...state.infrastructure.arbitrage,lastScans:recent(state.infrastructure.arbitrage.lastScans,20)},
+  volatility:{...state.infrastructure.volatility,lastScans:recent(state.infrastructure.volatility.lastScans,30)},
+  perpetuals:{...state.infrastructure.perpetuals,lastScans:recent(state.infrastructure.perpetuals.lastScans,30)},
+  smartMoney:{...state.infrastructure.smartMoney,lastScans:recent(state.infrastructure.smartMoney.lastScans,30)},
+  momentum:{...state.infrastructure.momentum,lastScans:recent(state.infrastructure.momentum.lastScans,30)},
+  yield:{...state.infrastructure.yield,lastScans:recent(state.infrastructure.yield.lastScans,20)},
+  fusion:{...state.infrastructure.fusion,recent:recent(state.infrastructure.fusion.recent,20)},
+  solana:{...state.infrastructure.solana,lastScans:recent(state.infrastructure.solana.lastScans,20),lastBirths:recent(state.infrastructure.solana.lastBirths,50)},
+  intelligence:{...state.infrastructure.intelligence,recent:recent(state.infrastructure.intelligence.recent,20),comboLeaderboard:recent(state.infrastructure.intelligence.comboLeaderboard,20)},
+  simulation:{...state.infrastructure.simulation,recent:recent(state.infrastructure.simulation.recent,30)},
+  performance:{...state.infrastructure.performance,recent:recent(state.infrastructure.performance.recent,30)},
+  polymarket:{...state.infrastructure.polymarket,lastScans:recent(state.infrastructure.polymarket.lastScans,20)},
   marketBots:{...state.infrastructure.marketBots,results:Object.fromEntries(Object.entries(state.infrastructure.marketBots.results||{}).map(([id,result])=>[id,publicMarketBotResult(result)]))},
-  centralAgent:{...state.infrastructure.centralAgent,incidents:(state.infrastructure.centralAgent.incidents||[]).slice(0,40),reports:(state.infrastructure.centralAgent.reports||[]).slice(0,10),actions:(state.infrastructure.centralAgent.actions||[]).slice(0,20)}
+  centralAgent:{...state.infrastructure.centralAgent,incidents:recent(state.infrastructure.centralAgent.incidents,40),reports:recent(state.infrastructure.centralAgent.reports,10),actions:recent(state.infrastructure.centralAgent.actions,20)}
 }};}

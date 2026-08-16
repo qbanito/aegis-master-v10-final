@@ -14,6 +14,7 @@
     "dotenv": "latest",
     "ethers": "latest",
     "express": "latest",
-    "socket.io": "latest"
+    "socket.io": "latest",
+    "ws": "^8.21.3"
   }
 }

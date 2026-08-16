@@ -76,6 +76,25 @@ const marketBotRegistry=new MarketBotRegistry({state,persist,bus:opportunityBus}
 const governance=new AgentGovernance({state,persist,broadcast});
 const refreshKronosState=()=>{state.infrastructure.kronos=kronosStatus();};
 refreshKronosState();
+const BLOCKED_RUNTIME_STATUS=/^(WAITING_|NOT_CONFIGURED|SCAN_ERROR|ERROR|FAILED|BLOCKED|OFFLINE)/;
+const CURRENT_OPPORTUNITY_MAX_AGE_MS=Math.max(10000,Number(process.env.CURRENT_OPPORTUNITY_MAX_AGE_MS||120000));
+const timestamp=value=>{const parsed=Date.parse(value||'');return Number.isFinite(parsed)?parsed:0;};
+const currentOpportunity=row=>{const now=Date.now(),expires=timestamp(row?.expiresAt),created=timestamp(row?.createdAt);return Boolean(row)&&(!expires||expires>=now)&&(!created||now-created<=CURRENT_OPPORTUNITY_MAX_AGE_MS);};
+function refreshBotMetrics(){
+  const now=Date.now(),dayAgo=now-86400000;
+  state.opportunities=(state.opportunities||[]).filter(currentOpportunity).slice(0,250);
+  for(const bot of state.bots||[]){
+    bot.opportunities=state.opportunities.filter(item=>item.strategyId===bot.id&&!item.metadata?.advisory&&!item.metadata?.signalOnly).length;
+    bot.pnl24h=Number((state.executions||[]).filter(item=>item.strategyId===bot.id&&item.status==='CLOSED'&&timestamp(item.closedAt||item.createdAt)>=dayAgo).reduce((sum,item)=>sum+Number(item.realizedProfitUsd||0),0).toFixed(2));
+  }
+}
+function setRuntimeStatus(bot,status){
+  if(!bot)return;
+  bot.heartbeat=new Date().toISOString();bot.status=bot.active?status:'PAUSED';
+  if(BLOCKED_RUNTIME_STATUS.test(String(bot.status||'')))state.opportunities=(state.opportunities||[]).filter(item=>item.strategyId!==bot.id);
+  refreshBotMetrics();
+}
+refreshBotMetrics();
 
 const paperBroker=new RealMarketPaperBroker({state,persist,solanaTrading,polygonTrading:polygonPaperQuotes,onClose:({execution,opportunity,simulation})=>{
   if(!execution||execution.status!=='CLOSED'||!opportunity)return;
@@ -97,7 +116,7 @@ opportunityBus.on('raw-opportunity',async raw=>{
   const enriched={...preRisk,risk};
   state.infrastructure.simulation.recent.unshift(simulation);state.infrastructure.simulation.recent=state.infrastructure.simulation.recent.slice(0,100);
   simulation.passed?state.infrastructure.simulation.passed++:state.infrastructure.simulation.rejected++;journal.simulation(simulation);
-  state.opportunities.unshift(enriched);state.opportunities=state.opportunities.slice(0,250);const bot=state.bots.find(b=>b.id===opportunity.strategyId);if(bot&&!opportunity.metadata?.advisory&&!opportunity.metadata?.signalOnly)bot.opportunities++;
+  state.opportunities.unshift(enriched);state.opportunities=state.opportunities.slice(0,250);refreshBotMetrics();
   const breaker=circuitBreaker.canRun(opportunity.strategyId);enriched.circuitBreaker=breaker;
   if(brain.decision==='CANDIDATE'&&risk.approved&&breaker.allowed){const proposal=polymarketTrading.maybePropose(enriched);if(proposal)enriched.liveProposal=proposal;}
   const paperExecutionAllowed=state.mode==='PAPER'&&PAPER_EXECUTE_WATCH&&(brain.decision==='CANDIDATE'||brain.decision==='WATCH');
@@ -120,7 +139,7 @@ opportunityBus.on('raw-opportunity',async raw=>{
     }
   }
   const fusion=fusionEngine.ingest(enriched);if(fusion){state.infrastructure.fusion.recent.unshift(fusion);state.infrastructure.fusion.recent=state.infrastructure.fusion.recent.slice(0,50);journal.fusion(fusion);io.emit('fusion',fusion);const intel=intelligenceLayer.evaluate(fusion);state.infrastructure.intelligence.recent.unshift(intel);state.infrastructure.intelligence.recent=state.infrastructure.intelligence.recent.slice(0,50);state.infrastructure.intelligence.comboLeaderboard=intelligenceLayer.leaderboard();journal.intelligence(intel);io.emit('intelligence',intel);if(enriched.execution){intelligenceLayer.recordOutcome({strategies:intel.strategies,realizedProfitUsd:enriched.execution.realizedProfitUsd});state.infrastructure.intelligence.comboLeaderboard=intelligenceLayer.leaderboard();journal.combo({fusionId:fusion.id,executionId:enriched.execution.id,strategies:intel.strategies,realizedProfitUsd:enriched.execution.realizedProfitUsd,leaderboard:state.infrastructure.intelligence.comboLeaderboard.slice(0,5)});}}
-  journal.opportunity(enriched);persist();io.emit('opportunity',enriched);broadcast();
+  refreshBotMetrics();journal.opportunity(enriched);persist();io.emit('opportunity',enriched);broadcast();
 });
 
 startSyntheticAgents(state,opportunityBus,bot=>io.emit('heartbeat',{id:bot.id,heartbeat:bot.heartbeat,status:bot.status}));
@@ -130,49 +149,49 @@ const liquidationBot=state.bots.find(b=>b.id==='liquidation');
 const liquidationLab=new LiquidationStrategyLab();
 state.infrastructure.liquidation.markets=loadAaveMarkets();
 const liquidationScanner=new AaveV3LiquidationScanner({rpcManager,bus:opportunityBus,
-  onStatus:status=>{if(liquidationBot){liquidationBot.heartbeat=new Date().toISOString();liquidationBot.status=liquidationBot.active?status:'PAUSED';}broadcast();},
+  onStatus:status=>{setRuntimeStatus(liquidationBot,status);broadcast();},
   onScan:scan=>{cap(state.infrastructure.liquidation.lastScans,scan,50);journal.liquidation(scan);const ranked=liquidationLab.ingest(scan);if(ranked){state.infrastructure.liquidation.lab=liquidationLab.stats();liquidationResearchStore.record(state.infrastructure.liquidation.lab);io.emit('liquidation-lab',ranked);}},
   onDiscovery:d=>{cap(state.infrastructure.liquidation.lastDiscoveries,d,20);state.infrastructure.liquidation={...state.infrastructure.liquidation,...liquidationScanner.config()};journal.discovery(d);broadcast();}});
 state.infrastructure.liquidation={...state.infrastructure.liquidation,...liquidationScanner.config()};liquidationScanner.start();
 
 const arbitrageBot=state.bots.find(b=>b.id==='arbitrage');
 const arbitrageScanner=new DexArbitrageScanner({rpcManager,bus:opportunityBus,
-  onStatus:status=>{if(arbitrageBot){arbitrageBot.heartbeat=new Date().toISOString();arbitrageBot.status=arbitrageBot.active?status:'PAUSED';}broadcast();},
+  onStatus:status=>{setRuntimeStatus(arbitrageBot,status);broadcast();},
   onScan:scan=>{cap(state.infrastructure.arbitrage.lastScans,scan,50);journal.arbitrage(scan);broadcast();}});
 state.infrastructure.arbitrage={...state.infrastructure.arbitrage,...arbitrageScanner.config()};arbitrageScanner.start();
 
 const volatilityBot=state.bots.find(b=>b.id==='volatility');
 const volatilityScanner=new VolatilityScanner({marketData:binanceMarketData,bus:opportunityBus,
-  onStatus:status=>{if(volatilityBot){volatilityBot.heartbeat=new Date().toISOString();volatilityBot.status=volatilityBot.active?status:'PAUSED';}broadcast();},
+  onStatus:status=>{setRuntimeStatus(volatilityBot,status);broadcast();},
   onScan:scan=>{cap(state.infrastructure.volatility.lastScans,scan,60);journal.volatility(scan);broadcast();}});
 state.infrastructure.volatility={...state.infrastructure.volatility,...volatilityScanner.config()};volatilityScanner.start();
 
 const perpetualsBot=state.bots.find(b=>b.id==='perpetuals');
 const fundingScanner=new FundingScanner({marketData:binanceFuturesMarketData,bus:opportunityBus,
-  onStatus:status=>{if(perpetualsBot){perpetualsBot.heartbeat=new Date().toISOString();perpetualsBot.status=perpetualsBot.active?status:'PAUSED';}broadcast();},
+  onStatus:status=>{setRuntimeStatus(perpetualsBot,status);broadcast();},
   onScan:scan=>{cap(state.infrastructure.perpetuals.lastScans,scan,60);journal.perpetuals(scan);broadcast();}});
 state.infrastructure.perpetuals={...state.infrastructure.perpetuals,...fundingScanner.config()};fundingScanner.start();
 
 const smartMoneyBot=state.bots.find(b=>b.id==='smart-money');
 const whaleScanner=new Erc20WhaleScanner({rpcManager,bus:opportunityBus,
-  onStatus:status=>{if(smartMoneyBot){smartMoneyBot.heartbeat=new Date().toISOString();smartMoneyBot.status=smartMoneyBot.active?status:'PAUSED';}broadcast();},
+  onStatus:status=>{setRuntimeStatus(smartMoneyBot,status);broadcast();},
   onScan:scan=>{cap(state.infrastructure.smartMoney.lastScans,scan,60);journal.smartMoney(scan);broadcast();}});
 state.infrastructure.smartMoney={...state.infrastructure.smartMoney,...whaleScanner.config()};whaleScanner.start();
 
 const momentumBot=state.bots.find(b=>b.id==='momentum');
-const momentumScanner=new MomentumScanner({marketData:binanceMarketData,bus:opportunityBus,onStatus:status=>{if(momentumBot){momentumBot.heartbeat=new Date().toISOString();momentumBot.status=momentumBot.active?status:'PAUSED';}broadcast();},onScan:scan=>{cap(state.infrastructure.momentum.lastScans,scan,60);journal.momentum(scan);broadcast();}});
+const momentumScanner=new MomentumScanner({marketData:binanceMarketData,bus:opportunityBus,onStatus:status=>{setRuntimeStatus(momentumBot,status);broadcast();},onScan:scan=>{cap(state.infrastructure.momentum.lastScans,scan,60);journal.momentum(scan);broadcast();}});
 state.infrastructure.momentum={...state.infrastructure.momentum,...momentumScanner.config()};momentumScanner.start();
 
 const yieldBot=state.bots.find(b=>b.id==='yield');
-const yieldScanner=new YieldScanner({data:defiLlamaYields,bus:opportunityBus,onStatus:status=>{if(yieldBot){yieldBot.heartbeat=new Date().toISOString();yieldBot.status=yieldBot.active?status:'PAUSED';}broadcast();},onScan:scan=>{cap(state.infrastructure.yield.lastScans,scan,30);journal.yield(scan);broadcast();}});
+const yieldScanner=new YieldScanner({data:defiLlamaYields,bus:opportunityBus,onStatus:status=>{setRuntimeStatus(yieldBot,status);broadcast();},onScan:scan=>{cap(state.infrastructure.yield.lastScans,scan,30);journal.yield(scan);broadcast();}});
 state.infrastructure.yield={...state.infrastructure.yield,...yieldScanner.config()};yieldScanner.start();
 
 const solanaBot=state.bots.find(b=>b.id==='solana-radar');
-const solanaScanner=new SolanaEarlyTokenScanner({rpc:solanaRpc,auditRpc:helius.configured()?helius:solanaRpc,bus:opportunityBus,onStatus:status=>{if(solanaBot){solanaBot.heartbeat=new Date().toISOString();solanaBot.status=solanaBot.active?status:'PAUSED';}broadcast();},onScan:scan=>{cap(state.infrastructure.solana.lastScans,scan,30);state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};journal.solana(scan);broadcast();}});
+const solanaScanner=new SolanaEarlyTokenScanner({rpc:solanaRpc,auditRpc:helius.configured()?helius:solanaRpc,bus:opportunityBus,onStatus:status=>{setRuntimeStatus(solanaBot,status);broadcast();},onScan:scan=>{state.infrastructure.solana.lastScans=Array.isArray(state.infrastructure.solana.lastScans)?state.infrastructure.solana.lastScans:[];state.infrastructure.solana.lastBirths=Array.isArray(state.infrastructure.solana.lastBirths)?state.infrastructure.solana.lastBirths:[];cap(state.infrastructure.solana.lastScans,scan,30);state.infrastructure.solana.lastBirths.unshift(...(scan.births||[]));state.infrastructure.solana.lastBirths.splice(50);state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};journal.solana(scan);broadcast();}});
 state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};solanaScanner.start();
 
 const polymarketBot=state.bots.find(b=>b.id==='polymarket');
-const polymarketScanner=new PolymarketScanner({data:polymarketData,bus:opportunityBus,onStatus:status=>{if(polymarketBot){polymarketBot.heartbeat=new Date().toISOString();polymarketBot.status=polymarketBot.active?status:'PAUSED';}broadcast();},onScan:scan=>{cap(state.infrastructure.polymarket.lastScans,scan,30);state.infrastructure.polymarket={...state.infrastructure.polymarket,...polymarketScanner.config()};journal.polymarket(scan);broadcast();}});
+const polymarketScanner=new PolymarketScanner({data:polymarketData,bus:opportunityBus,onStatus:status=>{setRuntimeStatus(polymarketBot,status);broadcast();},onScan:scan=>{cap(state.infrastructure.polymarket.lastScans,scan,30);state.infrastructure.polymarket={...state.infrastructure.polymarket,...polymarketScanner.config()};journal.polymarket(scan);broadcast();}});
 state.infrastructure.polymarket={...state.infrastructure.polymarket,...polymarketScanner.config()};polymarketScanner.start();
 
 async function probeRpc(){state.infrastructure.rpc=await rpcManager.probeAll();journal.rpc(state.infrastructure.rpc);persist();broadcast();}
@@ -184,8 +203,8 @@ async function probeLatencyRouter(){state.infrastructure.latencyRouter=await rpc
 async function probeYieldData(){try{state.infrastructure.yieldData=await defiLlamaYields.ping();}catch(error){state.infrastructure.yieldData={provider:'DefiLlama Yields',online:false,error:error?.message||'YIELD_DATA_ERROR',checkedAt:new Date().toISOString()};}journal.yieldData(state.infrastructure.yieldData);persist();broadcast();}
 async function probeMarketBots(){try{state.infrastructure.marketBots.connectors=await marketBotRegistry.refreshConnectors();persist();broadcast();}catch(error){state.infrastructure.marketBots.connectors={error:error?.message||'MARKET_BOTS_CONNECTOR_ERROR',checkedAt:new Date().toISOString()};persist();broadcast();}}
 async function scanMarketBots(){try{await marketBotRegistry.scanAll();persist();broadcast();}catch(error){journal?.centralIncident?.({fingerprint:'market-bots:scan-error',severity:'error',code:'MARKET_BOTS_SCAN_ERROR',message:error?.message||'Market bot scan failed',createdAt:new Date().toISOString()});}}
-function rebalance(){const result=applyAllocations(state);journal.allocation(result);persist();broadcast();return result;}
-function recoverBot(id){const bot=state.bots.find(b=>b.id===id);if(!bot||!bot.active)return;bot.status='RECOVERING';bot.heartbeat=new Date().toISOString();setTimeout(()=>{if(bot.active)bot.status='SCANNING';broadcast();},1000);}
+function rebalance(){refreshBotMetrics();const result=applyAllocations(state);journal.allocation(result);persist();broadcast();return result;}
+function recoverBot(id){const bot=state.bots.find(b=>b.id===id);if(!bot||!bot.active)return;setRuntimeStatus(bot,'RECOVERING');const scanners={liquidation:liquidationScanner,arbitrage:arbitrageScanner,volatility:volatilityScanner,perpetuals:fundingScanner,'smart-money':whaleScanner,momentum:momentumScanner,yield:yieldScanner,'solana-radar':solanaScanner,polymarket:polymarketScanner};scanners[id]?.scanOnce?.().catch(()=>setRuntimeStatus(bot,'SCAN_ERROR'));broadcast();}
 const supervisor=new HealthSupervisor({state,onRecover:recoverBot,staleMs:Number(process.env.SUPERVISOR_STALE_MS||90000),intervalMs:Number(process.env.SUPERVISOR_INTERVAL_MS||15000)});
 supervisor.start();
 state.infrastructure.production.execution=executionAdapter.capabilities();
@@ -194,7 +213,7 @@ state.infrastructure.production.wallet={address:process.env.AEGIS_TREASURY_ADDRE
 state.infrastructure.binanceTrading=binanceTrading.status();
 state.infrastructure.solanaTrading=solanaTrading.status();
 state.infrastructure.polymarketTrading=polymarketTrading.status();
-setInterval(()=>{state.infrastructure.production.supervisor=supervisor.check();persist();broadcast();},Math.max(5000,Number(process.env.SUPERVISOR_INTERVAL_MS||15000)));
+setInterval(()=>{refreshBotMetrics();state.infrastructure.production.supervisor=supervisor.check();persist();broadcast();},Math.max(5000,Number(process.env.SUPERVISOR_INTERVAL_MS||15000)));
 setInterval(()=>{refreshKronosState();broadcast();},15000);
 state.infrastructure.performance=performanceDb.snapshot();probeRpc();probeLatencyRouter();probeMarketData();probeFuturesMarketData();probeYieldData();probeSolana();probePolymarket();probeMarketBots();setTimeout(scanMarketBots,10000).unref?.();rebalance();setInterval(probeRpc,15000);setInterval(probeLatencyRouter,20000);setInterval(probeMarketData,30000);setInterval(probeFuturesMarketData,30000);setInterval(probeYieldData,300000);setInterval(probeSolana,30000);setInterval(probePolymarket,45000);setInterval(probeMarketBots,60000);setInterval(scanMarketBots,Math.max(60000,Number(process.env.MARKET_BOTS_SCAN_MS||120000)));setInterval(rebalance,Math.max(15000,Number(process.env.ALLOCATOR_REBALANCE_MS||30000)));
 
@@ -245,7 +264,7 @@ app.get('/api/integrations/data-providers/status',(req,res)=>res.json({mode:'PAP
 app.get('/api/kronos/status',(req,res)=>res.json(kronosStatus()));
 app.post('/api/kronos/forecast',async(req,res)=>{try{const result=await kronosForecast(req.body||{});res.status(result.available?200:503).json(result);}catch(error){res.status(400).json({available:false,error:error?.message||'KRONOS_FORECAST_ERROR'});}});
 
-const healthPayload=()=>{const bots=state.bots||[],agentsTotal=bots.length,agentsOnline=bots.filter(bot=>bot.active&&!['PAUSED','ERROR','OFFLINE'].includes(String(bot.status||'').toUpperCase())).length,processed=(state.opportunities?.length||0)+(state.executions?.length||0);return {ok:true,service:'AEGIS Core',kind:'finance',version:'11.0.0',status:'online',mode:state.mode,time:new Date().toISOString(),agentsOnline,agentsTotal,processed,eventsProcessed:processed,paperEquityUsd:Number(state.treasury?.paperBalanceUsd||0)};};
+const healthPayload=()=>{refreshBotMetrics();const bots=state.bots||[],agentsTotal=bots.length,agentsOnline=bots.filter(bot=>bot.active&&!BLOCKED_RUNTIME_STATUS.test(String(bot.status||'').toUpperCase())&&String(bot.status||'').toUpperCase()!=='PAUSED').length,blockedBots=bots.filter(bot=>bot.active&&BLOCKED_RUNTIME_STATUS.test(String(bot.status||'').toUpperCase())).map(bot=>({id:bot.id,status:bot.status})),processed=(state.opportunities?.length||0)+(state.executions?.length||0);return {ok:true,service:'AEGIS Core',kind:'finance',version:'11.0.0',status:blockedBots.length?'degraded':'online',mode:state.mode,time:new Date().toISOString(),agentsOnline,agentsTotal,blockedBots,processed,eventsProcessed:processed,paperEquityUsd:Number(state.treasury?.paperBalanceUsd||0)};};
 app.get('/health',(req,res)=>res.json(healthPayload()));
 app.get('/api/health',(req,res)=>res.json(healthPayload()));
 app.get('/api/state',(req,res)=>res.json(publicState()));app.get('/api/bots',(req,res)=>res.json(state.bots));app.get('/api/opportunities',(req,res)=>res.json(state.opportunities.slice(0,100)));
@@ -261,6 +280,7 @@ app.post('/api/volatility/scan',async(req,res)=>{if(!volatilityBot?.active)retur
 app.post('/api/perpetuals/scan',async(req,res)=>{if(!perpetualsBot?.active)return res.status(409).json({error:'PERPETUALS_BOT_PAUSED'});await fundingScanner.scanOnce();res.json({ok:true,lastScans:state.infrastructure.perpetuals.lastScans.slice(0,12)});});
 app.post('/api/infrastructure/solana/probe',async(req,res)=>{await probeSolana();res.json(state.infrastructure.solanaRpc);});
 app.post('/api/solana-radar/scan',async(req,res)=>{if(!solanaBot?.active)return res.status(409).json({error:'SOLANA_RADAR_PAUSED'});await solanaScanner.scanOnce();state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};res.json({ok:true,lastScans:state.infrastructure.solana.lastScans.slice(0,10)});});
+app.post('/api/solana-radar/demo',async(req,res)=>{if(!solanaBot?.active)return res.status(409).json({error:'SOLANA_RADAR_PAUSED'});try{const scan=await solanaScanner.scanOnce({emitSignals:false});state.infrastructure.solana={...state.infrastructure.solana,...solanaScanner.config()};res.json({ok:true,mode:'DEMO',live:false,executed:false,signalsEmitted:0,scan:{...scan,mode:'DEMO',paperExecution:'Disabled for this demo request; no opportunity bus emission, no ledger mutation.'}});}catch(error){res.status(502).json({ok:false,mode:'DEMO',live:false,error:error?.message||'SOLANA_RADAR_DEMO_ERROR'});}});
 app.post('/api/infrastructure/rpc/latency-probe',async(req,res)=>{await probeLatencyRouter();res.json(state.infrastructure.latencyRouter);});
 app.post('/api/infrastructure/polymarket/probe',async(req,res)=>{await probePolymarket();res.json(state.infrastructure.polymarketData);});
 app.post('/api/polymarket/scan',async(req,res)=>{if(!polymarketBot?.active)return res.status(409).json({error:'POLYMARKET_BOT_PAUSED'});await polymarketScanner.scanOnce();res.json({ok:true,lastScans:state.infrastructure.polymarket.lastScans.slice(0,10)});});

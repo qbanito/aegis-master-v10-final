@@ -23,12 +23,12 @@ export class AaveV3LiquidationScanner {
     this.discoveryMaxBorrowers=Math.max(10,Number(process.env.AAVE_DISCOVERY_MAX_BORROWERS||250));
     this.discoveryEveryMs=Math.max(30000,Number(process.env.AAVE_DISCOVERY_MS||120000));
     this.lastDiscoveryAt=0;
-    this.bonusBps=Math.max(0,Number(process.env.LIQUIDATION_BONUS_ESTIMATE_BPS||500));
+    this.bonusBps=Math.max(0,Number(process.env.LIQUIDATION_BONUS_ESTIMATE_BPS||500));this.gasEstimateUsd=Math.max(0,Number(process.env.LIQUIDATION_GAS_ESTIMATE_USD||3));this.minNetProfitUsd=Math.max(0,Number(process.env.LIQUIDATION_MIN_NET_PROFIT_USD||5));
   }
   targets(){ return [...this.discovered].slice(-this.discoveryMaxBorrowers); }
   config(){
     return {network:'arbitrum',poolAddress:this.poolAddress||null,watchlistCount:this.watchlist.length,discoveredBorrowers:this.discovered.size,discoveryEnabled:this.discoveryEnabled,
-      discoveryLookbackBlocks:this.discoveryLookbackBlocks,scanEveryMs:this.scanEveryMs,baseDecimals:this.baseDecimals,configured:Boolean(this.poolAddress&&(this.watchlist.length||this.discoveryEnabled))};
+      discoveryLookbackBlocks:this.discoveryLookbackBlocks,scanEveryMs:this.scanEveryMs,baseDecimals:this.baseDecimals,bonusBps:this.bonusBps,gasEstimateUsd:this.gasEstimateUsd,minNetProfitUsd:this.minNetProfitUsd,configured:Boolean(this.poolAddress&&(this.watchlist.length||this.discoveryEnabled))};
   }
   async discoverBorrowers(){
     if(!this.discoveryEnabled || !isAddress(this.poolAddress)) return;
@@ -61,14 +61,18 @@ export class AaveV3LiquidationScanner {
           const scan={address,healthFactor,totalDebtUsd,totalCollateralUsd,liquidationThresholdBps:Number(data.currentLiquidationThreshold),source:this.watchlist.includes(address)?'MANUAL_WATCHLIST':'BORROW_EVENT_DISCOVERY',scannedAt:new Date().toISOString()};
           this.onScan?.(scan); if(totalDebtUsd<=0 || healthFactor>=1.08) continue;
           const proximity=clamp((1.08-healthFactor)/0.08); const executionProbability=healthFactor<1?.96:.55+proximity*.35; const confidence=.68+proximity*.30;
-          const estimatedGrossBonus=totalDebtUsd*(this.bonusBps/10000)*Math.min(.5,healthFactor<1?.5:.15); const expectedProfitUsd=Math.max(0,estimatedGrossBonus*.55);
+          const estimatedGrossBonus=totalDebtUsd*(this.bonusBps/10000)*Math.min(.5,healthFactor<1?.5:.15); const netBeforeProbability=estimatedGrossBonus-this.gasEstimateUsd; const expectedProfitUsd=Math.max(0,netBeforeProbability*.55);
+          if(expectedProfitUsd<this.minNetProfitUsd)continue;
           this.bus.emit('raw-opportunity',{strategyId:'liquidation',strategy:'Liquidation Hunter',network:'Arbitrum',asset:'AAVE-V3 POSITION',confidence,executionProbability,
             expectedProfitUsd:Number(expectedProfitUsd.toFixed(2)),capitalRequiredUsd:0,estimatedSlippageBps:20,riskScore:clamp(.42-(proximity*.22)),source:'AAVE_V3_BORROWER_DISCOVERY',synthetic:false,
-            expiresAt:new Date(Date.now()+this.scanEveryMs*1.5).toISOString(),metadata:{borrower:address,healthFactor,totalDebtUsd,totalCollateralUsd,poolAddress:this.poolAddress,discoverySource:scan.source,profitModel:'ESTIMATE_ONLY'}});
+            expiresAt:new Date(Date.now()+this.scanEveryMs*1.5).toISOString(),metadata:{borrower:address,healthFactor,totalDebtUsd,totalCollateralUsd,poolAddress:this.poolAddress,discoverySource:scan.source,estimatedGrossBonus:Number(estimatedGrossBonus.toFixed(2)),gasEstimateUsd:this.gasEstimateUsd,netBeforeProbability:Number(netBeforeProbability.toFixed(2)),profitModel:'ESTIMATE_AFTER_GAS_PAPER'}});
         }catch(error){this.onScan?.({address,error:error?.shortMessage||error?.message||'AAVE_READ_ERROR',scannedAt:new Date().toISOString()});}
       }
       this.onStatus?.('SCANNING_REAL');
+    }catch(error){
+      this.onScan?.({network:'arbitrum',error:error?.shortMessage||error?.message||'LIQUIDATION_SCAN_ERROR',scannedAt:new Date().toISOString()});
+      this.onStatus?.('SCAN_ERROR');
     }finally{this.running=false;}
   }
-  start(){this.scanOnce();this.interval=setInterval(()=>this.scanOnce(),this.scanEveryMs);return()=>clearInterval(this.interval);}
+  start(){this.scanOnce().catch(()=>this.onStatus?.('SCAN_ERROR'));this.interval=setInterval(()=>this.scanOnce().catch(()=>this.onStatus?.('SCAN_ERROR')),this.scanEveryMs);return()=>clearInterval(this.interval);}
 }
