@@ -527,8 +527,9 @@ function CommandCenter() {
   const online = (id) => snapshot.find((b) => b.id === id)?.status === "online";
   const critical = state?.incidents?.filter((i) => i.status === "open") || [];
   const active = thinking || talking || listening;
+  const fullBrainMode = ["finance", "commerce", "services", "saas", "media"].includes(activePage);
   return (
-    <div className={`commandApp ${focusMode ? "focusMode" : ""}`} onDoubleClick={handleSurfaceDoubleClick}>
+    <div className={`commandApp ${focusMode ? "focusMode" : ""} ${fullBrainMode ? "fullBrainMode" : ""}`} onDoubleClick={handleSurfaceDoubleClick}>
       <div className="scanline" />
       <header className="masthead">
         <div className="brandBlock">
@@ -547,7 +548,7 @@ function CommandCenter() {
           </button>
         </div>
       </header>
-      <div className="layout">
+      <div className={`layout ${fullBrainMode ? "fullBrainLayout" : ""}`}>
         <aside className="hierarchy">
           <SectionLabel>HIERARCHY OVERVIEW</SectionLabel>
           <HierarchyItem
@@ -1392,9 +1393,7 @@ function OperationalBrainPage({ brainId, onTalk, onBack }) {
   const modules = operationalModules[brainId] || [];
   const color = meta?.color || "#25e8ff";
   return (
-    <section className="brainPage operationalPage" style={{ "--page-accent": color }}>
-      <PageHeader eyebrow={`${meta.label} · OPERATIONAL CONTROL`} title={meta.name} description={`${meta.subtitle}. ${meta.detail}. Esta superficie concentra telemetría, módulos operativos y controles conectados del Brain.`} color={color} image={meta.image} onBack={onBack} onTalk={onTalk} />
-      <div className="pageNotice"><CheckCircle2 size={14} /> {notice}</div>
+    <section className="brainPage operationalPage fullBrainSurface" style={{ "--page-accent": color }}>
       <div className="brainEmbedShell" style={{ "--page-accent": color }}>
         <iframe title={`${meta.name} full cockpit`} src={`/brain-ui/${brainId}/`} />
       </div>
