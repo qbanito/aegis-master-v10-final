@@ -147,7 +147,27 @@ export class PublicDiscoveryConnector{
     }catch(error){return {...this.status(),online:false,error:error?.message||'DISCOVERY_RPC_UNAVAILABLE'};}
   }
   async search(){
-    const query=encodeURIComponent(this.query);const body=await fetchJson(`https://api.dexscreener.com/latest/dex/search?q=${query}`,{timeoutMs:8000,retries:1,errorPrefix:'DEXSCREENER'});const pairs=(body?.pairs||[]).filter(pair=>String(pair.chainId).toLowerCase()===this.chainId).slice(0,20);return pairs.map(pair=>({chainId:pair.chainId,dexId:pair.dexId,pairAddress:pair.pairAddress,baseToken:pair.baseToken,quoteToken:pair.quoteToken,priceUsd:pair.priceUsd,liquidityUsd:Number(pair.liquidity?.usd||0),volume24hUsd:Number(pair.volume?.h24||0),priceChange5m:Number(pair.priceChange?.m5||0),priceChange1h:Number(pair.priceChange?.h1||0),priceChange6h:Number(pair.priceChange?.h6||0),priceChange24h:Number(pair.priceChange?.h24||0),fdv:Number(pair.fdv||0),url:pair.url}));
+    let pairs=[];
+    if(this.chainId==='solana'){
+      try{
+        const feedUrls=['token-profiles/latest/v1','token-boosts/latest/v1'];
+        const responses=await Promise.allSettled(feedUrls.map(path=>fetchJson(`https://api.dexscreener.com/${path}`,{timeoutMs:8000,retries:1,errorPrefix:'DEXSCREENER_LAUNCH_FEED'})));
+        const addresses=[...new Set(responses.flatMap(result=>result.status==='fulfilled'&&Array.isArray(result.value)?result.value:[]).filter(item=>String(item?.chainId||'').toLowerCase()==='solana').map(item=>item.tokenAddress).filter(Boolean))].slice(0,30);
+        if(addresses.length){
+          const body=await fetchJson(`https://api.dexscreener.com/tokens/v1/solana/${encodeURIComponent(addresses.join(','))}`,{timeoutMs:10000,retries:1,errorPrefix:'DEXSCREENER_LAUNCH_PAIRS'});
+          pairs=Array.isArray(body)?body:(body?.pairs||[]);
+        }
+      }catch{}
+    }
+    if(!pairs.length){
+      const query=encodeURIComponent(this.query);const body=await fetchJson(`https://api.dexscreener.com/latest/dex/search?q=${query}`,{timeoutMs:8000,retries:1,errorPrefix:'DEXSCREENER'});pairs=body?.pairs||[];
+    }
+    const normalized=pairs.filter(pair=>String(pair.chainId).toLowerCase()===this.chainId).map(pair=>{
+      const txns=window=>pair.txns?.[window]||{};const createdAt=Number(pair.pairCreatedAt||0);const ageMinutes=createdAt>0?Math.max(0,(Date.now()-createdAt)/60000):null;
+      const m5=txns('m5'),h1=txns('h1'),h24=txns('h24');
+      return {chainId:pair.chainId,dexId:pair.dexId,pairAddress:pair.pairAddress,baseToken:pair.baseToken,quoteToken:pair.quoteToken,priceUsd:Number(pair.priceUsd||0),liquidityUsd:Number(pair.liquidity?.usd||0),volume5mUsd:Number(pair.volume?.m5||0),volume1hUsd:Number(pair.volume?.h1||0),volume24hUsd:Number(pair.volume?.h24||0),priceChange5m:Number(pair.priceChange?.m5||0),priceChange1h:Number(pair.priceChange?.h1||0),priceChange6h:Number(pair.priceChange?.h6||0),priceChange24h:Number(pair.priceChange?.h24||0),fdv:Number(pair.fdv||0),marketCap:Number(pair.marketCap||0),pairCreatedAt:createdAt?new Date(createdAt).toISOString():null,ageMinutes,buys5m:Number(m5.buys||0),sells5m:Number(m5.sells||0),txns5m:Number(m5.buys||0)+Number(m5.sells||0),buys1h:Number(h1.buys||0),sells1h:Number(h1.sells||0),txns1h:Number(h1.buys||0)+Number(h1.sells||0),buys24h:Number(h24.buys||0),sells24h:Number(h24.sells||0),txns24h:Number(h24.buys||0)+Number(h24.sells||0),boostActive:Number(pair.boosts?.active||0),url:pair.url,info:pair.info};
+    });
+    const best=new Map();for(const pair of normalized){const mint=pair.baseToken?.address||pair.pairAddress;if(!mint)continue;const current=best.get(mint);if(!current||pair.liquidityUsd>current.liquidityUsd)best.set(mint,pair);}return [...best.values()].sort((a,b)=>(b.txns5m+b.volume1hUsd/1000)-(a.txns5m+a.volume1hUsd/1000)).slice(0,30);
   }
 }
 
