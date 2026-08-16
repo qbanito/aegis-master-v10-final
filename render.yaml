@@ -39,15 +39,9 @@ services:
       - key: PORT
         value: "10000"
       - key: MEDIA_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-media-brain
-          property: hostport
+        value: https://aegis-media-brain.onrender.com
       - key: MANAGER_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-manager-brain
-          property: hostport
+        value: https://aegis-manager-brain.onrender.com
       - key: APIFY_API_TOKEN
         sync: false
       - key: APIFY_AMAZON_ACTOR_ID
@@ -93,15 +87,9 @@ services:
       - key: PORT
         value: "10000"
       - key: COMMERCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-commerce-brain
-          property: hostport
+        value: https://aegis-commerce-brain.onrender.com
       - key: SAAS_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-saas-brain
-          property: hostport
+        value: https://aegis-saas-brain.onrender.com
       - key: MUAPI_API_KEY
         sync: false
       - key: MUAPI_BASE_URL
@@ -129,35 +117,17 @@ services:
       - key: SERVICES_ALLOWED_ORIGINS
         value: "*"
       - key: FINANCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-finance-brain
-          property: hostport
+        value: https://aegis-finance-brain.onrender.com
       - key: COMMERCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-commerce-brain
-          property: hostport
+        value: https://aegis-commerce-brain.onrender.com
       - key: SAAS_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-saas-brain
-          property: hostport
+        value: https://aegis-saas-brain.onrender.com
       - key: MEDIA_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-media-brain
-          property: hostport
+        value: https://aegis-media-brain.onrender.com
       - key: MANAGER_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-manager-brain
-          property: hostport
+        value: https://aegis-manager-brain.onrender.com
       - key: CEO_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-ceo-brain
-          property: hostport
+        value: https://aegis-ceo-brain.onrender.com
       - key: RESEND_API_KEY
         sync: false
       - key: RESEND_FROM_DOMAIN
@@ -185,30 +155,15 @@ services:
       - key: PORT
         value: "10000"
       - key: FINANCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-finance-brain
-          property: hostport
+        value: https://aegis-finance-brain.onrender.com
       - key: COMMERCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-commerce-brain
-          property: hostport
+        value: https://aegis-commerce-brain.onrender.com
       - key: SAAS_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-saas-brain
-          property: hostport
+        value: https://aegis-saas-brain.onrender.com
       - key: MEDIA_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-media-brain
-          property: hostport
+        value: https://aegis-media-brain.onrender.com
       - key: SERVICES_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-services-brain
-          property: hostport
+        value: https://aegis-services-brain.onrender.com
       - key: OPENAI_API_KEY
         sync: false
       - key: AEGIS_AI_PROVIDER
@@ -228,35 +183,17 @@ services:
       - key: PORT
         value: "10000"
       - key: MANAGER_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-manager-brain
-          property: hostport
+        value: https://aegis-manager-brain.onrender.com
       - key: FINANCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-finance-brain
-          property: hostport
+        value: https://aegis-finance-brain.onrender.com
       - key: COMMERCE_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-commerce-brain
-          property: hostport
+        value: https://aegis-commerce-brain.onrender.com
       - key: SAAS_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-saas-brain
-          property: hostport
+        value: https://aegis-saas-brain.onrender.com
       - key: MEDIA_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-media-brain
-          property: hostport
+        value: https://aegis-media-brain.onrender.com
       - key: SERVICES_BRAIN_URL
-        fromService:
-          type: web
-          name: aegis-services-brain
-          property: hostport
+        value: https://aegis-services-brain.onrender.com
       - key: OPENAI_API_KEY
         sync: false
       - key: RESEND_API_KEY
