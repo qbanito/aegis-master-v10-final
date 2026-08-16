@@ -51,6 +51,21 @@ test('solana meme momentum blocks an audit with missing holder distribution',asy
   const result=await registry.scan('solana-meme-momentum');assert.ok(result.rejectedCandidates[0].blockers.includes('HOLDER_AUDIT_REQUIRED'));assert.equal(result.tradeable,false);
 });
 
+test('polygon meme momentum emits a confirmed PAPER signal for a verified low-tax pair',async()=>{
+  const emitted=[];const state=makeState();state.infrastructure.marketBots={connectors:{polygonDiscovery:{online:true},polygonPaperQuotes:{configured:true},goPlus:{configured:true}}};
+  const registry=new MarketBotRegistry({state,persist:()=>{},bus:{emit:(name,payload)=>{if(name==='raw-opportunity')emitted.push(payload);}}});
+  registry.polygonDiscovery={health:async()=>({online:true}),search:async()=>[{chainId:'polygon',dexId:'quickswap',pairAddress:'0xPAIR',baseToken:{address:'0xToken',symbol:'MOMO',name:'Momo'},quoteToken:{symbol:'USDC'},pairCreatedAt:Date.now()-10*60000,priceUsd:'.001',liquidityUsd:500000,volume5mUsd:100000,volume24hUsd:2000000,priceChange5m:5,priceChange1h:25,buys5m:30,sells5m:10,txns5m:40}]};
+  registry.securityChecks=async()=>[{chain:'137',address:'0xToken',security:{address:'0xToken',decimals:18,securityStatus:'AUDITED',securityFlags:[],verifiedContract:true,ownershipRenounced:false,buyTax:.005,sellTax:.005,top10HolderPct:18}}];
+  const first=await registry.scan('polygon-meme-momentum');const second=await registry.scan('polygon-meme-momentum');
+  assert.equal(first.tradeable,false);assert.equal(first.rejectedCandidates[0].blockers.includes('SIGNAL_CONFIRMATION_REQUIRED'),true);assert.equal(second.tradeable,true);assert.equal(second.signal.strategyId,'polygon-meme-momentum');assert.equal(emitted.length,1);assert.equal(emitted[0].synthetic,false);assert.equal(emitted[0].metadata.inputToken,'0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174');assert.equal(emitted[0].metadata.outputToken,'0xToken');
+});
+
+test('polygon meme momentum blocks honeypot, excessive tax and holder concentration',async()=>{
+  const state=makeState();state.infrastructure.marketBots={connectors:{polygonDiscovery:{online:true},polygonPaperQuotes:{configured:true},goPlus:{configured:true}}};
+  const registry=new MarketBotRegistry({state,persist:()=>{}});registry.polygonDiscovery={health:async()=>({online:true}),search:async()=>[{chainId:'polygon',baseToken:{address:'0xRisk',symbol:'RISK'},pairCreatedAt:Date.now()-10*60000,liquidityUsd:500000,volume5mUsd:100000,volume24hUsd:2000000,priceChange5m:5,priceChange1h:25,buys5m:30,sells5m:10,txns5m:40}]};registry.securityChecks=async()=>[{chain:'137',address:'0xRisk',security:{securityStatus:'AUDITED',securityFlags:['HONEYPOT_DETECTED'],verifiedContract:true,buyTax:8,sellTax:9,top10HolderPct:62}}];
+  const result=await registry.scan('polygon-meme-momentum');const reasons=result.rejectedCandidates.flatMap(item=>item.blockers);assert.equal(result.tradeable,false);assert.ok(reasons.includes('HONEYPOT_DETECTED'));assert.ok(reasons.includes('BUY_TAX_ABOVE_GATE'));assert.ok(reasons.includes('SELL_TAX_ABOVE_GATE'));assert.ok(reasons.includes('TOP10_CONCENTRATION_TOO_HIGH'));
+});
+
 test('derivatives adapter falls back to OKX public data when Binance is unavailable',async()=>{
   const adapter=new BinanceFuturesMarketData('https://unavailable.invalid');
   adapter.get=async()=>{throw new Error('BINANCE_FUTURES_HTTP_451');};

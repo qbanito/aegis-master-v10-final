@@ -34,8 +34,8 @@ function vwap(levels,notional){
 }
 
 export class RealMarketPaperBroker{
-  constructor({state,persist,onClose,solanaTrading}={}){
-    this.state=state;this.persist=persist;this.onClose=onClose;this.solanaTrading=solanaTrading;this.timers=new Map();this.contexts=new Map();
+  constructor({state,persist,onClose,solanaTrading,polygonTrading}={}){
+    this.state=state;this.persist=persist;this.onClose=onClose;this.solanaTrading=solanaTrading;this.polygonTrading=polygonTrading;this.timers=new Map();this.contexts=new Map();
     this.feeBps=envNum('PAPER_FEE_BPS',10);
     this.maxSpreadBps=envNum('PAPER_MAX_SPREAD_BPS',75);
     this.maxOpenPositions=Math.max(1,Math.floor(envNum('PAPER_MAX_OPEN_POSITIONS',8,1)));
@@ -58,6 +58,11 @@ export class RealMarketPaperBroker{
       const quote=await this.solanaTrading.quote({inputMint:side==='exit'?outputMint:inputMint,outputMint:side==='exit'?inputMint:outputMint,amount,slippageBps:Math.max(25,num(meta.slippageBps||50))});
       const inputHuman=amount/10**(side==='exit'?tokenDecimals:inputDecimals),outputHuman=num(quote?.outAmount)/10**(side==='exit'?inputDecimals:tokenDecimals);if(!(inputHuman>0&&outputHuman>0))return null;
       const mid=side==='exit'?outputHuman/inputHuman:notional/outputHuman,spread=Math.max(.0001,num(meta.slippageBps||50)/10000/2),baseQuantity=side==='exit'?inputHuman:outputHuman;return {provider:'Jupiter quote',symbol:opportunity.asset,bid:mid*(1-spread),ask:mid*(1+spread),bids:[[mid*(1-spread),baseQuantity]],asks:[[mid*(1+spread),baseQuantity]],observedAt:now(),indicative:false,route:quote.routePlan||null,rawOutAmount:quote.outAmount,inputHuman,outputHuman,baseQuantity};
+    }
+    if(network.includes('polygon')&&!String(opportunity.asset||'').startsWith('POLY:')){
+      const meta=opportunity.metadata||{},inputToken=meta.inputToken||meta.paperPlan?.inputToken,outputToken=meta.outputToken||meta.paperPlan?.outputToken,tokenDecimals=Math.max(0,num(meta.tokenDecimals??meta.paperPlan?.tokenDecimals??18)),inputDecimals=Math.max(0,num(meta.inputDecimals??meta.paperPlan?.inputDecimals??6)),side=String(opportunity.side||meta.quoteSide||'entry').toLowerCase();
+      if(!this.polygonTrading||!inputToken||!outputToken)return null;
+      const notional=Math.max(1,num(meta.notionalUsd||meta.paperPlan?.notionalUsd||opportunity.capitalRequiredUsd||0));const amount=side==='exit'?Math.max(1,Math.floor(num(meta.tokenAmount||meta.quantity||0)*10**tokenDecimals)):Math.max(1,Math.floor(notional*10**inputDecimals));const quote=await this.polygonTrading.quote({inputToken:side==='exit'?outputToken:inputToken,outputToken:side==='exit'?inputToken:outputToken,amount:String(amount),inputDecimals:side==='exit'?tokenDecimals:inputDecimals,outputDecimals:side==='exit'?inputDecimals:tokenDecimals,slippageBps:Math.max(25,num(meta.slippageBps||50))});const inputHuman=amount/10**(side==='exit'?tokenDecimals:inputDecimals),outputHuman=num(quote?.buyAmount)/10**(side==='exit'?inputDecimals:tokenDecimals);if(!(inputHuman>0&&outputHuman>0))return null;const mid=side==='exit'?outputHuman/inputHuman:notional/outputHuman,spread=Math.max(.0001,num(meta.slippageBps||50)/10000/2),baseQuantity=side==='exit'?inputHuman:outputHuman;return {provider:'0x Polygon quote',symbol:opportunity.asset,bid:mid*(1-spread),ask:mid*(1+spread),bids:[[mid*(1-spread),baseQuantity]],asks:[[mid*(1+spread),baseQuantity]],observedAt:quote.observedAt||now(),indicative:false,route:quote.sources||quote.route||null,rawBuyAmount:quote.buyAmount,inputHuman,outputHuman,baseQuantity};
     }
     const symbol=symbolFrom(opportunity.asset);
     if(network.includes('binance spot')&&symbol){
@@ -117,7 +122,7 @@ export class RealMarketPaperBroker{
     if(!direction&&!modelAllocation)return this.blocked(opportunity,'DIRECTION_REQUIRED');
     const ledger=this.state.paperLedger;
     if((ledger.openPositions||[]).length>=this.maxOpenPositions)return this.blocked(opportunity,'MAX_OPEN_POSITIONS');
-    const quote=await this.quote(opportunity); if(!quote)return String(opportunity.network||'').toLowerCase().includes('solana')?this.blocked(opportunity,'NO_REAL_MARKET_QUOTE'):this.modelFallback?this.modelOpen(opportunity,simulation,modelAllocation?'YIELD_ALLOCATION_NO_REAL_MARKET_QUOTE':'NO_REAL_MARKET_QUOTE'):this.blocked(opportunity,'NO_REAL_MARKET_QUOTE');
+    const quote=await this.quote(opportunity); if(!quote){const networkName=String(opportunity.network||'').toLowerCase();return networkName.includes('solana')||networkName.includes('polygon')?this.blocked(opportunity,'NO_REAL_MARKET_QUOTE'):this.modelFallback?this.modelOpen(opportunity,simulation,modelAllocation?'YIELD_ALLOCATION_NO_REAL_MARKET_QUOTE':'NO_REAL_MARKET_QUOTE'):this.blocked(opportunity,'NO_REAL_MARKET_QUOTE');}
     if(!direction)return this.blocked(opportunity,'DIRECTION_REQUIRED');
     const mid=(num(quote.bid)+num(quote.ask))/2,spreadBps=mid?((num(quote.ask)-num(quote.bid))/mid)*10000:Infinity;
     if(!(quote.bid>0&&quote.ask>=quote.bid))return this.blocked(opportunity,'INVALID_MARKET_QUOTE',{quote});

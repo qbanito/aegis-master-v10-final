@@ -53,6 +53,7 @@ import {liquidationResearchStore} from './storage/liquidationResearchStore.js';
 import {evmNetworkRegistry} from './infrastructure/evmNetworkRegistry.js';
 import {binanceTrading} from './infrastructure/binance/binanceTrading.js';
 import {solanaTrading} from './infrastructure/solana/solanaTrading.js';
+import {polygonPaperQuotes} from './infrastructure/brokers/demoBrokers.js';
 import {PolymarketTradingConnector} from './infrastructure/polymarket/polymarketTrading.js';
 import {CentralSupervisor} from './agent/centralSupervisor.js';
 import {MarketBotRegistry} from './bots/market/marketBotRegistry.js';
@@ -76,7 +77,7 @@ const governance=new AgentGovernance({state,persist,broadcast});
 const refreshKronosState=()=>{state.infrastructure.kronos=kronosStatus();};
 refreshKronosState();
 
-const paperBroker=new RealMarketPaperBroker({state,persist,solanaTrading,onClose:({execution,opportunity,simulation})=>{
+const paperBroker=new RealMarketPaperBroker({state,persist,solanaTrading,polygonTrading:polygonPaperQuotes,onClose:({execution,opportunity,simulation})=>{
   if(!execution||execution.status!=='CLOSED'||!opportunity)return;
   const cb=circuitBreaker.record(opportunity.strategyId,Number(execution.realizedProfitUsd||0));
   state.infrastructure.production.circuitBreakers=circuitBreaker.snapshot();

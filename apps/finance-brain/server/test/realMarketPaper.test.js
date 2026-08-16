@@ -42,3 +42,14 @@ test('solana paper never invents PNL when Jupiter has no quote',async()=>{
   const result=await broker.open({id:'solana-no-quote',strategyId:'solana-radar',asset:'TEST',network:'Solana',direction:'LONG',synthetic:false,capitalRequiredUsd:100,expectedProfitUsd:10},{passed:true,estimatedNetProfitUsd:5,successProbability:.8});
   assert.equal(result.status,'BLOCKED');assert.equal(result.reason,'NO_REAL_MARKET_QUOTE');assert.equal(state.paperLedger.realizedPnlUsd,0);
 });
+
+test('polygon paper uses a 0x quote and never falls back to invented PNL',async()=>{
+  const state=testState();let received=null;const broker=new RealMarketPaperBroker({state,polygonTrading:{quote:async input=>{received=input;return {buyAmount:input.outputToken==='TOKEN'?'100000000000000000000':'100000000',observedAt:new Date().toISOString()};}}});
+  const quote=await broker.quote({asset:'MOMO:0xToken',network:'Polygon',capitalRequiredUsd:100,metadata:{inputToken:'USDC',outputToken:'TOKEN',inputDecimals:6,tokenDecimals:18,notionalUsd:100,slippageBps:50}});
+  assert.equal(received.inputToken,'USDC');assert.equal(received.outputToken,'TOKEN');assert.equal(received.amount,'100000000');assert.equal(quote.provider,'0x Polygon quote');assert.ok(quote.bid>0&&quote.ask>quote.bid);
+});
+
+test('polygon paper blocks without a real quote',async()=>{
+  const state=testState();const broker=new RealMarketPaperBroker({state,polygonTrading:{quote:async()=>null}});const result=await broker.open({id:'polygon-no-quote',strategyId:'polygon-meme-momentum',asset:'MOMO:0xToken',network:'Polygon',direction:'LONG',synthetic:false,capitalRequiredUsd:100,expectedProfitUsd:10,metadata:{inputToken:'USDC',outputToken:'TOKEN',inputDecimals:6,tokenDecimals:18,notionalUsd:100}},{passed:true,estimatedNetProfitUsd:5,successProbability:.8});
+  assert.equal(result.status,'BLOCKED');assert.equal(result.reason,'NO_REAL_MARKET_QUOTE');assert.equal(state.paperLedger.realizedPnlUsd,0);
+});

@@ -148,13 +148,13 @@ export class PublicDiscoveryConnector{
   }
   async search(){
     let pairs=[];
-    if(this.chainId==='solana'){
+    if(['solana','polygon'].includes(this.chainId)){
       try{
         const feedUrls=['token-profiles/latest/v1','token-boosts/latest/v1'];
         const responses=await Promise.allSettled(feedUrls.map(path=>fetchJson(`https://api.dexscreener.com/${path}`,{timeoutMs:8000,retries:1,errorPrefix:'DEXSCREENER_LAUNCH_FEED'})));
-        const addresses=[...new Set(responses.flatMap(result=>result.status==='fulfilled'&&Array.isArray(result.value)?result.value:[]).filter(item=>String(item?.chainId||'').toLowerCase()==='solana').map(item=>item.tokenAddress).filter(Boolean))].slice(0,30);
+        const addresses=[...new Set(responses.flatMap(result=>result.status==='fulfilled'&&Array.isArray(result.value)?result.value:[]).filter(item=>String(item?.chainId||'').toLowerCase()===this.chainId).map(item=>item.tokenAddress).filter(Boolean))].slice(0,30);
         if(addresses.length){
-          const body=await fetchJson(`https://api.dexscreener.com/tokens/v1/solana/${encodeURIComponent(addresses.join(','))}`,{timeoutMs:10000,retries:1,errorPrefix:'DEXSCREENER_LAUNCH_PAIRS'});
+          const body=await fetchJson(`https://api.dexscreener.com/tokens/v1/${this.chainId}/${encodeURIComponent(addresses.join(','))}`,{timeoutMs:10000,retries:1,errorPrefix:'DEXSCREENER_LAUNCH_PAIRS'});
           pairs=Array.isArray(body)?body:(body?.pairs||[]);
         }
       }catch{}
@@ -171,7 +171,18 @@ export class PublicDiscoveryConnector{
   }
 }
 
+export class PolygonPaperQuoteConnector{
+  constructor(){this.base=cleanBase(process.env.POLYGON_QUOTE_API_BASE||'https://api.0x.org');this.apiKey=String(process.env.ZEROX_API_KEY||process.env.POLYGON_QUOTE_API_KEY||'');this.chainId=137;this.usdc=process.env.POLYGON_PAPER_USDC_ADDRESS||'0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';}
+  configured(){return Boolean(this.apiKey);}
+  status(){return {id:'polygon-paper-quotes',provider:'0x Swap API',mode:'PAPER_READ_ONLY',configured:this.configured(),online:null,live:false,liveExecutionReady:false,chainId:this.chainId,base:this.base,capabilities:['polygon-token-quotes','paper-entry-exit-pricing'],warning:'Solo cotiza; no firma ni envía transacciones.'};}
+  async quote({inputToken,outputToken,amount,inputDecimals=6,outputDecimals=18,slippageBps=100}={}){
+    if(!this.configured())throw new Error('POLYGON_QUOTE_API_KEY_MISSING');if(!inputToken||!outputToken||!amount)throw new Error('POLYGON_QUOTE_PARAMETERS_REQUIRED');
+    const url=new URL(`${this.base}/swap/permit2/price`);for(const [key,value] of Object.entries({chainId:this.chainId,sellToken:inputToken,buyToken:outputToken,sellAmount:amount,slippageBps}))url.searchParams.set(key,String(value));const headers={accept:'application/json','0x-api-key':this.apiKey};const body=await fetchJson(url,{headers,timeoutMs:10000,retries:2,errorPrefix:'POLYGON_0X_QUOTE'});if(!body?.buyAmount)throw new Error(body?.validationErrors?.[0]?.reason||body?.reason||'POLYGON_QUOTE_EMPTY');return {...body,inputToken,outputToken,inputDecimals,outputDecimals,observedAt:isoNow(),provider:'0x Swap API Polygon'};
+  }
+}
+
 export const alpacaPaper=new AlpacaPaperConnector();
 export const oandaPractice=new OandaPracticeConnector();
 export const ibkrPaper=new IbkrPaperConnector();
 export const publicTradFi=new PublicTradFiDataConnector();
+export const polygonPaperQuotes=new PolygonPaperQuoteConnector();
