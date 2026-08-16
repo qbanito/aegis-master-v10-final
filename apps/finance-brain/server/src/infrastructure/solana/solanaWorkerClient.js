@@ -13,7 +13,7 @@ export class SolanaWorkerClient {
       return payload;
     }finally{clearTimeout(timer);}
   }
-  health(){return this.request('/health');}
+  health(){return this.request('/probe');}
   analyze(candidates){return this.request('/analyze',{method:'POST',body:{candidates}});}
   simulate(transactionBase64){return this.request('/simulate',{method:'POST',body:{transactionBase64}});}
 }

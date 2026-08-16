@@ -104,6 +104,13 @@ def candidate_report(row: dict[str, Any]) -> dict[str, Any]:
 
 
 async def health(_: web.Request) -> web.Response:
+    # Render's health check must test process liveness, not wait for a third
+    # party RPC.  RPC availability is exposed by /probe for the Finance UI.
+    return respond({"ok": True, "service": "AEGIS Solana Market Worker", "mode": "READ_ONLY_PAPER",
+                    "rpc": {"configured": bool(RPC_URL)}, "capabilities": ["candidate-analysis", "versioned-transaction-simulation", "no-signing"], "checkedAt": utc_now()})
+
+
+async def probe(_: web.Request) -> web.Response:
     started = asyncio.get_running_loop().time()
     try:
         async with AsyncClient(RPC_URL, timeout=TIMEOUT_SECONDS) as client:
@@ -153,6 +160,7 @@ def respond(body: dict[str, Any], status: int = 200) -> web.Response:
 
 app = web.Application(client_max_size=512 * 1024)
 app.router.add_get("/health", health)
+app.router.add_get("/probe", probe)
 app.router.add_post("/analyze", analyze)
 app.router.add_post("/simulate", simulate)
 

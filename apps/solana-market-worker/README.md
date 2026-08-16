@@ -9,6 +9,7 @@ Variables requeridas en Render: `SOLANA_RPC_URL`. Opcionalmente
 
 Endpoints:
 
-- `GET /health` — estado y latencia RPC.
+- `GET /health` — liveness instantáneo para Render.
+- `GET /probe` — estado y latencia RPC.
 - `POST /analyze` — analiza hasta 100 candidatos de un scan existente.
 - `POST /simulate` — simula una transacción Base64 sin firmar ni enviar.
