@@ -37,12 +37,19 @@ const functionCatalog=[
 const functionRuns=new Map();
 
 async function targetJson(url,path){
-  try{
-    const controller=new AbortController();setTimeout(()=>controller.abort(),1800);
-    const response=await fetch(url+path,{signal:controller.signal});
-    if(!response.ok)throw new Error("HTTP "+response.status);
-    return await response.json();
-  }catch(error){return {error:error?.message||"TARGET_UNAVAILABLE"};}
+  let lastError;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),2500);
+      const response=await fetch(url+path,{signal:controller.signal}); clearTimeout(timer);
+      if(!response.ok)throw new Error("HTTP "+response.status);
+      return await response.json();
+    }catch(error){
+      lastError=error;
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350));
+    }
+  }
+  return {error:lastError?.message||"TARGET_UNAVAILABLE"};
 }
 async function targetRequest(url, path, options = {}) {
   try {
@@ -136,14 +143,19 @@ async function advanceGoal(goal){
 setInterval(()=>{goals.forEach(goal=>{advanceGoal(goal).catch(()=>{});});},75000);
 
 async function probe(t){
-  try{
-    const controller=new AbortController(); setTimeout(()=>controller.abort(),1800);
-    const r=await fetch(t.url+"/health",{signal:controller.signal});
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    return {id:t.id,name:t.name,url:t.url,status:"online",health:await r.json()};
-  }catch(e){
-    return {id:t.id,name:t.name,url:t.url,status:"offline",error:e.message};
+  let lastError;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),2500);
+      const r=await fetch(t.url+"/health",{signal:controller.signal}); clearTimeout(timer);
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return {id:t.id,name:t.name,url:t.url,status:"online",health:await r.json()};
+    }catch(e){
+      lastError=e;
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350));
+    }
   }
+  return {id:t.id,name:t.name,url:t.url,status:"offline",error:lastError?.message||"TARGET_UNAVAILABLE"};
 }
 
 async function inspect(){
