@@ -24,3 +24,9 @@ test('real-market paper uses bid ask depth and closes with mark price',async()=>
   phase='close';await broker.close(state.paperLedger.openPositions[0].id,'TEST');
   assert.equal(closeResult.status,'CLOSED');assert.ok(closeResult.realizedProfitUsd>0);assert.equal(state.paperLedger.openPositions.length,0);assert.ok(state.paperLedger.equityUsd>10000);
 });
+
+test('solana paper uses a Jupiter quote and never falls back to invented PNL',async()=>{
+  const state=testState();let received=null;const broker=new RealMarketPaperBroker({state,solanaTrading:{quote:async input=>{received=input;return {outAmount:'1000000000',routePlan:[{swapInfo:{label:'TEST'}}]};}}});
+  const quote=await broker.quote({asset:'TEST',network:'Solana',capitalRequiredUsd:100,metadata:{inputMint:'USDC',outputMint:'MINT',inputDecimals:6,tokenDecimals:6,notionalUsd:100,slippageBps:50}});
+  assert.equal(received.inputMint,'USDC');assert.equal(received.outputMint,'MINT');assert.equal(received.amount,100000000);assert.equal(quote.provider,'Jupiter quote');assert.ok(quote.bid>0&&quote.ask>quote.bid);
+});

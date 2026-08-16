@@ -1,36 +1,71 @@
-const uniq=a=>[...new Set(a.filter(Boolean))];
-const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+import {fetchJson} from '../../infrastructure/httpClient.js';
+import {goPlus} from '../../infrastructure/security/tokenSecurity.js';
+
+const uniq=a=>[...new Set((a||[]).filter(Boolean))];
+const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
+const num=(value,fallback=0)=>Number.isFinite(Number(value))?Number(value):fallback;
+const iso=()=>new Date().toISOString();
+const array=value=>Array.isArray(value)?value:[];
+const asList=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
+const SOLANA_USDC='EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+function activity(pair,window){
+  const row=pair?.txns?.[window]||{};
+  return {buys:Math.max(0,num(row.buys)),sells:Math.max(0,num(row.sells)),total:Math.max(0,num(row.buys)+num(row.sells))};
+}
+
+function normalizePair(pair){
+  const base=pair?.baseToken||{};
+  const createdAt=num(pair?.pairCreatedAt);
+  const ageMinutes=createdAt>0?Math.max(0,(Date.now()-createdAt)/60000):Number.POSITIVE_INFINITY;
+  const a5=activity(pair,'m5'),a1=activity(pair,'h1'),a24=activity(pair,'h24');
+  return {source:'DEXSCREENER',chainId:String(pair?.chainId||'').toLowerCase(),dexId:pair?.dexId||null,pairAddress:pair?.pairAddress||null,mint:base.address||null,symbol:base.symbol||'UNKNOWN',name:base.name||base.symbol||'Unknown token',quoteSymbol:pair?.quoteToken?.symbol||null,priceUsd:num(pair?.priceUsd),liquidityUsd:num(pair?.liquidity?.usd),volume5mUsd:num(pair?.volume?.m5),volume1hUsd:num(pair?.volume?.h1),volume6hUsd:num(pair?.volume?.h6),volume24hUsd:num(pair?.volume?.h24),priceChange5m:num(pair?.priceChange?.m5),priceChange1h:num(pair?.priceChange?.h1),priceChange6h:num(pair?.priceChange?.h6),priceChange24h:num(pair?.priceChange?.h24),fdv:num(pair?.fdv),marketCap:num(pair?.marketCap),pairCreatedAt:createdAt?new Date(createdAt).toISOString():null,ageMinutes,buys5m:a5.buys,sells5m:a5.sells,txns5m:a5.total,buys1h:a1.buys,sells1h:a1.sells,txns1h:a1.total,buys24h:a24.buys,sells24h:a24.sells,txns24h:a24.total,boostActive:num(pair?.boosts?.active),url:pair?.url||null,info:pair?.info||null};
+}
+
 export class SolanaEarlyTokenScanner{
-  constructor({rpc,bus,onStatus=()=>{},onScan=()=>{}}={}){
-    this.rpc=rpc;this.bus=bus;this.onStatus=onStatus;this.onScan=onScan;this.timer=null;this.seen=new Set();
-    this.programs=(process.env.SOLANA_LAUNCH_PROGRAMS||'').split(',').map(x=>x.trim()).filter(Boolean);
-    this.limit=Number(process.env.SOLANA_SIGNATURE_LIMIT||25);this.scanEveryMs=Number(process.env.SOLANA_RADAR_SCAN_MS||20000);this.minConfidence=Number(process.env.SOLANA_RADAR_MIN_CONFIDENCE||0.68);
-    this.maxTxPerCycle=Number(process.env.SOLANA_RADAR_MAX_TX_PER_CYCLE||20);this.paperNotionalUsd=Number(process.env.SOLANA_RADAR_PAPER_NOTIONAL_USD||300);
+  constructor({rpc,bus,security=goPlus,onStatus=()=>{},onScan=()=>{}}={}){
+    this.rpc=rpc;this.security=security;this.bus=bus;this.onStatus=onStatus;this.onScan=onScan;this.timer=null;this.seen=new Set();this.emittedMints=new Set();
+    this.programs=String(process.env.SOLANA_LAUNCH_PROGRAMS||'').split(',').map(x=>x.trim()).filter(Boolean);
+    this.dexBase=String(process.env.SOLANA_RADAR_DEXSCREENER_URL||'https://api.dexscreener.com').replace(/\/$/,'');
+    this.discoveryEnabled=String(process.env.SOLANA_RADAR_DISCOVERY_ENABLED||'true').toLowerCase()!=='false';
+    this.feedLimit=Math.max(5,Math.min(50,Number(process.env.SOLANA_RADAR_FEED_LIMIT||30)));this.maxAuditCandidates=Math.max(1,Math.min(12,Number(process.env.SOLANA_RADAR_MAX_AUDITS||8)));
+    this.limit=Math.max(5,Math.min(100,Number(process.env.SOLANA_SIGNATURE_LIMIT||25)));this.scanEveryMs=Math.max(10000,Number(process.env.SOLANA_RADAR_SCAN_MS||20000));this.minConfidence=clamp(Number(process.env.SOLANA_RADAR_MIN_CONFIDENCE||0.72),0.5,0.98);this.minScore=Math.max(0,Math.min(100,Number(process.env.SOLANA_RADAR_MIN_SCORE||72)));this.maxTxPerCycle=Math.max(1,Number(process.env.SOLANA_RADAR_MAX_TX_PER_CYCLE||20));this.paperNotionalUsd=Math.max(25,Number(process.env.SOLANA_RADAR_PAPER_NOTIONAL_USD||300));
+    this.minLiquidityUsd=Math.max(1000,Number(process.env.SOLANA_RADAR_MIN_LIQUIDITY_USD||15000));this.minVolume24hUsd=Math.max(1000,Number(process.env.SOLANA_RADAR_MIN_VOLUME_24H_USD||10000));this.maxAgeMinutes=Math.max(5,Number(process.env.SOLANA_RADAR_MAX_AGE_MINUTES||1440));this.minBuys5m=Math.max(0,Number(process.env.SOLANA_RADAR_MIN_BUYS_5M||3));this.maxTop10HolderPct=Math.max(1,Math.min(100,Number(process.env.SOLANA_RADAR_MAX_TOP10_HOLDER_PCT||35)));this.requireHolderAudit=String(process.env.SOLANA_RADAR_REQUIRE_HOLDER_AUDIT||'false').toLowerCase()==='true';this.stopLossPct=Math.max(1,Math.min(30,Number(process.env.SOLANA_RADAR_STOP_LOSS_PCT||8)));this.takeProfitPct=Math.max(this.stopLossPct,Math.min(100,Number(process.env.SOLANA_RADAR_TAKE_PROFIT_PCT||18)));
   }
-  config(){return {configured:!!this.programs.length,programs:this.programs,signatureLimit:this.limit,scanEveryMs:this.scanEveryMs,minConfidence:this.minConfidence,maxTxPerCycle:this.maxTxPerCycle};}
+  config(){return {configured:Boolean(this.programs.length||this.discoveryEnabled),source:'Solana RPC + DEX Screener + GoPlus + mint audit',programs:this.programs,discoveryEnabled:this.discoveryEnabled,dexScreener:this.dexBase,signatureLimit:this.limit,scanEveryMs:this.scanEveryMs,minConfidence:this.minConfidence,minScore:this.minScore,maxTxPerCycle:this.maxTxPerCycle,maxAuditCandidates:this.maxAuditCandidates,gates:{minLiquidityUsd:this.minLiquidityUsd,minVolume24hUsd:this.minVolume24hUsd,maxAgeMinutes:this.maxAgeMinutes,minBuys5m:this.minBuys5m,maxTop10HolderPct:this.maxTop10HolderPct,requireHolderAudit:this.requireHolderAudit},paperPlan:{notionalUsd:this.paperNotionalUsd,stopLossPct:this.stopLossPct,takeProfitPct:this.takeProfitPct,liveExecutionReady:false}};}
   start(){if(this.timer)return;this.scanOnce().catch(()=>{});this.timer=setInterval(()=>this.scanOnce().catch(()=>{}),this.scanEveryMs);}
   stop(){clearInterval(this.timer);this.timer=null;}
-  extractMints(tx){
-    const pre=(tx?.meta?.preTokenBalances||[]).map(x=>x.mint),post=(tx?.meta?.postTokenBalances||[]).map(x=>x.mint);
-    return uniq(post.filter(m=>!pre.includes(m)));
+  extractMints(tx){const pre=array(tx?.meta?.preTokenBalances).map(x=>x.mint),post=array(tx?.meta?.postTokenBalances).map(x=>x.mint);return uniq(post.filter(m=>!pre.includes(m)));}
+  scoreTx(tx,mint){const logs=array(tx?.meta?.logMessages),ok=tx?.meta?.err==null,keys=array(tx?.transaction?.message?.accountKeys),signerCount=keys.filter(k=>k?.signer).length,tokenTouches=array(tx?.meta?.postTokenBalances).filter(x=>x.mint===mint).length,logDepth=Math.min(logs.length,30)/30,confidence=clamp(0.55+(ok?.08:0)+Math.min(.12,tokenTouches*.03)+Math.min(.08,signerCount*.02)+logDepth*.08,0,0.93);return {confidence:Number(confidence.toFixed(3)),tokenTouches,signerCount,logCount:logs.length};}
+  async discoverPairs(){
+    const urls=[`${this.dexBase}/token-profiles/latest/v1`,`${this.dexBase}/token-boosts/latest/v1`];
+    const responses=await Promise.allSettled(urls.map(url=>fetchJson(url,{timeoutMs:8000,retries:1,errorPrefix:'SOLANA_RADAR_DISCOVERY'})));
+    const profiles=responses.flatMap(result=>result.status==='fulfilled'?asList(result.value):[]);const addresses=uniq(profiles.filter(item=>String(item?.chainId||'').toLowerCase()==='solana').map(item=>item.tokenAddress)).slice(0,this.feedLimit);if(!addresses.length)throw new Error('SOLANA_RADAR_NO_LAUNCH_FEED');
+    const body=await fetchJson(`${this.dexBase}/tokens/v1/solana/${encodeURIComponent(addresses.join(','))}`,{timeoutMs:10000,retries:1,errorPrefix:'SOLANA_RADAR_PAIRS'});const pairs=asList(body?.pairs||body).filter(pair=>String(pair?.chainId||'').toLowerCase()==='solana').map(normalizePair);const best=new Map();for(const pair of pairs){if(!pair.mint)continue;const current=best.get(pair.mint);if(!current||pair.liquidityUsd>current.liquidityUsd)best.set(pair.mint,pair);}return [...best.values()].sort((a,b)=>(b.txns5m+b.volume1hUsd/1000)-(a.txns5m+a.volume1hUsd/1000)).slice(0,this.feedLimit);
   }
-  scoreTx(tx,mint){
-    const logs=tx?.meta?.logMessages||[];const ok=tx?.meta?.err==null;const keys=tx?.transaction?.message?.accountKeys||[];
-    const signerCount=keys.filter(k=>k?.signer).length;const tokenTouches=(tx?.meta?.postTokenBalances||[]).filter(x=>x.mint===mint).length;
-    const logDepth=Math.min(logs.length,30)/30;const confidence=clamp(0.55+(ok?.08:0)+Math.min(.12,tokenTouches*.03)+Math.min(.08,signerCount*.02)+logDepth*.08,0,0.93);
-    return {confidence:Number(confidence.toFixed(3)),tokenTouches,signerCount,logCount:logs.length};
+  preliminary(pair){
+    const freshness=Number.isFinite(pair.ageMinutes)?clamp(1-pair.ageMinutes/this.maxAgeMinutes):0,liquidity=clamp(Math.log10(Math.max(1,pair.liquidityUsd/this.minLiquidityUsd)+1)/2),volume=clamp(Math.log10(Math.max(1,pair.volume24hUsd/this.minVolume24hUsd)+1)/2),activity=clamp(pair.txns5m/Math.max(1,this.minBuys5m*8)),flow=pair.txns5m?clamp(pair.buys5m/pair.txns5m):0,momentum=clamp(.5+pair.priceChange5m/20+pair.priceChange1h/40,-0.5,1),score=100*clamp(freshness*.18+liquidity*.22+volume*.2+activity*.15+flow*.1+momentum*.15),blockers=[];
+    if(pair.liquidityUsd<this.minLiquidityUsd)blockers.push('LIQUIDITY_BELOW_GATE');if(pair.volume24hUsd<this.minVolume24hUsd)blockers.push('VOLUME_BELOW_GATE');if(!Number.isFinite(pair.ageMinutes)||pair.ageMinutes>this.maxAgeMinutes)blockers.push('LAUNCH_TOO_OLD_OR_UNKNOWN');if(pair.buys5m<this.minBuys5m)blockers.push('BUY_ACTIVITY_BELOW_GATE');
+    return {...pair,score:Number(score.toFixed(2)),components:{freshness:Number(freshness.toFixed(3)),liquidity:Number(liquidity.toFixed(3)),volume:Number(volume.toFixed(3)),activity:Number(activity.toFixed(3)),buyFlow:Number(flow.toFixed(3)),momentum:Number(momentum.toFixed(3))},blockers};
+  }
+  async auditMint(mint){
+    try{
+      const result=await this.security.tokenSecurity('solana',mint),row=result?.[mint]||result||{},bad=[];
+      for(const [key,label] of [['mintable','MINT_AUTHORITY_ACTIVE'],['freezable','FREEZE_AUTHORITY_ACTIVE'],['closable','TOKEN_CLOSABLE'],['balance_mutable_authority','BALANCE_AUTHORITY_ACTIVE'],['metadata_mutable','METADATA_MUTABLE']]){if(row?.[key]?.status!==undefined&&String(row[key].status)!=='0')bad.push(label);}
+      return {mint,decimals:num(row?.decimals||row?.metadata?.decimals),mintAuthorityRevoked:row?.mintable?.status==='0',freezeAuthorityRevoked:row?.freezable?.status==='0',top10HolderPct:null,holderAudit:'NOT_AVAILABLE',provider:'GoPlus Token Security',securityFlags:bad,securityStatus:bad.length?'AUDITED_RISK':'AUDITED',auditedAt:iso()};
+    }catch(error){
+      try{const [account,supply,largest]=await Promise.all([this.rpc.accountInfo(mint),this.rpc.tokenSupply(mint),this.rpc.tokenLargestAccounts(mint)]);const info=account?.value?.data?.parsed?.info||{},decimals=num(info.decimals,supply?.value?.decimals||0),total=num(supply?.value?.uiAmount),top10=array(largest?.value).slice(0,10).reduce((sum,row)=>sum+num(row.uiAmount),0);return {mint,decimals,mintAuthority:info.mintAuthority||null,freezeAuthority:info.freezeAuthority||null,mintAuthorityRevoked:!info.mintAuthority,freezeAuthorityRevoked:!info.freezeAuthority,top10HolderPct:total?Number((top10/total*100).toFixed(2)):null,holderAudit:'ONCHAIN',provider:'Solana RPC',securityStatus:'AUDITED',auditedAt:iso()};}catch(rpcError){return {mint,securityStatus:'AUDIT_UNAVAILABLE',auditError:`${error?.message||'GOPLUS_ERROR'} · ${rpcError?.message||'RPC_AUDIT_ERROR'}`,auditedAt:iso()};}
+    }
+  }
+  finalize(pair,audit){
+    const blockers=[...(pair.blockers||[])];if(!audit||!String(audit.securityStatus||'').startsWith('AUDITED'))blockers.push('MINT_AUDIT_REQUIRED');if(audit?.securityStatus==='AUDITED_RISK')blockers.push(...(audit.securityFlags||['TOKEN_SECURITY_RISK']));if(audit?.mintAuthorityRevoked===false)blockers.push('MINT_AUTHORITY_ACTIVE');if(audit?.freezeAuthorityRevoked===false)blockers.push('FREEZE_AUTHORITY_ACTIVE');if(this.requireHolderAudit&&audit?.top10HolderPct==null)blockers.push('HOLDER_AUDIT_REQUIRED');if(audit?.top10HolderPct!=null&&audit.top10HolderPct>this.maxTop10HolderPct)blockers.push('TOP10_CONCENTRATION_TOO_HIGH');if(pair.score<this.minScore)blockers.push('RADAR_SCORE_BELOW_GATE');
+    const securityScore=String(audit?.securityStatus||'').startsWith('AUDITED')?1:0,confidence=clamp(.48+(pair.score/100)*.38+securityScore*.1,0,0.96),riskScore=clamp(.82-(pair.score/100)*.34-securityScore*.18+(audit?.top10HolderPct!=null&&audit.top10HolderPct>this.maxTop10HolderPct?0.2:0)+(audit?.top10HolderPct==null?0.06:0)),tradeable=blockers.length===0&&confidence>=this.minConfidence,slippageBps=Math.min(70,Math.max(25,Math.round(100000/Math.max(pair.liquidityUsd,1)))),grossTarget=this.paperNotionalUsd*this.takeProfitPct/100,estimatedProfit=Math.max(0,grossTarget*confidence-(this.paperNotionalUsd*slippageBps/10000)-(this.paperNotionalUsd*.001));
+    return {...pair,audit,blockers,tradeable,confidence:Number(confidence.toFixed(3)),riskScore:Number(riskScore.toFixed(3)),signal:tradeable?'CANDIDATE':'WATCH',paperPlan:{inputMint:SOLANA_USDC,outputMint:pair.mint,tokenDecimals:audit?.decimals||0,inputDecimals:6,notionalUsd:this.paperNotionalUsd,stopLossPct:this.stopLossPct,takeProfitPct:this.takeProfitPct,maxLossUsd:Number((this.paperNotionalUsd*this.stopLossPct/100).toFixed(2)),slippageBps,expectedProfitUsd:Number(estimatedProfit.toFixed(2))}};
   }
   async scanOnce(){
-    if(!this.programs.length){this.onStatus('WAITING_CONFIG');const scan={at:new Date().toISOString(),configured:false,programs:0,discoveries:[]};this.onScan(scan);return scan;}
-    this.onStatus('SCANNING');const discoveries=[];let processed=0;
-    for(const program of this.programs){
-      let sigs=[];try{sigs=await this.rpc.signatures(program,this.limit);}catch(error){discoveries.push({program,error:error.message});continue;}
-      for(const s of sigs){if(processed>=this.maxTxPerCycle)break;if(this.seen.has(s.signature))continue;this.seen.add(s.signature);processed++;
-        try{const tx=await this.rpc.transaction(s.signature);for(const mint of this.extractMints(tx)){const score=this.scoreTx(tx,mint);const item={program,signature:s.signature,mint,slot:s.slot,blockTime:s.blockTime?new Date(s.blockTime*1000).toISOString():null,...score,source:'SOLANA_RPC',createdAt:new Date().toISOString()};discoveries.push(item);
-          if(score.confidence>=this.minConfidence)this.bus.emit('raw-opportunity',{strategyId:'solana-radar',strategy:'Solana Early Token Radar',network:'Solana',asset:mint,confidence:score.confidence,executionProbability:.5,expectedProfitUsd:0,capitalRequiredUsd:this.paperNotionalUsd,estimatedSlippageBps:75,riskScore:.65,source:'SOLANA_LAUNCH_PROGRAM_ACTIVITY',synthetic:false,metadata:{direction:'WATCH',program,signature:s.signature,mint,slot:s.slot,tokenTouches:score.tokenTouches,signerCount:score.signerCount}});
-        }}catch(error){discoveries.push({program,signature:s.signature,error:error.message});}
-      }
-    }
-    if(this.seen.size>5000)this.seen=new Set([...this.seen].slice(-2500));const scan={at:new Date().toISOString(),configured:true,programs:this.programs.length,processed,discoveries:discoveries.slice(0,100)};this.onScan(scan);this.onStatus('SCANNING');return scan;
+    this.onStatus('SCANNING_REAL');const started=Date.now(),discoveries=[],launches=[];let processed=0,discoveryError=null;
+    if(this.discoveryEnabled){try{const pairs=await this.discoverPairs(),preliminary=pairs.map(pair=>this.preliminary(pair)).sort((a,b)=>b.score-a.score),auditTargets=preliminary.filter(row=>row.blockers.length<=1).slice(0,this.maxAuditCandidates),audits=await Promise.all(auditTargets.map(row=>this.auditMint(row.mint))),auditMap=new Map(audits.map(row=>[row.mint,row]));for(const row of preliminary){const final=this.finalize(row,auditMap.get(row.mint));launches.push(final);if(final.tradeable&&!this.emittedMints.has(final.mint)){this.emittedMints.add(final.mint);this.bus.emit('raw-opportunity',{strategyId:'solana-radar',strategy:'Solana Early Token Radar',network:'Solana',asset:final.symbol||final.mint,direction:'LONG',confidence:final.confidence,executionProbability:final.confidence,expectedProfitUsd:final.paperPlan.expectedProfitUsd,capitalRequiredUsd:final.paperPlan.notionalUsd,estimatedSlippageBps:final.paperPlan.slippageBps,riskScore:final.riskScore,source:'DEXSCREENER_SOLANA_LAUNCH_REAL',synthetic:false,expiresAt:new Date(Date.now()+Math.max(60000,this.scanEveryMs*3)).toISOString(),metadata:{direction:'LONG',mint:final.mint,pairAddress:final.pairAddress,symbol:final.symbol,name:final.name,dexId:final.dexId,priceUsd:final.priceUsd,liquidityUsd:final.liquidityUsd,volume24hUsd:final.volume24hUsd,priceChange5m:final.priceChange5m,priceChange1h:final.priceChange1h,ageMinutes:final.ageMinutes,score:final.score,components:final.components,audit:final.audit,paperPlan:final.paperPlan,inputMint:final.paperPlan.inputMint,outputMint:final.paperPlan.outputMint,tokenDecimals:final.paperPlan.tokenDecimals,inputDecimals:final.paperPlan.inputDecimals,maxLossUsd:final.paperPlan.maxLossUsd,slippageBps:final.paperPlan.slippageBps,signalModel:'FRESHNESS_LIQUIDITY_FLOW_MOMENTUM_MINT_AUDIT',advisory:false,signalOnly:false}});}}}catch(error){discoveryError=error?.message||'SOLANA_LAUNCH_DISCOVERY_ERROR';}}
+    if(this.programs.length){for(const program of this.programs){let sigs=[];try{sigs=await this.rpc.signatures(program,this.limit);}catch(error){discoveries.push({program,error:error.message});continue;}for(const s of sigs){if(processed>=this.maxTxPerCycle)break;if(this.seen.has(s.signature))continue;this.seen.add(s.signature);processed++;try{const tx=await this.rpc.transaction(s.signature);for(const mint of this.extractMints(tx)){const score=this.scoreTx(tx,mint);discoveries.push({type:'program_activity',program,signature:s.signature,mint,slot:s.slot,blockTime:s.blockTime?new Date(s.blockTime*1000).toISOString():null,...score,source:'SOLANA_RPC',createdAt:iso()});}}catch(error){discoveries.push({type:'program_activity',program,signature:s.signature,error:error.message});}}}}
+    if(this.seen.size>5000)this.seen=new Set([...this.seen].slice(-2500));const qualified=launches.filter(row=>row.tradeable),blocked=launches.filter(row=>!row.tradeable),scan={at:iso(),scannedAt:iso(),configured:Boolean(this.programs.length||this.discoveryEnabled),mode:'PAPER',source:'DEXSCREENER + SOLANA_RPC',processed,discoveryError,launches:launches.slice(0,50),discoveries:[...discoveries,...launches.slice(0,50)],kpis:{candidates:launches.length,audited:launches.filter(row=>row.audit?.securityStatus==='AUDITED').length,qualified:qualified.length,blocked:blocked.length,topScore:launches[0]?.score||0,elapsedMs:Date.now()-started},paperExecution:'Only qualified launches with a real Jupiter quote can enter the paper ledger'};this.onScan(scan);this.onStatus('SCANNING_REAL');return scan;
   }
 }

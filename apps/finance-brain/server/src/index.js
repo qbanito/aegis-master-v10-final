@@ -73,7 +73,7 @@ const governance=new AgentGovernance({state,persist,broadcast});
 const refreshKronosState=()=>{state.infrastructure.kronos=kronosStatus();};
 refreshKronosState();
 
-const paperBroker=new RealMarketPaperBroker({state,persist,onClose:({execution,opportunity,simulation})=>{
+const paperBroker=new RealMarketPaperBroker({state,persist,solanaTrading,onClose:({execution,opportunity,simulation})=>{
   if(!execution||execution.status!=='CLOSED'||!opportunity)return;
   const cb=circuitBreaker.record(opportunity.strategyId,Number(execution.realizedProfitUsd||0));
   state.infrastructure.production.circuitBreakers=circuitBreaker.snapshot();

@@ -34,8 +34,8 @@ function vwap(levels,notional){
 }
 
 export class RealMarketPaperBroker{
-  constructor({state,persist,onClose}={}){
-    this.state=state;this.persist=persist;this.onClose=onClose;this.timers=new Map();this.contexts=new Map();
+  constructor({state,persist,onClose,solanaTrading}={}){
+    this.state=state;this.persist=persist;this.onClose=onClose;this.solanaTrading=solanaTrading;this.timers=new Map();this.contexts=new Map();
     this.feeBps=envNum('PAPER_FEE_BPS',10);
     this.maxSpreadBps=envNum('PAPER_MAX_SPREAD_BPS',75);
     this.maxOpenPositions=Math.max(1,Math.floor(envNum('PAPER_MAX_OPEN_POSITIONS',8,1)));
@@ -47,6 +47,16 @@ export class RealMarketPaperBroker{
   status(){return {mode:'REAL_MARKET_PAPER',modelFallback:this.modelFallback,modelMaxTradesPerHour:this.modelMaxTradesPerHour,live:false,feeBps:this.feeBps,maxSpreadBps:this.maxSpreadBps,maxOpenPositions:this.maxOpenPositions,holdMs:this.holdMs,markIntervalMs:this.markIntervalMs,openPositions:this.state.paperLedger?.openPositions?.length||0};}
   async quote(opportunity){
     const network=String(opportunity.network||'').toLowerCase();
+    if(network.includes('solana')){
+      const meta=opportunity.metadata||{};
+      const inputMint=meta.inputMint||meta.paperPlan?.inputMint,outputMint=meta.outputMint||meta.paperPlan?.outputMint,tokenDecimals=Math.max(0,num(meta.tokenDecimals??meta.paperPlan?.tokenDecimals)),inputDecimals=Math.max(0,num(meta.inputDecimals??meta.paperPlan?.inputDecimals??6)),side=String(opportunity.side||meta.quoteSide||'entry').toLowerCase();
+      if(!this.solanaTrading||!inputMint||!outputMint)return null;
+      const notional=Math.max(1,num(meta.notionalUsd||meta.paperPlan?.notionalUsd||opportunity.capitalRequiredUsd||0));
+      const amount=side==='exit'?Math.max(1,Math.floor(num(meta.tokenAmount||meta.quantity||0)*10**tokenDecimals)):Math.max(1,Math.floor(notional*10**inputDecimals));
+      const quote=await this.solanaTrading.quote({inputMint:side==='exit'?outputMint:inputMint,outputMint:side==='exit'?inputMint:outputMint,amount,slippageBps:Math.max(25,num(meta.slippageBps||50))});
+      const inputHuman=amount/10**(side==='exit'?tokenDecimals:inputDecimals),outputHuman=num(quote?.outAmount)/10**(side==='exit'?inputDecimals:tokenDecimals);if(!(inputHuman>0&&outputHuman>0))return null;
+      const mid=side==='exit'?outputHuman/inputHuman:notional/outputHuman,spread=Math.max(.0001,num(meta.slippageBps||50)/10000/2);return {provider:'Jupiter quote',symbol:opportunity.asset,bid:mid*(1-spread),ask:mid*(1+spread),bids:[[mid*(1-spread),inputHuman]],asks:[[mid*(1+spread),inputHuman]],observedAt:now(),indicative:false,route:quote.routePlan||null,rawOutAmount:quote.outAmount};
+    }
     const symbol=symbolFrom(opportunity.asset);
     if(network.includes('binance spot')&&symbol){
       const [ticker,depth]=await Promise.all([binanceMarketData.bookTicker(symbol),binanceMarketData.depth(symbol,20)]);
@@ -129,7 +139,7 @@ export class RealMarketPaperBroker{
     return execution;
   }
   async close(positionId,reason='MANUAL'){const ledger=this.state.paperLedger;const position=(ledger.openPositions||[]).find(item=>item.id===positionId);if(!position)return null;
-    const context=this.contexts.get(positionId)||{};const quote=await this.quote({network:position.network,asset:position.asset,metadata:context.opportunity?.metadata||{},direction:position.direction,synthetic:false});
+    const context=this.contexts.get(positionId)||{};const quote=await this.quote({network:position.network,asset:position.asset,metadata:{...(context.opportunity?.metadata||{}),quoteSide:'exit',tokenAmount:position.quantity},direction:position.direction,side:'exit',synthetic:false});
     if(!quote){const retry=setTimeout(()=>this.close(positionId,'RETRY_NO_QUOTE'),Math.min(15000,this.markIntervalMs*2));this.timers.set(positionId,retry);return null;}
     const exitPrice=position.direction==='LONG'?num(quote.bid):num(quote.ask);if(exitPrice<=0)return null;
     const exitNotional=position.quantity*exitPrice,exitFee=exitNotional*this.feeBps/10000;
