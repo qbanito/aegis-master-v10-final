@@ -760,12 +760,7 @@ function CommandCenter() {
               onOpenPage={openPage}
               onBack={() => openPage("overview")}
             />
-          ) : activePage === "services" ? (
-            <ServicesPage
-              onTalk={() => openChat("services")}
-              onBack={() => openPage("overview")}
-            />
-          ) : ["finance", "commerce", "saas", "media"].includes(activePage) ? (
+          ) : ["finance", "commerce", "services", "saas", "media"].includes(activePage) ? (
             <OperationalBrainPage
               brainId={activePage}
               onTalk={() => openChat(activePage)}
