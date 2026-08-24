@@ -315,3 +315,25 @@ services:
         sync: false
       - key: RESEND_API_KEY
         sync: false
+
+  - type: web
+    name: aegis-institutional-brain
+    plan: free
+    runtime: node
+    rootDir: apps/institutional-brain
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: AEGIS_AI_PROVIDER
+        value: mock
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: MUAPI_API_KEY
+        sync: false
+      - key: MUAPI_BASE_URL
+        value: https://api.muapi.ai
