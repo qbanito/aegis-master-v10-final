@@ -58,7 +58,8 @@ const COMMERCE = import.meta.env.VITE_COMMERCE_BRAIN_URL || runtimeApi("http://l
 const SAAS = import.meta.env.VITE_SAAS_BRAIN_URL || runtimeApi("http://localhost:8790", "/brain-api/saas");
 const MEDIA = import.meta.env.VITE_MEDIA_BRAIN_URL || runtimeApi("http://localhost:8804", "/brain-api/media");
 const SERVICES = import.meta.env.VITE_SERVICES_BRAIN_URL || runtimeApi("http://localhost:8808", "/brain-api/services");
-const BRAIN_APIS = {ceo: CEO, manager: MANAGER, finance: FINANCE, commerce: COMMERCE, saas: SAAS, media: MEDIA, services: SERVICES, banking: MANAGER, account: MANAGER};
+const INSTITUTIONAL = import.meta.env.VITE_INSTITUTIONAL_BRAIN_URL || runtimeApi("http://localhost:8820", "/brain-api/institutional");
+const BRAIN_APIS = {ceo: CEO, manager: MANAGER, finance: FINANCE, commerce: COMMERCE, saas: SAAS, media: MEDIA, services: SERVICES, institutional: INSTITUTIONAL, banking: MANAGER, account: MANAGER};
 function brainChatRequest(brain, message, conversation) {
   return {url: `${String(BRAIN_APIS[brain] || CEO).replace(/\/$/, "")}${brain === "finance" ? "/api/agent/chat" : "/api/chat"}`, body: {message, brain, conversation}};
 }
@@ -119,6 +120,17 @@ const brainMeta = {
     image: "/brains/media.png",
     agentsActive: "8",
     stats: ["AGENTS ACTIVE", "PIECES TODAY", "REACH 7D", "ENGAGEMENT"],
+  },
+  institutional: {
+    label: "BRAIN 06",
+    name: "INSTITUTIONAL BRAIN",
+    color: "#5ce1ff",
+    subtitle: "Real Estate · Private Credit · Structured Finance",
+    detail: "Institutional Digital Asset Studio",
+    icon: Landmark,
+    image: "/brains/institutional.svg",
+    agentsActive: "4",
+    stats: ["DEAL TYPES", "SECURITY SCORE", "NETWORKS", "INVARIANTS"],
   },
 };
 const satelliteMeta = {
@@ -527,7 +539,7 @@ function CommandCenter() {
   const online = (id) => snapshot.find((b) => b.id === id)?.status === "online";
   const critical = state?.incidents?.filter((i) => i.status === "open") || [];
   const active = thinking || talking || listening;
-  const fullBrainMode = ["finance", "commerce", "services", "saas", "media"].includes(activePage);
+  const fullBrainMode = ["finance", "commerce", "services", "saas", "media", "institutional"].includes(activePage);
   return (
     <div className={`commandApp ${focusMode ? "focusMode" : ""} ${fullBrainMode ? "fullBrainMode" : ""}`} onDoubleClick={handleSurfaceDoubleClick}>
       <div className="scanline" />
@@ -761,7 +773,7 @@ function CommandCenter() {
               onOpenPage={openPage}
               onBack={() => openPage("overview")}
             />
-          ) : ["finance", "commerce", "services", "saas", "media"].includes(activePage) ? (
+          ) : ["finance", "commerce", "services", "saas", "media", "institutional"].includes(activePage) ? (
             <OperationalBrainPage
               brainId={activePage}
               onTalk={() => openChat(activePage)}
@@ -1371,6 +1383,12 @@ const operationalModules = {
     { id: "distribution", label: "DISTRIBUTION", detail: "Social, SEO y alcance.", icon: Radio, target: "operational-controls" },
     { id: "analytics", label: "ANALYTICS", detail: "Reach, engagement y rendimiento.", icon: Activity, target: "operational-metrics" },
   ],
+  institutional: [
+    { id: "deal-builder", label: "DEAL BUILDER", detail: "Financial Specification Engine.", icon: ListChecks, target: "operational-metrics" },
+    { id: "simulation-lab", label: "SIMULATION LAB", detail: "Digital twin y escenarios adversos.", icon: Terminal, target: "operational-controls" },
+    { id: "security-center", label: "SECURITY CENTER", detail: "Invariantes financieros y readiness.", icon: ShieldCheck, target: "operational-controls" },
+    { id: "network-intelligence", label: "NETWORK INTELLIGENCE", detail: "EVM · Stellar · Canton fit.", icon: Network, target: "operational-metrics" },
+  ],
 };
 
 function OperationalBrainPage({ brainId, onTalk, onBack }) {
@@ -1738,12 +1756,12 @@ function AccountPage({ report, financeStatus, onTalk, onBack }) {
   );
 }
 
-const branchOrder = ["finance", "commerce", "services", "saas", "media"];
-const branchX = { finance: 100, commerce: 300, services: 500, saas: 700, media: 900 };
+const branchOrder = ["finance", "commerce", "services", "saas", "media", "institutional"];
+const branchX = { finance: 100, commerce: 300, services: 500, saas: 700, media: 900, institutional: 950 };
 function ConnectionBranches({ active, hovered }) {
   return (
     <div className={`connectionBranches ${active ? "active" : ""}`}>
-      <svg viewBox="0 0 1000 60" preserveAspectRatio="none" aria-hidden="true">
+      <svg viewBox="0 0 1050 60" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="branchBeam" x1="0" x2="1" y1="0" y2="0">
             <stop stopColor="#bd58ff" />
@@ -1753,7 +1771,7 @@ function ConnectionBranches({ active, hovered }) {
         </defs>
         <path
           className="branchMain"
-          d="M500 0 V17 H100 M500 17 H300 M500 17 H500 M500 17 H700 M500 17 H900"
+          d="M500 0 V17 H100 M500 17 H300 M500 17 H500 M500 17 H700 M500 17 H900 M500 17 H950"
         />
         {branchOrder.map((id) => (
           <path

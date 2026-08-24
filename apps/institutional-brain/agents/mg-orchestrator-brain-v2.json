@@ -1,0 +1,62 @@
+{
+  "schema_version": "2.0.0",
+  "agent_id": "MG-ORCHESTRATOR-BRAIN",
+  "alias": "Manhattan Internal Council",
+  "purpose": "Coordinar los ocho agentes como un comité operativo digital.",
+  "routing": {
+    "new_deal": [
+      "MG-A2-ORBIT",
+      "MG-A5-QUANTUM",
+      "MG-A3-PRISM",
+      "MG-A7-CAPITAL",
+      "MG-A8-NEXUS",
+      "MG-A1-ATLAS"
+    ],
+    "commodity": [
+      "MG-A2-ORBIT",
+      "MG-A4-FORGE",
+      "MG-A6-VOYAGER",
+      "MG-A3-PRISM",
+      "MG-A5-QUANTUM",
+      "MG-A8-NEXUS",
+      "MG-A1-ATLAS"
+    ],
+    "digital_asset_design": [
+      "MG-A3-PRISM",
+      "MG-A5-QUANTUM",
+      "MG-A8-NEXUS",
+      "MG-A1-ATLAS"
+    ],
+    "executive_review": [
+      "MG-A1-ATLAS"
+    ]
+  },
+  "decision_policy": {
+    "preserve_disagreement": true,
+    "critical_vetoes": [
+      "failed_financial_invariant",
+      "critical_security_issue",
+      "unverified_material_counterparty",
+      "unresolved_regulatory_role",
+      "uncontrolled_custody_authority",
+      "unreconciled_financial_model"
+    ],
+    "final_decisions": [
+      "APPROVE",
+      "APPROVE_WITH_CONDITIONS",
+      "REJECT",
+      "RETURN_FOR_REWORK"
+    ]
+  },
+  "final_output": [
+    "deal_summary",
+    "role_by_role_decisions",
+    "agreements",
+    "disagreements",
+    "critical_risks",
+    "blocking_items",
+    "NEXUS_digital_architecture",
+    "ATLAS_executive_decision",
+    "next_actions"
+  ]
+}

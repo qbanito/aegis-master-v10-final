@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="a" x1="70" y1="40" x2="330" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#bff4ff"/><stop offset=".45" stop-color="#5ce1ff"/><stop offset="1" stop-color="#ffb545"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- brain silhouette outline — thin bright line only, black everywhere else, so additive
+       blending in the 3D scene preserves the shape instead of blowing out into a flat glow -->
+  <path d="M108 148C68 108 108 46 168 66c30-38 92-35 116 8 51-14 90 34 63 78 28 37 0 92-46 92H140c-51 0-73-62-32-96Z"
+        stroke="url(#a)" stroke-width="4" filter="url(#soft)"/>
+
+  <!-- gyri / sulci fold lines -->
+  <g stroke="url(#a)" stroke-width="2" stroke-linecap="round" opacity=".92">
+    <path d="M118 140c14-24 42-30 58-14M150 96c10-18 34-22 48-8M198 84c22-10 46 2 54 22M250 108c26-2 44 18 42 42M262 168c20 6 28 28 16 46M120 178c-10 22 4 44 26 50M150 188c6 20 26 30 46 24M186 154c-6 18 8 34 26 32M138 118c8-12 24-16 34-6"/>
+  </g>
+  <!-- fine circuit / mesh texture -->
+  <g stroke="#8fe8ff" stroke-width="1" opacity=".4">
+    <path d="M96 150 320 150M104 176 300 176M118 202 284 202M140 224 262 224M96 150c8 26 8 50 22 74M320 150c-10 24-8 50-24 72"/>
+  </g>
+  <g fill="#bff4ff">
+    <circle cx="118" cy="140" r="2.6"/><circle cx="198" cy="84" r="2.6"/><circle cx="262" cy="168" r="2.6"/>
+    <circle cx="150" cy="188" r="2.6"/><circle cx="250" cy="108" r="2.6"/><circle cx="120" cy="178" r="2.6"/>
+  </g>
+
+  <!-- institutional motif nested at the base: a small glowing vault/ledger glyph, the one detail
+       that marks this specifically as the institutional core rather than a generic brain -->
+  <g filter="url(#soft)">
+    <rect x="148" y="248" width="104" height="10" rx="2" stroke="#5ce1ff" stroke-width="2"/>
+    <path d="M152 248v-14l48-24 48 24v14" stroke="#5ce1ff" stroke-width="2"/>
+    <path d="M162 248v-30M182 248v-30M202 248v-30M222 248v-30M238 248v-30" stroke="#ffb545" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+
+  <circle cx="200" cy="196" r="3" fill="#fff"/>
+</svg>

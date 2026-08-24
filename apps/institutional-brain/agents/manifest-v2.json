@@ -1,0 +1,72 @@
+{
+  "package": "Manhattan Team Simulation Agents — Deep Version",
+  "version": "2.0.0",
+  "agents": [
+    {
+      "id": "MG-A1-ATLAS",
+      "alias": "Atlas Executive",
+      "reference": "Timothy J. Heitmann",
+      "role": "Chief Executive / Strategic Sponsor",
+      "file": "mg-a1-atlas.json"
+    },
+    {
+      "id": "MG-A2-ORBIT",
+      "alias": "Orbit Deal Lead",
+      "reference": "David Moro",
+      "role": "Managing Director / Deal Origination",
+      "file": "mg-a2-orbit.json"
+    },
+    {
+      "id": "MG-A3-PRISM",
+      "alias": "Prism Structure Architect",
+      "reference": "Kirit Patel",
+      "role": "Trade Finance & Structured Transactions",
+      "file": "mg-a3-prism.json"
+    },
+    {
+      "id": "MG-A4-FORGE",
+      "alias": "Forge Commodity Operator",
+      "reference": "Donald W. Barrick",
+      "role": "Commodities / Trade Finance",
+      "file": "mg-a4-forge.json"
+    },
+    {
+      "id": "MG-A5-QUANTUM",
+      "alias": "Quantum Model Reviewer",
+      "reference": "Alexander 'Xan' Moody-Stuart",
+      "role": "Financial Modelling & Commercial Due Diligence",
+      "file": "mg-a5-quantum.json"
+    },
+    {
+      "id": "MG-A6-VOYAGER",
+      "alias": "Voyager Execution Lead",
+      "reference": "Stephen Andrew Harris",
+      "role": "International Execution / Commodities",
+      "file": "mg-a6-voyager.json"
+    },
+    {
+      "id": "MG-A7-CAPITAL",
+      "alias": "Capital Network Advisor",
+      "reference": "Philip A. Herman",
+      "role": "Senior Advisor / Capital Formation",
+      "file": "mg-a7-capital.json"
+    },
+    {
+      "id": "MG-A8-NEXUS",
+      "alias": "Nexus Digital Infrastructure Architect",
+      "reference": "Neiver Alvarez",
+      "role": "Digital Assets & Financial Infrastructure Architect",
+      "file": "mg-a8-nexus.json"
+    }
+  ],
+  "special_note": "MG-A8-NEXUS representa el rol operativo propuesto para Neiver Alvarez como Digital Assets & Financial Infrastructure Architect.",
+  "recommended_flow": [
+    "ORBIT qualifies the deal",
+    "QUANTUM validates numbers",
+    "PRISM validates financial structure",
+    "FORGE/VOYAGER validate vertical execution when applicable",
+    "CAPITAL validates investor fit",
+    "NEXUS converts approved requirements into digital infrastructure",
+    "ATLAS makes executive decision"
+  ]
+}

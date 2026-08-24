@@ -11,6 +11,7 @@
     "apps/saas-brain",
     "apps/manager-brain",
     "apps/ceo-brain",
+    "apps/institutional-brain",
     "packages/inter-brain-protocol",
     "packages/aegis-data"
   ],

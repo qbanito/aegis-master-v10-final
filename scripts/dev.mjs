@@ -31,7 +31,9 @@ const ports = {
   commerceUi: Number(process.env.AEGIS_COMMERCE_UI_PORT || 8812),
   saasUi: Number(process.env.AEGIS_SAAS_UI_PORT || 8813),
   mediaUi: Number(process.env.AEGIS_MEDIA_UI_PORT || 8814),
-  servicesUi: Number(process.env.AEGIS_SERVICES_UI_PORT || 8815)
+  servicesUi: Number(process.env.AEGIS_SERVICES_UI_PORT || 8815),
+  institutional: Number(process.env.AEGIS_INSTITUTIONAL_PORT || 8820),
+  institutionalUi: Number(process.env.AEGIS_INSTITUTIONAL_UI_PORT || 8821)
 };
 const urls = {
   finance: `http://localhost:${ports.finance}`,
@@ -40,7 +42,8 @@ const urls = {
   media: `http://localhost:${ports.media}`,
   services: `http://localhost:${ports.services}`,
   manager: `http://localhost:${ports.manager}`,
-  ceo: `http://localhost:${ports.ceo}`
+  ceo: `http://localhost:${ports.ceo}`,
+  institutional: `http://localhost:${ports.institutional}`
 };
 const apps = [
   {name: "finance", cwd: "apps/finance-brain/server", port: ports.finance, env: {CLIENT_ORIGIN: `http://localhost:${ports.financeUi}`}},
@@ -50,12 +53,14 @@ const apps = [
   {name: "services", cwd: "apps/services-brain", port: ports.services, env: {FINANCE_BRAIN_URL: urls.finance, COMMERCE_BRAIN_URL: urls.commerce, SAAS_BRAIN_URL: urls.saas, MEDIA_BRAIN_URL: urls.media, MANAGER_BRAIN_URL: urls.manager, CEO_BRAIN_URL: urls.ceo}},
   {name: "manager", cwd: "apps/manager-brain", port: ports.manager, env: {FINANCE_BRAIN_URL: urls.finance, COMMERCE_BRAIN_URL: urls.commerce, SAAS_BRAIN_URL: urls.saas, MEDIA_BRAIN_URL: urls.media, SERVICES_BRAIN_URL: urls.services}},
   {name: "ceo", cwd: "apps/ceo-brain", port: ports.ceo, env: {MANAGER_BRAIN_URL: urls.manager, FINANCE_BRAIN_URL: urls.finance, COMMERCE_BRAIN_URL: urls.commerce, SAAS_BRAIN_URL: urls.saas, MEDIA_BRAIN_URL: urls.media, SERVICES_BRAIN_URL: urls.services}},
-  {name: "master-ui", cwd: "apps/master-ui", port: ports.masterUi, ui: true, env: {VITE_CEO_BRAIN_URL: urls.ceo, VITE_MANAGER_BRAIN_URL: urls.manager}},
+  {name: "institutional", cwd: "apps/institutional-brain", port: ports.institutional},
+  {name: "master-ui", cwd: "apps/master-ui", port: ports.masterUi, ui: true, env: {VITE_CEO_BRAIN_URL: urls.ceo, VITE_MANAGER_BRAIN_URL: urls.manager, VITE_INSTITUTIONAL_BRAIN_URL: urls.institutional}},
   {name: "finance-ui", cwd: "apps/brain-ui", port: ports.financeUi, ui: true, kind: "finance", api: urls.finance},
   {name: "commerce-ui", cwd: "apps/brain-ui", port: ports.commerceUi, ui: true, kind: "commerce", api: urls.commerce},
   {name: "saas-ui", cwd: "apps/brain-ui", port: ports.saasUi, ui: true, kind: "saas", api: urls.saas},
   {name: "media-ui", cwd: "apps/brain-ui", port: ports.mediaUi, ui: true, kind: "media", api: urls.media},
-  {name: "services-ui", cwd: "apps/brain-ui", port: ports.servicesUi, ui: true, kind: "services", api: urls.services}
+  {name: "services-ui", cwd: "apps/brain-ui", port: ports.servicesUi, ui: true, kind: "services", api: urls.services},
+  {name: "institutional-ui", cwd: "apps/brain-ui", port: ports.institutionalUi, ui: true, kind: "institutional", api: urls.institutional}
 ];
 
 for (const app of apps) {

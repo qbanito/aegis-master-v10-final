@@ -5,7 +5,8 @@ const targets=[
  ["media",process.env.MEDIA_BRAIN_URL||"http://localhost:8804"],
  ["services",process.env.SERVICES_BRAIN_URL||"http://localhost:8808"],
  ["manager",process.env.MANAGER_BRAIN_URL||"http://localhost:8805"],
- ["ceo",process.env.CEO_BRAIN_URL||"http://localhost:8806"]
+ ["ceo",process.env.CEO_BRAIN_URL||"http://localhost:8806"],
+ ["institutional",process.env.INSTITUTIONAL_BRAIN_URL||"http://localhost:8820"]
 ];
 let bad=0;
 for(const [name,url] of targets){

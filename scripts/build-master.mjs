@@ -13,6 +13,7 @@ const brains = {
   saas: "https://aegis-saas-brain.onrender.com",
   media: "https://aegis-media-brain.onrender.com",
   services: "https://aegis-services-brain.onrender.com",
+  institutional: "https://aegis-institutional-brain.onrender.com",
 };
 
 rmSync(brainOutputRoot, { recursive: true, force: true });

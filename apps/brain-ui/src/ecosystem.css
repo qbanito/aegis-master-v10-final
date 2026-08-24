@@ -95,3 +95,165 @@
   .ecosystemPreviewFoot > div { display: grid; grid-template-columns: 1fr 1fr; }
   .financeToolWindow header h2 { max-width: 190px; }
 }
+
+/* Institutional Brain — Deal Builder, Simulation Lab, Security Center, Network Intelligence */
+.institutionalPanel { margin-top: 13px; }
+.institutionalDealTypeGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+.institutionalDealTypeCard { position: relative; text-align: left; border: 1px solid #26324e; border-radius: 12px; background: linear-gradient(145deg, #0c1328, #090e20); color: #d7e1f2; padding: 13px; cursor: pointer; transition: .2s; }
+.institutionalDealTypeCard:hover, .institutionalDealTypeCard.active { transform: translateY(-1px); border-color: #5ce1ff; box-shadow: inset 0 0 24px rgba(92, 225, 255, .08), 0 8px 22px rgba(0, 0, 0, .2); }
+.institutionalDealTypeCard b { display: block; font-size: 12px; }
+.institutionalDealTypeCard small { display: block; margin-top: 4px; color: #5ce1ff; font: 8px 'DM Mono', monospace; letter-spacing: .08em; }
+.institutionalDealTypeCard p { margin: 8px 0 10px; color: #7d8ba6; font-size: 10.5px; line-height: 1.5; }
+.institutionalBadge { display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; padding: 4px 9px; font: 7px 'DM Mono', monospace; letter-spacing: .08em; }
+.institutionalBadge.full { background: rgba(92, 225, 255, .12); color: #5ce1ff; border: 1px solid rgba(92, 225, 255, .4); }
+.institutionalBadge.preset { background: rgba(255, 181, 69, .12); color: #ffb545; border: 1px solid rgba(255, 181, 69, .4); }
+.institutionalBadge.locked { background: rgba(255, 120, 155, .12); color: #ff789b; border: 1px solid rgba(255, 120, 155, .4); }
+.institutionalHint { margin-top: 12px; color: #7d8ba6; font-size: 11px; }
+.institutionalSpecPreview { margin-top: 18px; }
+.institutionalSpecPreview h3, .institutionalSimulationResults h3, .institutionalScenarios h3, .institutionalSecurity h3, .institutionalNetworkFit h3, .institutionalComparison h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 13px; }
+.institutionalSpecGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.institutionalSpecGrid > div { border: 1px solid #202d47; border-radius: 10px; background: #0a1122; padding: 10px 12px; }
+.institutionalSpecGrid small { display: block; color: #6e7d98; font: 7px 'DM Mono', monospace; }
+.institutionalSpecGrid b { display: block; margin-top: 4px; font-size: 13px; }
+.institutionalSpecGrid em { display: block; margin-top: 2px; color: #7d8ba6; font-size: 10px; font-style: normal; }
+.institutionalActions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.institutionalSimulationResults, .institutionalScenarios, .institutionalSecurity, .institutionalNetworkFit, .institutionalComparison { margin-top: 22px; padding-top: 18px; border-top: 1px solid #1c2740; }
+.institutionalTotalsRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.institutionalTotalsRow > div { border: 1px solid #202d47; border-radius: 10px; background: #0a1122; padding: 10px 12px; }
+.institutionalTotalsRow small { display: block; color: #6e7d98; font: 7px 'DM Mono', monospace; }
+.institutionalTotalsRow b { display: block; margin-top: 4px; font-size: 13px; }
+.institutionalInvariants h4 { margin: 0 0 8px; font-size: 10px; color: #7d8ba6; text-transform: uppercase; letter-spacing: .08em; }
+.institutionalInvariantRow { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 11px; color: #cbd8ec; }
+.institutionalInvariantRow.ok svg { color: #5ce3ad; }
+.institutionalInvariantRow.fail svg { color: #ff789b; }
+.institutionalScenarioGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.institutionalScenarioCard { border: 1px solid #26324e; border-radius: 12px; background: #0a1122; padding: 12px; }
+.institutionalScenarioCard b { display: block; margin-bottom: 8px; font-size: 11px; }
+.institutionalScenarioCard button { width: 100%; border: 1px solid #35435e; border-radius: 8px; background: #10172b; color: #cbd8ec; padding: 8px; font: 9px 'DM Mono', monospace; cursor: pointer; }
+.institutionalScenarioResult { margin-top: 10px; border-radius: 8px; background: rgba(255, 120, 155, .1); border: 1px solid rgba(255, 120, 155, .35); padding: 8px 10px; }
+.institutionalScenarioResult span { display: block; color: #ff789b; font: 9px 'DM Mono', monospace; font-weight: 700; }
+.institutionalScenarioResult p { margin: 4px 0 0; color: #cbd8ec; font-size: 10.5px; line-height: 1.5; }
+.institutionalDeployStatus { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.institutionalNetworkRow { display: grid; grid-template-columns: 160px 1fr 60px; align-items: center; gap: 10px; padding: 8px 0; }
+.institutionalNetworkRow b { font-size: 11px; }
+.institutionalNetworkRow em { font-size: 10px; color: #5ce1ff; font-style: normal; }
+.institutionalNetworkRow p { grid-column: 1 / -1; margin: 4px 0 0; color: #7d8ba6; font-size: 10px; }
+.institutionalNetworkBar { height: 6px; border-radius: 99px; background: #0a1122; border: 1px solid #202d47; overflow: hidden; }
+.institutionalNetworkBar span { display: block; height: 100%; background: linear-gradient(90deg, #5ce1ff, #ffb545); }
+.institutionalComparisonScroll { overflow-x: auto; }
+.institutionalComparisonTable { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+.institutionalComparisonTable th, .institutionalComparisonTable td { border: 1px solid #202d47; padding: 8px 10px; text-align: left; vertical-align: top; }
+.institutionalComparisonTable th { color: #5ce1ff; font: 8px 'DM Mono', monospace; text-transform: uppercase; }
+.institutionalComparisonTable td { color: #cbd8ec; }
+.institutionalNotice { margin-top: 14px; color: #5ce1ff; font-size: 11px; }
+.institutionalGlossaryTerm { position: relative; display: inline-flex; cursor: help; color: #5ce1ff; vertical-align: middle; }
+.institutionalGlossaryPopover { position: absolute; z-index: 20; bottom: 20px; left: 0; width: 230px; border: 1px solid #5ce1ff; border-radius: 10px; background: #070c1a; box-shadow: 0 12px 30px rgba(0, 0, 0, .5); padding: 10px 12px; }
+.institutionalGlossaryPopover b { display: block; font-size: 10px; color: #5ce1ff; }
+.institutionalGlossaryPopover p { margin: 5px 0 0; color: #cbd8ec; font-size: 10px; line-height: 1.5; }
+.institutionalCodeShell { min-height: 260px; padding: 14px; overflow: auto; }
+.institutionalCodePreview { margin: 0; white-space: pre-wrap; word-break: break-word; color: #cbd8ec; font: 10.5px/1.6 'DM Mono', monospace; }
+.institutionalContractBlock { border-top: 1px solid #202d47; }
+.institutionalContractBlock:first-child { border-top: 0; }
+.institutionalContractHeader { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px 0; }
+.institutionalContractHeader b { color: #5ce1ff; font: 10px 'DM Mono', monospace; }
+.institutionalContractHeader small { color: #6e7d98; font-size: 10px; }
+.institutionalAdapterBody { min-height: 0; overflow-y: auto; background: #030711; }
+.institutionalAdapterWindow .institutionalCodePreview { padding: 10px 16px 16px; }
+.institutionalAdapterBody > .institutionalHint { padding: 16px; }
+
+/* Financial Brain Hub — inline in-page panel with tabs, replacing the old floating drawer so
+   switching destinations never loses your place on the page. */
+.institutionalHubPanel { margin-top: 13px; }
+.institutionalDestinationTabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #1c2740; }
+.institutionalDestinationTab { display: flex; align-items: center; gap: 6px; border: 1px solid #26324e; border-radius: 99px; background: #0a1122; color: #8593aa; padding: 7px 12px; font: 8px 'DM Mono', monospace; letter-spacing: .04em; cursor: pointer; transition: .2s; white-space: nowrap; }
+.institutionalDestinationTab:hover { border-color: var(--toolAccent); color: #cbd8ec; }
+.institutionalDestinationTab.active { border-color: var(--toolAccent); background: color-mix(in srgb, var(--toolAccent) 14%, #0a1122); color: #fff; box-shadow: inset 0 0 16px color-mix(in srgb, var(--toolAccent) 12%, transparent); }
+.institutionalHubBody { min-height: 0; }
+@media (max-width: 720px) {
+  .institutionalDestinationTab span { display: none; }
+}
+
+/* NEXUS Session — the one deliberate near-full-viewport overlay in the app, plus the shared
+   chat-bubble formatter for agent output wherever it appears. */
+.nexusOverlay { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: center; padding: 2vh 2vw; background: rgba(1, 4, 11, .92); backdrop-filter: blur(16px); animation: brainFloatIn .2s ease-out; }
+.nexusWindow { width: 96vw; height: 96vh; display: grid; grid-template-rows: auto minmax(0, 1fr); border: 1px solid #3a2a6b; border-radius: 18px; overflow: hidden; background: #030308; box-shadow: 0 40px 120px rgba(0, 0, 0, .8), 0 0 80px rgba(189, 88, 255, .12); }
+.nexusHeader { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 18px; border-bottom: 1px solid #241a44; background: linear-gradient(90deg, rgba(189, 88, 255, .1), #0a0a16); }
+.nexusHeaderTitle { display: flex; align-items: center; gap: 12px; color: #bd58ff; }
+.nexusHeaderTitle small { display: block; color: #bd58ff; font: 8px 'DM Mono', monospace; letter-spacing: .1em; }
+.nexusHeaderTitle h2 { margin-top: 4px; font-size: 16px; color: #f2eaff; }
+.nexusHeader > button { width: 36px; height: 36px; border: 1px solid #35435e; border-radius: 8px; background: #10172b; color: #cbd8ec; font-size: 18px; }
+.nexusBody { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 0; }
+.nexusLibraryRail { min-height: 0; overflow-y: auto; border-right: 1px solid #1c1438; background: #050510; padding: 14px; }
+.nexusAgentFilters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #1c1438; }
+.nexusAgentFilters button { border: 1px solid #2a2050; border-radius: 99px; background: #0c0c1e; color: #8593aa; padding: 5px 10px; font: 8px 'DM Mono', monospace; }
+.nexusAgentFilters button.active { border-color: #bd58ff; background: rgba(189, 88, 255, .18); color: #f2eaff; }
+.nexusCategory { margin-bottom: 6px; }
+.nexusCategoryHead { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid #1c1438; border-radius: 8px; background: #0a0a18; color: #cbd8ec; padding: 9px 11px; font-size: 10.5px; text-align: left; }
+.nexusCategoryHead small { color: #6e7d98; font: 8px 'DM Mono', monospace; }
+.nexusCategoryList { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; padding-left: 8px; }
+.nexusScenarioItem { display: flex; align-items: baseline; gap: 8px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #9aa7bd; padding: 7px 9px; text-align: left; font-size: 10px; }
+.nexusScenarioItem:hover { background: #0e0e22; color: #cbd8ec; }
+.nexusScenarioItem.active { border-color: #bd58ff; background: rgba(189, 88, 255, .12); color: #f2eaff; }
+.nexusScenarioNumber { color: #bd58ff; font: 8px 'DM Mono', monospace; flex: 0 0 auto; }
+.nexusQuickActionsToggle { width: 100%; margin-top: 12px; border: 1px dashed #35435e; border-radius: 8px; background: transparent; color: #8593aa; padding: 10px; font: 9px 'DM Mono', monospace; }
+.nexusMain { min-height: 0; overflow-y: auto; padding: 20px 24px; }
+.nexusIntro { max-width: 560px; margin: 40px auto; text-align: center; color: #8593aa; }
+.nexusIntro h3 { color: #f2eaff; font-size: 18px; margin-bottom: 10px; }
+.nexusScenarioDetailHead small { color: #bd58ff; font: 8px 'DM Mono', monospace; letter-spacing: .08em; }
+.nexusScenarioDetailHead h3 { margin: 6px 0; font-size: 20px; color: #f2eaff; }
+.nexusScenarioDetailHead p { color: #cbd8ec; font-size: 12px; line-height: 1.6; max-width: 720px; }
+.nexusWhatToProve { color: #a7b3c9; }
+.nexusTeamRow { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 16px; }
+.nexusTeamChip { border: 1px solid #2a2050; border-radius: 99px; background: rgba(189, 88, 255, .1); color: #d9c6ff; padding: 5px 11px; font: 9px 'DM Mono', monospace; }
+.nexusEvidenceCard { margin: 18px 0; border: 1px solid #202d47; border-radius: 10px; background: #05070f; padding: 12px 14px; }
+.nexusEvidenceCard small { color: #5ce1ff; font: 8px 'DM Mono', monospace; }
+.nexusEvidenceCard pre { margin: 8px 0 0; color: #8fa3c0; font: 9.5px/1.5 'DM Mono', monospace; white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow-y: auto; }
+.nexusTranscript { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+.nexusBubble { display: flex; gap: 12px; border: 1px solid #1c1438; border-radius: 12px; background: #07070f; padding: 14px; }
+.nexusBubbleAvatar { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--bubbleColor); color: var(--bubbleColor); background: color-mix(in srgb, var(--bubbleColor) 14%, #0a0a18); font: 11px 'DM Mono', monospace; font-weight: 700; }
+.nexusBubbleBody { min-width: 0; flex: 1; }
+.nexusBubbleHeader { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nexusBubbleHeader b { font-size: 12px; color: #f2eaff; }
+.nexusBubbleHeader em { color: #6e7d98; font-size: 10px; font-style: normal; }
+.nexusConfidenceBar { position: relative; height: 5px; border-radius: 99px; background: #12182c; margin: 8px 0; overflow: hidden; }
+.nexusConfidenceBar span { display: block; height: 100%; }
+.nexusConfidenceBar small { position: absolute; right: 0; top: 6px; color: #6e7d98; font: 7px 'DM Mono', monospace; }
+.nexusConfidencePill { color: var(--bubbleColor); font: 8px 'DM Mono', monospace; opacity: .75; margin-left: auto; }
+.nexusSimulationNotice { margin: 2px 0 0; color: #5c6884; font: 8px 'DM Mono', monospace; letter-spacing: .01em; opacity: .8; }
+.nexusOrbitQuickResult { margin-top: 14px; }
+.nexusOrbitFooter { margin-top: 14px; display: flex; justify-content: flex-end; }
+.nexusReportDownload { display: inline-flex; margin-top: 14px; width: fit-content; }
+.nexusBubbleSpeech { margin: 9px 0 4px; color: #eef2fa; font-size: 14px; line-height: 1.62; font-weight: 400; }
+.nexusBubbleText { margin: 6px 0; color: #cbd8ec; font-size: 11.5px; line-height: 1.6; }
+.nexusExpandToggle { border: 0; background: transparent; color: #5ce1ff; font: 9px 'DM Mono', monospace; padding: 0; cursor: pointer; margin-top: 4px; }
+.nexusTechnicalDetail { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #1c1438; }
+.nexusTagGroup { margin-top: 10px; }
+.nexusTagGroup > small { display: block; color: #6e7d98; font: 7px 'DM Mono', monospace; letter-spacing: .08em; margin-bottom: 5px; }
+.nexusTagGroup > div { display: flex; flex-wrap: wrap; gap: 5px; }
+.nexusTag { display: inline-block; border-radius: 7px; padding: 5px 8px; font-size: 9.5px; line-height: 1.4; max-width: 100%; }
+.nexusTag.risk { background: rgba(255, 120, 155, .1); border: 1px solid rgba(255, 120, 155, .3); color: #ffb3c6; }
+.nexusTag.question { background: rgba(92, 225, 255, .08); border: 1px solid rgba(92, 225, 255, .28); color: #a7e8f6; }
+.nexusTag.action { background: rgba(242, 189, 105, .08); border: 1px solid rgba(242, 189, 105, .28); color: #f2d19f; }
+.nexusTag.action.blocking { background: rgba(255, 120, 155, .12); border-color: rgba(255, 120, 155, .4); color: #ffb3c6; }
+.nexusBubbleMeta { margin-top: 10px; color: #4c5876; font: 8px 'DM Mono', monospace; }
+.nexusSynthesis { margin-top: 18px; padding-top: 14px; border-top: 1px solid #1c1438; }
+.nexusSynthesis h4 { margin: 0 0 8px; font-size: 11px; color: #a7b3c9; text-transform: uppercase; letter-spacing: .06em; }
+
+/* Live conversation feel: bubbles animate in one at a time, a typing indicator fills the gap
+   while an agent's real call is in flight, and the team roster pulses on whoever is "speaking". */
+@keyframes nexusBubbleRise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.nexusBubbleEnter { animation: nexusBubbleRise .38s cubic-bezier(.2, .8, .2, 1) both; }
+.nexusTyping .nexusBubbleHeader em { color: #6e7d98; font-style: normal; }
+.nexusTypingDots { display: flex; gap: 5px; margin-top: 10px; }
+.nexusTypingDots span { width: 6px; height: 6px; border-radius: 50%; background: #6e7d98; animation: nexusTypingBounce 1.1s ease-in-out infinite; }
+.nexusTypingDots span:nth-child(2) { animation-delay: .15s; }
+.nexusTypingDots span:nth-child(3) { animation-delay: .3s; }
+@keyframes nexusTypingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-5px); opacity: 1; } }
+.nexusTeamChip.speaking { border-color: #bd58ff; background: rgba(189, 88, 255, .22); color: #fff; animation: nexusChipPulse 1.3s ease-in-out infinite; }
+@keyframes nexusChipPulse { 0%, 100% { box-shadow: 0 0 0 rgba(189, 88, 255, .4); } 50% { box-shadow: 0 0 14px rgba(189, 88, 255, .55); } }
+.nexusLiveProgress { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: #bd58ff; font: 9.5px 'DM Mono', monospace; }
+.nexusLiveProgress i { width: 7px; height: 7px; border-radius: 50%; background: #bd58ff; box-shadow: 0 0 8px #bd58ff; animation: nexusChipPulse 1.3s ease-in-out infinite; flex: 0 0 auto; }
+@media (max-width: 860px) {
+  .nexusBody { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .nexusLibraryRail { max-height: 40vh; border-right: 0; border-bottom: 1px solid #1c1438; }
+}

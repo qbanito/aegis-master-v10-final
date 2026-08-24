@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" fill="none">
+  <defs><linearGradient id="a" x1="55" y1="30" x2="270" y2="230" gradientUnits="userSpaceOnUse"><stop stop-color="#8fe8ff"/><stop offset=".5" stop-color="#5ce1ff"/><stop offset="1" stop-color="#ffb545"/></linearGradient><filter id="g"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <path d="M78 92C53 62 82 28 120 42c23-29 70-27 88 5 39-11 68 26 48 58 22 28 1 70-34 70H101c-39 0-56-47-23-75Z" stroke="url(#a)" stroke-width="5" filter="url(#g)"/>
+  <path d="M83 98 132 73l29 24 43-31M91 147l42-19 28 25 48-26M132 73v55M204 66l-43 31v56" stroke="url(#a)" stroke-width="3" opacity=".9"/>
+  <rect x="108" y="150" width="104" height="10" rx="2" fill="#071426" stroke="#5ce1ff" stroke-width="2.5"/>
+  <path d="M112 150v-14l48-24 48 24v14" fill="#071426" stroke="#5ce1ff" stroke-width="2.5"/>
+  <path d="M122 150v-30M142 150v-30M162 150v-30M182 150v-30M198 150v-30" stroke="#ffb545" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="83" cy="98" r="6" fill="#5ce1ff"/><circle cx="132" cy="73" r="6" fill="#ffb545"/><circle cx="204" cy="66" r="6" fill="#5ce1ff"/><circle cx="91" cy="147" r="6" fill="#ffb545"/>
+</svg>

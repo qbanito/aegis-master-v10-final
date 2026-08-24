@@ -1,26 +1,30 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
 import {createRoot} from "react-dom/client";
+import {createPortal} from "react-dom";
 import * as THREE from "three";
 import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {io as connectSocket} from "socket.io-client";
 import {
   Activity, ArrowUpRight, BarChart3, Bot, Brain, Briefcase, ChevronRight, CircleDollarSign,
   Database, ExternalLink, Gauge, Globe2, Layers3, Maximize2, Orbit, Radar, Radio, RefreshCw, Rocket,
-  Image as ImageIcon, Mic2, MessageCircle, Music2, Plus, Settings, ShieldCheck, Sparkles, Target, TrendingUp, Video, Volume2, WalletCards, Zap
+  Image as ImageIcon, Mic2, MessageCircle, Music2, Plus, Settings, ShieldCheck, Sparkles, Target, TrendingUp, Video, Volume2, WalletCards, Zap,
+  Landmark, Building2, Scale, FileCode, Coins, Package, Lock, Download, HelpCircle, AlertTriangle, CheckCircle2, XCircle,
+  Users, FileText, ListChecks, Network
 } from "lucide-react";
 import "./style.css";
 import "./control-overlay.css";
 import "./ecosystem.css";
 import "./responsive.css";
 
-const ports = {finance: 8811, commerce: 8812, saas: 8813, media: 8814, services: 8815};
+const ports = {finance: 8811, commerce: 8812, saas: 8813, media: 8814, services: 8815, institutional: 8821};
 const runtimeApi = (local, production) => import.meta.env.DEV ? local : production;
 const config = {
   finance: {name: "Finance Brain", kicker: "CAPITAL INTELLIGENCE", desc: "Execution, risk and liquidity intelligence in one high-signal cockpit.", accent: "#9c7bff", accent2: "#49d9ff", icon: CircleDollarSign, page: "finance", api: runtimeApi("http://localhost:8787", "/brain-api/finance"), metric: "PAPER EQUITY"},
   commerce: {name: "Commerce Brain", kicker: "REVENUE ORCHESTRATION", desc: "Find, test and compound the next distribution opportunity before the market notices.", accent: "#4ee8d2", accent2: "#63a7ff", icon: Rocket, page: "commerce", api: runtimeApi("http://localhost:8802", "/brain-api/commerce"), metric: "ACTIVE TESTS"},
   saas: {name: "SaaS Brain", kicker: "REVENUE INTELLIGENCE", desc: "Turn product telemetry into durable MRR, retention and portfolio clarity.", accent: "#ff77c8", accent2: "#a77dff", icon: Orbit, page: "saas", api: runtimeApi("http://localhost:8790", "/brain-api/saas"), metric: "PORTFOLIO MRR"},
   media: {name: "Media Brain", kicker: "CONTENT DISTRIBUTION", desc: "Convert signals into a living editorial system that ships, learns and compounds.", accent: "#ffb86b", accent2: "#ff6f9d", icon: Radar, page: "media", api: runtimeApi("http://localhost:8804", "/brain-api/media"), metric: "CONTENT QUEUE"},
-  services: {name: "Services Brain", kicker: "SERVICE REVENUE SYSTEM", desc: "Vende, cotiza y entrega videos, páginas web, SEO y servicios digitales desde un solo cockpit.", accent: "#ff8b5b", accent2: "#25e8ff", icon: Briefcase, page: "services", api: runtimeApi("http://localhost:8808", "/brain-api/services"), metric: "ACTIVE SERVICES"}
+  services: {name: "Services Brain", kicker: "SERVICE REVENUE SYSTEM", desc: "Vende, cotiza y entrega videos, páginas web, SEO y servicios digitales desde un solo cockpit.", accent: "#ff8b5b", accent2: "#25e8ff", icon: Briefcase, page: "services", api: runtimeApi("http://localhost:8808", "/brain-api/services"), metric: "ACTIVE SERVICES"},
+  institutional: {name: "Institutional Brain", kicker: "INSTITUTIONAL DIGITAL ASSET STUDIO", desc: "Define una operacion financiera una sola vez y modelala, validala, simulala y tradúcela a EVM, Stellar y Canton.", accent: "#5ce1ff", accent2: "#ffb545", icon: Landmark, page: "institutional", api: runtimeApi("http://localhost:8820", "/brain-api/institutional"), metric: "SECURITY SCORE"}
 };
 
 const FINANCE_ECOSYSTEM_TOOLS = [
@@ -123,6 +127,47 @@ const FINANCE_ECOSYSTEM_TOOLS = [
   },
 ];
 
+// The three chain adapters, rendered as floating "ecosystem" tool nodes just like Finance's
+// external platforms — except these are internal render engines (code generation), not
+// external iframes, so `internal: true` routes them to InstitutionalAdapterPanel instead.
+const INSTITUTIONAL_ADAPTER_TOOLS = [
+  {
+    id: "adapter-evm", name: "EVM ADAPTER", shortName: "EVM / Solidity",
+    category: "CHAIN ADAPTER", network: "ETHEREUM / POLYGON", adapterId: "evm",
+    description: "Traduce la Financial Specification a un contrato Solidity para Ethereum / Polygon.",
+    accent: "#9c7bff", Icon: FileCode, internal: true, embeddable: false,
+  },
+  {
+    id: "adapter-stellar", name: "STELLAR ADAPTER", shortName: "Stellar / Soroban",
+    category: "CHAIN ADAPTER", network: "STELLAR", adapterId: "stellar",
+    description: "Traduce la Financial Specification a un contrato Soroban (Rust) para Stellar.",
+    accent: "#28e6f6", Icon: Coins, internal: true, embeddable: false,
+  },
+  {
+    id: "adapter-canton", name: "CANTON ADAPTER", shortName: "Canton / Daml",
+    category: "CHAIN ADAPTER", network: "CANTON NETWORK", adapterId: "canton",
+    description: "Traduce la Financial Specification a un template Daml para Canton Network.",
+    accent: "#ffb545", Icon: Scale, internal: true, embeddable: false,
+  },
+];
+
+// The Financial Brain Hub's 12 destinations — every one of the 35 master-spec sections lives
+// under one of these. Each is a clickable orbit node; selecting one opens its drawer panel.
+const FINANCIAL_BRAIN_DESTINATIONS = [
+  {id: "financial-brain", name: "FINANCIAL BRAIN", category: "CORE", accent: "#5ce1ff", Icon: Brain, description: "Estado del deal, riesgos, requisitos faltantes y siguiente accion — respuestas deterministicas."},
+  {id: "deal-builder", name: "DEAL BUILDER", category: "SPECIFICATION", accent: "#28e6f6", Icon: ListChecks, description: "Financial Specification Engine — define la operacion una sola vez."},
+  {id: "roles-counterparties", name: "ROLES & COUNTERPARTIES", category: "PARTICIPANTS", accent: "#7c5cff", Icon: Users, description: "Institutional Role Mapper + Entity & Counterparty Intelligence (SIMULATED)."},
+  {id: "investors", name: "INVESTORS", category: "PARTICIPANTS", accent: "#4ee8d2", Icon: WalletCards, description: "Roster de inversionistas simulados, KYC, lock-up y transferencias."},
+  {id: "compliance-risk", name: "COMPLIANCE & RISK", category: "GOVERNANCE", accent: "#ff789b", Icon: ShieldCheck, description: "Compliance Readiness Score + Risk Engine de 9 categorias."},
+  {id: "capital-stack", name: "CAPITAL STACK & CASH FLOW", category: "STRUCTURE", accent: "#ffb545", Icon: Layers3, description: "Tramos del capital stack y el waterfall de pagos."},
+  {id: "contracts-security", name: "CONTRACTS & SECURITY", category: "TECHNOLOGY", accent: "#9c7bff", Icon: FileCode, description: "Arquitectura de contratos generada + Security Readiness Score."},
+  {id: "simulation-lab", name: "SIMULATION LAB", category: "MODELING", accent: "#63c9ff", Icon: Activity, description: "Run 1 Month / 12 Months / Full Lifecycle / Stress Test + Digital Twin."},
+  {id: "governance-treasury", name: "GOVERNANCE & TREASURY", category: "GOVERNANCE", accent: "#f2bd69", Icon: Scale, description: "Aprobaciones por etapa + simulador de tesoreria multisig."},
+  {id: "deployment-monitoring", name: "DEPLOYMENT & MONITORING", category: "OPERATIONS", accent: "#59e2b0", Icon: Radar, description: "Testnet Deployment Center (simulado) + Monitoring Center."},
+  {id: "reports-business", name: "REPORTS & BUSINESS", category: "REPORTING", accent: "#ff8b5b", Icon: FileText, description: "Executive Dashboard, Revenue Model y el Digital Transaction Package."},
+  {id: "tenants", name: "TENANTS", category: "PLATFORM", accent: "#25e8ff", Icon: Network, description: "Multi-tenant registry — Manhattan es un tenant, no el sistema."}
+];
+
 const ecosystemNode = tool => ({
   ...tool,
   nodeType: "tool",
@@ -135,7 +180,7 @@ const ecosystemNode = tool => ({
 const kind = import.meta.env.VITE_BRAIN_KIND || new URLSearchParams(location.search).get("brain") || "finance";
 const current = config[kind] || config.finance;
 function brainGreeting(brain = kind) {
-  const label = ({finance: "Finance", commerce: "Commerce", saas: "SaaS", media: "Media", services: "Services"}[brain] || String(brain).replace(/\s*brain$/i, ""));
+  const label = ({finance: "Finance", commerce: "Commerce", saas: "SaaS", media: "Media", services: "Services", institutional: "Institutional"}[brain] || String(brain).replace(/\s*brain$/i, ""));
   return `Hola Neiver soy tu ${label} asistente.`;
 }
 function withBrainGreeting(brain, value) {
@@ -149,12 +194,19 @@ const KIND_BRAIN = {
   saas: {name: "SAAS BRAIN", tagline: "El sistema operativo de crecimiento recurrente.", core: "/brains/saas-core.png", color: "#7c5cff"},
   media: {name: "MEDIA BRAIN", tagline: "El sistema operativo de contenido.", core: "/brains/media-core.png", color: "#ff4fc3"},
   services: {name: "SERVICES BRAIN", tagline: "El sistema operativo de servicios.", core: "/brains/services-core.svg", color: "#ff8b5b"},
+  institutional: {name: "INSTITUTIONAL BRAIN", tagline: "El sistema operativo de activos institucionales.", core: "/brains/finance-core.png", color: "#5ce1ff"},
 };
 const brainTheme = KIND_BRAIN[kind] || KIND_BRAIN.finance;
 const brainBase = String(import.meta.env.BASE_URL || "/").endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const brainAsset = asset => `${brainBase}${String(asset).replace(/^\/+/, "")}`;
 const brainCoreUrl = brainAsset(brainTheme.core);
 const API = import.meta.env.VITE_BRAIN_API_URL || current.api;
+// Shared NEXUS session state, read/written from three otherwise-unrelated places (the hub tab
+// teaser, the 3D agent chamber, and the overlay itself) without prop-drilling it through
+// FinancialBrainHub → FinancialBrainInlinePanel → FinancialBrainDestinationPanel. This is the
+// only Context in the file — everything else here follows the codebase's normal prop-passing
+// convention — because those three consumers otherwise have no common ancestor closer than App.
+const NexusContext = createContext(null);
 const VOICE_API = import.meta.env.VITE_VOICE_API_URL || runtimeApi("http://localhost:8806", "/brain-api/ceo");
 const chainLabel = value => { const raw=String(value||"").toLowerCase(); const id=raw.startsWith("0x")?Number.parseInt(raw,16):Number(raw); return ({1:"Ethereum",137:"Polygon",42161:"Arbitrum",8453:"Base"}[id]||`Chain ${raw}`); };
 const shortAddress = value => value ? `${value.slice(0,6)}…${value.slice(-4)}` : "";
@@ -225,6 +277,17 @@ function App() {
   const [executionBusy,setExecutionBusy]=useState(false);
   const [walletBusy, setWalletBusy] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState(null);
+  const [institutionalDealId, setInstitutionalDealId] = useState(null);
+  const [nexusSessionOpen, setNexusSessionOpen] = useState(false);
+  const [nexusInitialAgentFilter, setNexusInitialAgentFilter] = useState(null);
+  const [nexusLive, setNexusLive] = useState(null);
+  const nexusContextValue = useMemo(() => ({
+    open: nexusSessionOpen,
+    openSession: agentId => { setNexusInitialAgentFilter(agentId || null); setNexusSessionOpen(true); },
+    closeSession: () => setNexusSessionOpen(false),
+    live: nexusLive,
+    setLive: setNexusLive
+  }), [nexusSessionOpen, nexusLive]);
   const Icon = current.icon;
 
   const refresh = useCallback(async () => {
@@ -236,6 +299,10 @@ function App() {
         s = await get("/api/state");
         events = [...(s.opportunities || []), ...(s.executions || [])];
         setExecutionControl(await get("/api/execution/control").catch(()=>null));
+      } else if (kind === "institutional") {
+        // Institutional Brain has no /api/summary or /api/events — its state lives in the
+        // Deal Builder (InstitutionalControlPanel), not the generic bots/events model.
+        s = h; events = [];
       } else {
         [s, events] = await Promise.all([get("/api/summary"), get("/api/events")]);
       }
@@ -387,10 +454,11 @@ function App() {
     if (kind === "finance") return `$${Number(kpis.balance || 0).toLocaleString()}`;
     if (kind === "commerce") return Number(kpis.active || 0).toString().padStart(2, "0");
     if (kind === "services") return Number(kpis.serviceCount || 0).toString().padStart(2, "0");
+    if (kind === "institutional") return Number(health?.dealTypes || 0).toString().padStart(2, "0");
     return Number(kpis.queued || 0).toString().padStart(2, "0");
   }, [kpis]);
 
-  return <div className="app" style={{"--accent": current.accent, "--accent2": current.accent2}}>
+  return <NexusContext.Provider value={nexusContextValue}><div className="app" style={{"--accent": current.accent, "--accent2": current.accent2}}>
     <div className="ambient ambientA"/><div className="ambient ambientB"/>
     <aside className="rail">
       <a href="/" className="brand"><span className="brandMark"><Brain size={22}/></span><span><b>AEGIS</b><small>OPERATING SYSTEM</small></span></a>
@@ -423,8 +491,11 @@ function App() {
       {kind === "media" && <BrainAgentControlPanel api={API} kind="media" agents={summary?.agents || []} summary={summary} health={health} selectedAgentId={selectedBotId} onSelect={setSelectedBotId}/>} 
       {kind === "commerce" && <CommerceBrainOrbit bots={summary?.bots || []} speaking={brainSpeaking} onSelect={setSelectedBotId}/>} 
       {kind === "commerce" && <CommerceBotControlPanel api={API} selectedBotId={selectedBotId}/>} 
-      {kind === "services" && <ServicesBrainOrbit bots={summary?.agents || []} speaking={brainSpeaking} onSelect={setSelectedBotId}/>} 
-      {kind === "services" && <ServicesControlPanel api={API} agents={summary?.agents || []} summary={summary} selectedAgentId={selectedBotId} onSelect={setSelectedBotId}/>} 
+      {kind === "services" && <ServicesBrainOrbit bots={summary?.agents || []} speaking={brainSpeaking} onSelect={setSelectedBotId}/>}
+      {kind === "services" && <ServicesControlPanel api={API} agents={summary?.agents || []} summary={summary} selectedAgentId={selectedBotId} onSelect={setSelectedBotId}/>}
+      {kind === "institutional" && <FinancialBrainHub api={API} dealId={institutionalDealId} onDealCreated={setInstitutionalDealId} speaking={brainSpeaking}/>}
+      {kind === "institutional" && <NexusAgentOrbit api={API} dealId={institutionalDealId}/>}
+      {kind === "institutional" && <InstitutionalEcosystemPanel tools={INSTITUTIONAL_ADAPTER_TOOLS} api={API} dealId={institutionalDealId} onOpen={setSelectedToolId}/>}
 
       {kind === "finance" && <CentralFinanceBrainPanel data={centralAgent} busy={centralBusy} onRun={runCentralAgent} mediaApi="http://localhost:8804" onSpeakingChange={setBrainSpeaking}/>} 
       {kind === "finance" && <FinanceBrainOrbit bots={financeTelemetry} tools={FINANCE_ECOSYSTEM_TOOLS} central={centralAgent} speaking={brainSpeaking} streamConnected={streamConnected} selectedBotId={selectedBotId} onSelect={setSelectedBotId} onOpenTool={setSelectedToolId}/>}
@@ -438,7 +509,10 @@ function App() {
     </main>
     {kind === "finance" && selectedBotId && <BotControlErrorBoundary onClose={() => setSelectedBotId(null)}><BotControlModal api={API} bot={financeTelemetry.find(item => item.id === selectedBotId) || {id:selectedBotId,name:selectedBotId,active:false,status:"UNKNOWN"}} onClose={() => setSelectedBotId(null)} onScan={id => financeAction(id, "scan")} onToggle={id => financeAction(id, "toggle")} onSetExecutionMode={setBotExecutionMode}/></BotControlErrorBoundary>}
     {kind === "finance" && selectedToolId && <FinanceToolEmbed tool={FINANCE_ECOSYSTEM_TOOLS.find(item => item.id === selectedToolId)} onClose={() => setSelectedToolId(null)}/>}
-  </div>
+    {kind === "commerce" && selectedBotId && <BotControlErrorBoundary onClose={() => setSelectedBotId(null)}><CommerceModuleControlModal api={API} moduleId={selectedBotId} onClose={() => setSelectedBotId(null)}/></BotControlErrorBoundary>}
+    {kind === "institutional" && selectedToolId && <InstitutionalAdapterPanel tool={INSTITUTIONAL_ADAPTER_TOOLS.find(item => item.id === selectedToolId)} api={API} dealId={institutionalDealId} onClose={() => setSelectedToolId(null)}/>}
+    {kind === "institutional" && nexusSessionOpen && <NexusSessionOverlay api={API} dealId={institutionalDealId} initialAgentFilter={nexusInitialAgentFilter} onLiveUpdate={setNexusLive} onClose={() => setNexusSessionOpen(false)}/>}
+  </div></NexusContext.Provider>
 }
 
 function Stat({icon: Icon, label, value, sub, live}) { return <div className="stat"><span className="statIcon"><Icon size={17}/></span><div><small>{label}</small><strong className={live ? "liveValue" : ""}>{value}</strong><em>{sub}</em></div></div> }
@@ -556,6 +630,218 @@ function CommerceBotControlPanel({api, selectedBotId}) {
     {landings[0] && <div className="commerceLanding"><div><small>LATEST LANDING DRAFT · {landings[0].status}</small><h3>{landings[0].headline}</h3><p>{landings[0].subheadline}</p></div><div className="commerceLandingOffer"><b>${Number(landings[0].offer?.price || 0).toFixed(2)}</b><small>{landings[0].asset?.mode === "brief" ? "ASSET BRIEF READY" : `ASSET ${String(landings[0].asset?.status || "QUEUED").toUpperCase()}`}</small></div><div className="commerceLandingSections">{(landings[0].sections || []).slice(0, 4).map(section => <span key={section}><Zap size={11}/>{section}</span>)}</div><em>Shopify: {landings[0].shopify?.status || "DRAFT ONLY"} · no publishing action performed</em></div>}
   </section>;
 }
+const COMMERCE_MODULE_META = {
+  "product-scout": {n: 1, label: "AMAZON PRODUCT SCOUT", accent: "#4ee8d2", Icon: Target},
+  "dropship-hunter": {n: 2, label: "DROPSHIPPING HUNTER", accent: "#63a7ff", Icon: Globe2},
+  "digital-builder": {n: 3, label: "DIGITAL PRODUCT BUILDER", accent: "#b58cff", Icon: Layers3},
+  "offer-pricing": {n: 4, label: "OFFER & PRICING ENGINE", accent: "#f2ca63", Icon: Gauge},
+  "creative-factory": {n: 5, label: "CONTENT & CREATIVE FACTORY", accent: "#ff8bc6", Icon: ImageIcon},
+  "store-manager": {n: 6, label: "STORE & MARKETPLACE MANAGER", accent: "#59e2a4", Icon: Database},
+  "traffic": {n: 7, label: "TRAFFIC ACQUISITION AGENT", accent: "#ff9a68", Icon: Radio},
+  "closer": {n: 8, label: "SALES CLOSER / CRM", accent: "#6db7ff", Icon: MessageCircle},
+  "retention": {n: 9, label: "RETENTION & UPSELL AGENT", accent: "#73e7a0", Icon: RefreshCw},
+  "allocator": {n: 10, label: "REVENUE ALLOCATOR", accent: "#f0d277", Icon: WalletCards}
+};
+function commerceModuleMeta(id) { return COMMERCE_MODULE_META[id] || {n: 0, label: String(id || "MODULE").toUpperCase(), accent: "#4ee8d2", Icon: Bot}; }
+const COMMERCE_STAGE_ORDER = ["OBSERVE", "DRAFT", "APPROVAL", "LIVE"];
+
+function CommerceStageStepper({actionStage, readinessState, onAdvance, busy}) {
+  const currentIndex = Math.max(0, COMMERCE_STAGE_ORDER.indexOf(actionStage));
+  return <div className="commerceStageStepper">
+    {COMMERCE_STAGE_ORDER.map((stage, index) => {
+      const done = index < currentIndex, active = index === currentIndex, nextAllowed = index === currentIndex + 1;
+      return <button key={stage} className={done ? "done" : active ? "active" : "pending"} disabled={!nextAllowed || busy} onClick={() => nextAllowed && onAdvance(stage)} title={nextAllowed ? `Avanzar a ${stage}` : stage}><i>{done ? "✓" : index + 1}</i><b>{stage}</b></button>;
+    })}
+    <small className="commerceStageReadiness">{String(readinessState || "LOADING").replaceAll("_", " ")}</small>
+  </div>;
+}
+
+function CommerceCopilotThinkingOverlay({meta, question}) {
+  const phases = [
+    {label: "Conectando el modelo de razonamiento", detail: "OpenAI · fallback determinista si no hay crédito"},
+    {label: "Leyendo readiness real del módulo", detail: "Bloqueos, conectores y última corrida"},
+    {label: "Revisando evidencia reciente", detail: "Runs, candidatos y artefactos generados"},
+    {label: "Contrastando política activa", detail: "Parámetros y permisos por etapa"},
+    {label: "Construyendo respuesta auditable", detail: "Hallazgos y recomendaciones, sin inventar datos"}
+  ];
+  const [phase, setPhase] = useState(0), [elapsed, setElapsed] = useState(0);
+  useEffect(() => { setPhase(0); setElapsed(0); const phaseTimer = setInterval(() => setPhase(current => Math.min(phases.length - 1, current + 1)), 2400), clock = setInterval(() => setElapsed(current => current + 1), 1000); return () => { clearInterval(phaseTimer); clearInterval(clock); }; }, [question]);
+  return <div className="copilotThinkingBackdrop" role="dialog" aria-modal="true" aria-live="polite" aria-label={`Copilot analizando ${meta.label}`}><section className="copilotThinkingWindow" style={{"--botAccent": meta.accent}}><div className="copilotThinkingTop"><span><i/> MODULE COPILOT · LIVE ANALYSIS</span><small>{String(elapsed).padStart(2, "0")}s · PAPER SAFE</small></div><div className="copilotThinkingLayout"><div className="copilotNeuralStage"><div className="copilotAmbientGrid"/><div className="copilotOrbit orbitA"><i/><i/><i/></div><div className="copilotOrbit orbitB"><i/><i/></div><div className="copilotBrainCore"><span className="copilotBrainHalo"/><img src={brainCoreUrl} alt="Commerce Brain analizando"/><meta.Icon size={44}/><b>{meta.label}</b><small>CONTEXT LOCKED</small></div></div><div className="copilotThinkingReport"><div className="copilotThinkingIdentity"><Sparkles size={18}/><div><small>ANALIZANDO TU PREGUNTA</small><p>{question || "Preparando contexto del módulo…"}</p></div></div><div className="copilotPhaseList">{phases.map((item, index) => <article className={index < phase ? "done" : index === phase ? "active" : "waiting"} key={item.label}><span>{index < phase ? "✓" : String(index + 1).padStart(2, "0")}</span><div><b>{item.label}</b><small>{item.detail}</small></div>{index === phase && <em><i/><i/><i/></em>}</article>)}</div><div className="copilotThinkingFooter"><Activity size={14}/><span>Solo lee datos reales de este módulo. No se aplicará ningún cambio sin tu aprobación.</span></div></div></div></section></div>;
+}
+
+function CommerceCandidatesPanel({moduleId, bot}) {
+  const result = bot?.lastResult || {};
+  if (["product-scout", "dropship-hunter"].includes(moduleId)) {
+    const ranked = result.ranked || [];
+    return <div className="botControlBody"><div className="botResultList modern">{ranked.length ? ranked.map(item => <article className="botDecisionCard" key={item.id}><div><span className={`decisionBadge ${String(item.tier || "review").toLowerCase()}`}>{item.tier || "REVIEW"}</span><b>{item.name}</b><small>score {item.score ?? "—"}</small></div><div className="botDecisionNumbers"><span><small>MARGIN</small><b>{item.economics?.marginPct != null ? `${item.economics.marginPct}%` : "—"}</b></span><span><small>CONTRIBUTION</small><b>{money(item.economics?.contribution)}</b></span></div>{item.risks?.length > 0 && <p>{item.risks.join(" · ")}</p>}</article>) : <div className="botControlEmpty">Ejecuta una corrida para poblar la matriz de productos.</div>}</div></div>;
+  }
+  if (moduleId === "digital-builder") {
+    const opportunity = result.opportunity;
+    return <div className="botControlBody">{opportunity ? <article className="botDecisionCard"><div><b>{opportunity.name}</b><small>{opportunity.problem}</small></div><div className="botDecisionNumbers"><span><small>PRICE</small><b>${opportunity.price}</b></span><span><small>MARGIN</small><b>{opportunity.economics?.marginPct}%</b></span><span><small>VALIDATION</small><b>{opportunity.validation?.status}</b></span></div><p>{opportunity.validation?.nextTest}</p></article> : <div className="botControlEmpty">Sin oportunidades generadas todavía.</div>}</div>;
+  }
+  if (moduleId === "closer") {
+    const queue = result.queue || [];
+    return <div className="botControlBody"><div className="botResultList modern">{queue.length ? queue.map(lead => <article className="botDecisionCard" key={lead.id}><div><span className={`decisionBadge ${lead.priority === "HOT" ? "buy" : "watch"}`}>{lead.priority}</span><b>{lead.email}</b><small>{lead.source}</small></div><div className="botDecisionNumbers"><span><small>SCORE</small><b>{lead.score}</b></span></div><p>{lead.nextAction}</p></article>) : <div className="botControlEmpty">CRM vacío — captura leads vía POST /api/leads.</div>}</div></div>;
+  }
+  if (moduleId === "retention") {
+    const queue = result.queue || [];
+    return <div className="botControlBody"><div className="botResultList modern">{queue.length ? queue.map(row => <article className="botDecisionCard" key={row.customerId}><div><b>{row.customerId}</b><small>{row.orderCount} pedidos</small></div><p>{row.action}</p></article>) : <div className="botControlEmpty">Sin cohortes todavía — necesitas pedidos verificados.</div>}</div></div>;
+  }
+  if (moduleId === "allocator") {
+    const allocations = result.allocations || [];
+    return <div className="botControlBody"><div className="botResultList modern">{allocations.length ? allocations.map(row => <article className="botDecisionCard" key={row.productId}><div><b>{row.name}</b><small>{row.rationale}</small></div><div className="botDecisionNumbers"><span><small>BUDGET</small><b>${row.recommendedBudget}</b></span><span><small>MAX CAC</small><b>${row.maxCac}</b></span></div></article>) : <div className="botControlEmpty">Sin productos TEST_READY para asignar presupuesto.</div>}</div></div>;
+  }
+  return <div className="botControlBody"><div className="botControlEmpty">Este módulo no produce una lista de candidatos — revisa la pestaña OUTPUTS.</div></div>;
+}
+
+function CommerceOutputsPanel({moduleId, bot, readiness}) {
+  const result = bot?.lastResult || {};
+  if (moduleId === "offer-pricing") {
+    const sensitivity = result.pricing?.sensitivity || [];
+    return <div className="botControlBody"><div className="botResultList modern">{sensitivity.length ? sensitivity.map(row => <article className="botDecisionCard" key={row.discountPct}><div><b>{row.discountPct}% descuento</b><small>precio ${row.price}</small></div><div className="botDecisionNumbers"><span><small>CONTRIBUTION</small><b>${row.contribution}</b></span><span><small>MARGIN</small><b>{row.marginPct}%</b></span></div></article>) : <div className="botControlEmpty">Ejecuta una corrida sobre un producto para ver la curva de margen.</div>}</div></div>;
+  }
+  if (moduleId === "creative-factory") {
+    return <div className="botControlBody">{result.landingId ? <article className="botDecisionCard"><div><b>Landing draft · {result.assetStatus}</b><small>{(result.channels || []).join(" · ")}</small></div><p>Disclosure requerido: {result.disclosureRequired ? "sí" : "no"}</p></article> : <div className="botControlEmpty">Sin creatividades generadas todavía.</div>}</div>;
+  }
+  if (moduleId === "store-manager") {
+    const draft = result.draft;
+    return <div className="botControlBody">{draft ? <article className="botDecisionCard"><div><b>{draft.product?.title}</b><small>{draft.status}</small></div><div className="botDecisionNumbers"><span><small>PRICE</small><b>${draft.product?.price}</b></span><span><small>SHOPIFY</small><b>{draft.connector?.configured ? "CONFIGURED" : "NOT CONFIGURED"}</b></span></div><p>{result.publishAllowed ? "Publicación habilitada." : "Publicación bloqueada — draft only."}</p></article> : <div className="botControlEmpty">Sin drafts de tienda todavía.</div>}</div>;
+  }
+  if (moduleId === "traffic") {
+    const campaign = result.campaign;
+    return <div className="botControlBody">{campaign ? <article className="botDecisionCard"><div><b>{campaign.message}</b><small>{campaign.status}</small></div><div className="botDecisionNumbers"><span><small>DAILY BUDGET</small><b>${campaign.dailyBudget}</b></span><span><small>MAX CAC</small><b>${campaign.maxCac}</b></span></div>{campaign.blockers?.length > 0 && <p>{campaign.blockers.join(" · ")}</p>}</article> : <div className="botControlEmpty">Sin campañas generadas todavía.</div>}</div>;
+  }
+  if (moduleId === "allocator") {
+    return <div className="botControlBody"><div className="botControlStats botControlEdgeStats"><span><small>BUDGET</small><b>${result.budget || 0}</b></span><span><small>TOTAL ALLOCATED</small><b>${result.totalAllocated || 0}</b></span><span><small>SPEND ALLOWED</small><b>{result.spendAllowed ? "YES" : "NO"}</b></span></div></div>;
+  }
+  return <div className="botControlBody"><div className="botControlEmpty">La salida de este módulo se muestra en CANDIDATES · evidencia real: {JSON.stringify(readiness?.evidence || {})}</div></div>;
+}
+
+function CommerceModuleControlModal({api, moduleId, onClose}) {
+  const base = api.replace(/\/$/, "");
+  const meta = commerceModuleMeta(moduleId);
+  const [tab, setTab] = useState("cockpit");
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [bot, setBot] = useState(null);
+  const [readiness, setReadiness] = useState(null);
+  const [runs, setRuns] = useState([]);
+  const [mode, setMode] = useState(null);
+  const [policy, setPolicy] = useState(null);
+  const [connectors, setConnectors] = useState([]);
+  const [copilot, setCopilot] = useState(null);
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState("");
+  const [lastSync, setLastSync] = useState(null);
+  const [policyDraft, setPolicyDraft] = useState(null);
+  const [copilotPrompt, setCopilotPrompt] = useState("");
+  const [copilotQuestion, setCopilotQuestion] = useState("");
+  const [copilotMessages, setCopilotMessages] = useState([]);
+  const [copilotAnalysis, setCopilotAnalysis] = useState(null);
+  const [copilotBusy, setCopilotBusy] = useState(false);
+  const policyInitialized = useRef(false);
+
+  useEffect(() => { setTab("cockpit"); setDebugOpen(false); setMessage(""); policyInitialized.current = false; setCopilotMessages([]); setCopilotAnalysis(null); }, [moduleId]);
+
+  const load = useCallback(async () => {
+    const fetchJson = async path => { const response = await fetch(`${base}${path}`); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error || `API ${response.status}`); return body; };
+    const [botBody, readinessBody, runsBody, modeBody, policyBody, connectorsBody, copilotBody] = await Promise.all([
+      fetchJson(`/api/bots/${moduleId}`), fetchJson(`/api/modules/${moduleId}/readiness`), fetchJson(`/api/modules/${moduleId}/runs?limit=20`),
+      fetchJson(`/api/modules/${moduleId}/mode`), fetchJson(`/api/modules/${moduleId}/policy`), fetchJson(`/api/connectors/status`), fetchJson(`/api/modules/${moduleId}/copilot`)
+    ]);
+    setBot(botBody); setReadiness(readinessBody.readiness); setRuns(runsBody.items || []); setMode(modeBody); setPolicy(policyBody); setConnectors(connectorsBody.connectors || []); setCopilot(copilotBody);
+    if (!policyInitialized.current) { setPolicyDraft(policyBody.parameters || {}); policyInitialized.current = true; }
+    setLastSync(new Date());
+  }, [base, moduleId]);
+
+  useEffect(() => { load().catch(error => setMessage(error.message)); const timer = setInterval(() => load().catch(() => {}), 8000); return () => clearInterval(timer); }, [load]);
+  useEffect(() => { const close = event => { if (event.key === "Escape") onClose(); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, [onClose]);
+
+  async function postJson(path, body = {}) {
+    const response = await fetch(`${base}${path}`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(body)});
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || data.message || `API ${response.status}`);
+    return data;
+  }
+  async function runNow() { setBusy("run"); setMessage(""); try { const result = await postJson(`/api/modules/${moduleId}/run`); await load(); setMessage(result.deduped ? "Ya existe una corrida reciente para este disparador; no se duplicó evidencia." : (result.message || `Corrida completada · ${result.status || "OK"}.`)); } catch (error) { setMessage(error.message); } finally { setBusy(""); } }
+  async function toggleActive() { setBusy("toggle"); setMessage(""); try { await postJson(`/api/bots/${moduleId}/toggle`); await load(); setMessage(bot?.active ? "Módulo pausado." : "Módulo activado."); } catch (error) { setMessage(error.message); } finally { setBusy(""); } }
+  async function advanceStage(stage) { setBusy("stage"); setMessage(""); try { const confirmLive = stage === "LIVE"; if (confirmLive && !window.confirm(`Avanzar ${meta.label} a LIVE habilita sus acciones reales cuando el conector correspondiente esté configurado. ¿Continuar?`)) { setBusy(""); return; } await postJson(`/api/modules/${moduleId}/mode`, {actionStage: stage, confirmLive, actor: "operator"}); await load(); setMessage(`Etapa avanzada a ${stage}.`); } catch (error) { setMessage(error.message); } finally { setBusy(""); } }
+  async function savePolicy() { setBusy("policy"); setMessage(""); try { await postJson(`/api/modules/${moduleId}/policy`, {parameters: policyDraft}); await load(); setMessage("Política guardada."); } catch (error) { setMessage(error.message); } finally { setBusy(""); } }
+  async function askCopilot(value) {
+    const question = String(value || copilotPrompt).trim(); if (!question || copilotBusy) return;
+    setCopilotQuestion(question); setCopilotBusy(true);
+    try { const body = await postJson(`/api/modules/${moduleId}/copilot/chat`, {message: question, conversation: copilotMessages}); setCopilotAnalysis(body); setCopilotMessages(current => [...current, {role: "user", content: question}, {role: "assistant", content: body.reply}].slice(-12)); setCopilotPrompt(""); }
+    catch (error) { setCopilotAnalysis({reply: `No se pudo consultar al copiloto: ${error.message}`, findings: [], recommendations: []}); }
+    finally { setCopilotBusy(false); setCopilotQuestion(""); }
+  }
+
+  if (!readiness || !mode) return <div className="botControlOverlay" onClick={onClose}><section className="botControlModal" onClick={event => event.stopPropagation()} style={{"--botAccent": meta.accent}}><button className="botControlClose" onClick={onClose} aria-label="Close module control">×</button><div className="botControlMessage">{message || "Cargando módulo…"}</div></section></div>;
+
+  const permissions = mode.permissions || {};
+  const ownedActions = Object.entries(permissions).filter(([, row]) => row.owned);
+  const tabs = [["cockpit", "COCKPIT"], ["scanner", "SCANNER"], ["candidates", "CANDIDATES"], ["outputs", "OUTPUTS"], ["automation", "AUTOMATION"], ["connectors", "CONNECTORS"], ["strategy", "STRATEGY"], ["copilot", "COPILOT"], ["audit", "AUDIT"]];
+
+  return <div className="botControlOverlay" onClick={onClose}>
+    <section className="botControlModal commerceModuleModal" onClick={event => event.stopPropagation()} style={{"--botAccent": meta.accent}}>
+      <button className="botControlClose" onClick={onClose} aria-label="Close module control">×</button>
+      <div className="botControlHeader"><span className="botControlOrb"><meta.Icon size={26}/></span><div><small>MODULE {String(meta.n).padStart(2, "0")} · COMMERCE COCKPIT</small><h2>{meta.label}</h2><p>{bot?.description}</p></div><div className="botControlPulse"><span><i/> AUTO-SYNC 8S</span><b>{controlTime(lastSync)}</b><em>{mode.dataMode}</em></div></div>
+      <CommerceStageStepper actionStage={mode.actionStage} readinessState={readiness.state} onAdvance={advanceStage} busy={busy === "stage"}/>
+      <div className={`botSafetyRail ${mode.actionStage === "LIVE" ? "real" : "paper"}`}>
+        <button onClick={toggleActive} disabled={busy === "toggle"}><Zap size={12}/>{busy === "toggle" ? "UPDATING" : bot?.active ? "PAUSE MODULE" : "ACTIVATE MODULE"}</button>
+        <span><i className={readiness.ready ? "online" : "blocked"}/>{readiness.blockers?.[0] || "Sin bloqueos activos"}</span>
+        <button className="scan" onClick={runNow} disabled={busy === "run" || !bot?.active}><Radio size={12}/>{busy === "run" ? "RUNNING" : "RUN NOW"}</button>
+        <button className={debugOpen ? "confirm" : ""} onClick={() => setDebugOpen(current => !current)}><Database size={12}/>{debugOpen ? "HIDE DEBUG" : "DEBUG"}</button>
+      </div>
+      <div className="botControlTabs">{tabs.map(([id, label]) => <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}</button>)}</div>
+
+      {tab === "cockpit" && <div className="botCockpit">
+        <div className="botControlStats botControlEdgeStats"><span><small>SIGNALS (REAL)</small><b>{bot?.metrics?.signals || 0}</b></span><span><small>CANDIDATES</small><b>{bot?.metrics?.candidates || 0}</b></span><span><small>DRAFTS</small><b>{bot?.metrics?.drafts || 0}</b></span><span><small>READINESS SCORE</small><b>{readiness.score}/100</b></span><span><small>DATA MODE</small><b>{mode.dataMode}</b></span><span><small>ACTION STAGE</small><b>{mode.actionStage}</b></span></div>
+        <section className="botSpecialReadout"><div className="botSectionTitle"><span><Radar size={14}/> ÚLTIMA CORRIDA</span><small>{bot?.lastRunAt ? controlTime(bot.lastRunAt) : "Todavía no se ha ejecutado"}</small></div><div><span><small>ESTADO</small><b>{readiness.lastRun?.status || "SIN CORRIDAS"}</b></span><span><small>TRIGGER</small><b>{readiness.lastRun?.trigger || "—"}</b></span><span><small>NEXT ACTION</small><b>{readiness.nextAction}</b></span></div></section>
+        {readiness.blockers?.length > 0 && <div className="botDecisionWhy"><div><small>BLOCKERS</small><b>{readiness.blockers.join(" · ")}</b></div><p>Resuelve estos bloqueos para avanzar de etapa.</p></div>}
+        {readiness.warnings?.length > 0 && <div className="botDecisionWhy"><div><small>WARNINGS</small><b>{readiness.warnings.join(" · ")}</b></div></div>}
+      </div>}
+
+      {tab === "scanner" && <div className="botControlBody"><div className="botControlToolbar"><span>Historial real de corridas · idempotencia por hora en automático</span><button onClick={runNow} disabled={busy === "run"}><RefreshCw size={13}/>{busy === "run" ? "RUNNING…" : "RUN NOW"}</button></div><div className="botResultList modern">{runs.length ? runs.map(run => <article className={`botScanCard ${["ERROR", "BLOCKED"].includes(run.status) ? "hasError" : ""}`} key={run.id}><div className="botScanCardHead"><span><i className={run.status === "SUCCESS" ? "online" : "blocked"}/><b>{run.trigger.toUpperCase()} · {run.status}</b><small>{controlTime(run.finishedAt || run.startedAt)}</small></span><strong>{run.newSignal ? "NEW SIGNAL" : "NO NEW SIGNAL"}</strong></div><p>{run.summary}</p>{run.blockers?.length > 0 && <small className="commerceBotBlocker">BLOCKERS · {run.blockers.join(" · ")}</small>}</article>) : <div className="botControlEmpty">No hay corridas todavía. Ejecuta RUN NOW para iniciar el historial.</div>}</div></div>}
+
+      {tab === "candidates" && <CommerceCandidatesPanel moduleId={moduleId} bot={bot}/>}
+      {tab === "outputs" && <CommerceOutputsPanel moduleId={moduleId} bot={bot} readiness={readiness}/>}
+
+      {tab === "automation" && <div className="botControlBody"><div className="botResultList modern"><article className="botScanCard"><div className="botScanCardHead"><span><i className={bot?.active ? "online" : "blocked"}/><b>{bot?.active ? "ACTIVO EN EL CICLO AUTOMÁTICO" : "PAUSADO"}</b><small>Intervalo definido por COMMERCE_AUTOMATION_INTERVAL_MS</small></span></div><p>El ciclo automático llama a este módulo con trigger "scheduled"; una corrida por hora se deduplica por idempotencyKey — nunca vuelve a contar la misma evidencia dos veces.</p></article></div><button className="botSaveButton" onClick={runNow} disabled={busy === "run"}><Zap size={15}/>{busy === "run" ? "RUNNING…" : "FORZAR CORRIDA MANUAL"}</button></div>}
+
+      {tab === "connectors" && <div className="botControlBody"><div className="botResultList modern">{connectors.map(item => <article className="botScanCard" key={item.id}><div className="botScanCardHead"><span><i className={["READY", "VERIFIED"].includes(item.readiness) ? "online" : item.readiness === "UNVERIFIED" ? "" : "blocked"}/><b>{item.name}</b><small>{item.provider}</small></span><strong>{item.readiness || (item.configured ? "CONFIGURED" : "NOT CONFIGURED")}</strong></div><p>{item.detail}{item.error ? ` · ${item.error}` : ""}</p></article>)}</div></div>}
+
+      {tab === "strategy" && <div className="botManualForm">
+        <div className="botPolicyBanner"><Gauge size={18}/><div><b>PARÁMETROS DEL MÓDULO</b><small>Valores acotados por el backend — no se aceptan claves desconocidas ni fuera de rango.</small></div></div>
+        <div className="botPolicyGrid">{Object.entries(policy?.defaults || {}).map(([key, defaultValue]) => {
+          const value = policyDraft?.[key];
+          if (typeof defaultValue === "boolean") return <label className="botToggle" key={key}><input type="checkbox" checked={Boolean(value)} onChange={event => setPolicyDraft(current => ({...current, [key]: event.target.checked}))}/><span/> {key.toUpperCase()}</label>;
+          if (Array.isArray(defaultValue)) return <label key={key}>{key.toUpperCase()}<input type="text" value={Array.isArray(value) ? value.join(", ") : ""} onChange={event => setPolicyDraft(current => ({...current, [key]: event.target.value.split(",").map(item => item.trim()).filter(Boolean)}))}/></label>;
+          return <label key={key}>{key.toUpperCase()}<input type="number" value={value ?? ""} onChange={event => setPolicyDraft(current => ({...current, [key]: event.target.value}))}/></label>;
+        })}</div>
+        <button className="botSaveButton" onClick={savePolicy} disabled={busy === "policy"}><Settings size={15}/>{busy === "policy" ? "SAVING…" : "SAVE & SYNC POLICY"}</button>
+        <div className="botLiveNotice">Permisos por acción en esta etapa ({mode.actionStage}): {ownedActions.length ? ownedActions.map(([action, row]) => `${action}: ${row.allowed ? "permitido" : "bloqueado"}`).join(" · ") : "este módulo no controla ninguna acción mutante."}</div>
+      </div>}
+
+      {tab === "copilot" && <section className="botCopilot">
+        <div className="botSectionTitle"><span><MessageCircle size={14}/> MODULE COPILOT · {moduleId}</span><small>Solo datos reales · nunca inventa métricas</small></div>
+        <div className="botCopilotStatus"><span className={copilot?.status?.configured ? "ready" : "fallback"}><i/>{copilot?.status?.provider || "LOCAL"}</span><span>{readiness.state}</span></div>
+        <div className="botCopilotQuick">{["¿Por qué está bloqueado este módulo?", "¿Qué evidencia real tengo hasta ahora?", "¿Qué falta para avanzar de etapa?", "Resume la política activa."].map(question => <button key={question} onClick={() => askCopilot(question)} disabled={copilotBusy}>{question}</button>)}</div>
+        {(copilotAnalysis || copilot?.history?.length > 0) && <div className="botCopilotAnalysis">
+          <p>{copilotAnalysis?.reply || copilot.history[copilot.history.length - 1]?.content}</p>
+          {copilotAnalysis?.findings?.length > 0 && <div className="botCopilotFindings">{copilotAnalysis.findings.map((row, index) => <article key={index}><b>{row}</b></article>)}</div>}
+          {copilotAnalysis?.recommendations?.length > 0 && <div className="botCopilotRecommendations">{copilotAnalysis.recommendations.map((row, index) => <article key={index}><div><b>{row}</b></div></article>)}</div>}
+        </div>}
+        <div className="botCopilotComposer"><input value={copilotPrompt} onChange={event => setCopilotPrompt(event.target.value)} onKeyDown={event => { if (event.key === "Enter") askCopilot(); }} placeholder="Pregunta sobre este módulo…"/><button onClick={() => askCopilot()} disabled={copilotBusy || !copilotPrompt.trim()}>{copilotBusy ? "ANALYZING…" : "ASK COPILOT"}</button></div>
+      </section>}
+
+      {tab === "audit" && <div className="botControlBody"><div className="botResultList modern">{(mode.history || []).map((entry, index) => <article className="botScanCard" key={index}><div className="botScanCardHead"><span><i className="online"/><b>{entry.from} → {entry.to}</b><small>{controlTime(entry.at)} · {entry.actor}</small></span></div>{entry.reason && <p>{entry.reason}</p>}</article>)}{!(mode.history || []).length && <div className="botControlEmpty">Sin cambios de etapa todavía — este módulo sigue en OBSERVE.</div>}</div></div>}
+
+      {debugOpen && <div className="botDebugPanel"><div><Database size={15}/><span><b>RAW TELEMETRY</b><small>Solo visible con DEBUG activado.</small></span></div><pre>{JSON.stringify({bot, readiness, mode, policy, runs}, null, 2)}</pre></div>}
+      {message && <div className="botControlMessage">{message}</div>}
+      {copilotBusy && <CommerceCopilotThinkingOverlay meta={meta} question={copilotQuestion}/>}
+    </section>
+  </div>;
+}
+
 function CentralFinanceBrainPanel({data, busy, onRun, mediaApi, onSpeakingChange}) {
   const [message, setMessage] = useState("");
   const [reply, setReply] = useState("");
@@ -659,6 +945,1080 @@ function CommerceBrainOrbit({bots = [], speaking, onSelect}) {
 
 function ServicesBrainOrbit({bots = [], speaking, onSelect}) {
   return <section className={"panel brain3dPanel servicesBrain3dPanel " + (speaking ? "speaking" : "")}><div className="brain3dHeader"><div><small>03.6 / SERVICES BRAIN · COMMAND CHAMBER</small><h2>El sistema operativo de tus servicios.</h2><p>Un núcleo comercial conecta venta consultiva, cotización, delivery, web, video, SEO, branding, automatización y éxito del cliente.</p></div><span className="brain3dLive"><i/>{speaking ? "VOICE STREAMING" : "SERVICES CORE · ONLINE"}</span></div><Brain3DViewport bots={bots} onSelect={onSelect}/></section>;
+}
+
+// The Financial Brain Hub: the central node from the master spec, with the 12 destinations
+// orbiting it. Every destination is clickable (single or double click) and opens a drawer with
+// real, computed content — not a static mockup.
+function FinancialBrainHub({api, dealId, onDealCreated, speaking}) {
+  // `activeId` (which hub tab is open below) and `focusedNodeId` (which 3D node the camera is
+  // locked onto) are deliberately separate: activeId defaults to "deal-builder" so the tabs below
+  // aren't blank on load, but feeding that same default into Brain3DViewport's selectedBotId used
+  // to auto-focus the camera onto that node from the very first frame — permanently zooming past
+  // the brain core sprite at the center of the chamber so it was never actually visible. Camera
+  // This used to also render its own Brain3DViewport (12 hub-tab shortcuts as nodes) above the
+  // tab bar. That was a second, unrelated 3D chamber on the same page — every other kind (Finance,
+  // Commerce, SaaS, Media, Services) has exactly one 3D chamber, and it always shows real
+  // live bots/agents, never a static feature menu. NexusAgentOrbit (rendered once, right after
+  // this component, showing the 8 real Manhattan agents) is now that one chamber for institutional
+  // too; the 12 destinations navigate purely through the tab bar below, same as they already did.
+  const [activeId, setActiveId] = useState("deal-builder");
+  return <FinancialBrainInlinePanel activeId={activeId} onSelectDestination={setActiveId} api={api} dealId={dealId} onDealCreated={onDealCreated}/>;
+}
+
+// Inline, in-page panel (not a floating overlay) — the 12 destinations are tabs across the top,
+// same as the Deal Builder used to be permanently visible. Switching tabs never loses your place
+// on the page the way a modal window did.
+function FinancialBrainInlinePanel({activeId, onSelectDestination, api, dealId, onDealCreated}) {
+  const destination = FINANCIAL_BRAIN_DESTINATIONS.find(d => d.id === activeId) || FINANCIAL_BRAIN_DESTINATIONS[0];
+  const Icon = destination.Icon;
+  return <section className="panel institutionalPanel institutionalHubPanel" style={{"--toolAccent": destination.accent}}>
+    <div className="institutionalDestinationTabs">
+      {FINANCIAL_BRAIN_DESTINATIONS.map(item => {
+        const ItemIcon = item.Icon;
+        return <button key={item.id} className={`institutionalDestinationTab ${item.id === destination.id ? "active" : ""}`} style={{"--toolAccent": item.accent}} onClick={() => onSelectDestination(item.id)}>
+          <ItemIcon size={14}/><span>{item.name}</span>
+        </button>;
+      })}
+    </div>
+    <div className="panelHead"><div><small>FINANCIAL BRAIN · {destination.category}</small><h2><Icon size={18} style={{verticalAlign: "-3px", marginRight: 8}}/>{destination.name}</h2><p style={{margin: "6px 0 0", color: "#7d8ba6", fontSize: 11}}>{destination.description}</p></div>{dealId && <span className="panelAction">DEAL {dealId.slice(0, 14)}…</span>}</div>
+    <div className="institutionalHubBody">
+      <FinancialBrainDestinationPanel destination={destination.id} api={api} dealId={dealId} onDealCreated={onDealCreated}/>
+    </div>
+  </section>;
+}
+
+function FinancialBrainDestinationPanel({destination, api, dealId, onDealCreated}) {
+  switch (destination) {
+    case "financial-brain": return <FinancialBrainQaPanel api={api} dealId={dealId}/>;
+    case "deal-builder": return <InstitutionalControlPanel api={api} dealId={dealId} onDealCreated={onDealCreated}/>;
+    case "roles-counterparties": return <RolesCounterpartiesPanel api={api} dealId={dealId}/>;
+    case "investors": return <InvestorsPanel api={api} dealId={dealId}/>;
+    case "compliance-risk": return <ComplianceRiskPanel api={api} dealId={dealId}/>;
+    case "capital-stack": return <CapitalStackPanel api={api} dealId={dealId}/>;
+    case "contracts-security": return <ContractsSecurityPanel api={api} dealId={dealId}/>;
+    case "simulation-lab": return <SimulationLabPanel api={api} dealId={dealId}/>;
+    case "governance-treasury": return <GovernanceTreasuryPanel api={api} dealId={dealId}/>;
+    case "deployment-monitoring": return <DeploymentMonitoringPanel api={api} dealId={dealId}/>;
+    case "reports-business": return <ReportsBusinessPanel api={api} dealId={dealId}/>;
+    case "tenants": return <TenantsPanel api={api}/>;
+    default: return null;
+  }
+}
+
+function NeedsDeal() { return <p className="institutionalHint">Carga o crea un deal desde <b>DEAL BUILDER</b> para ver datos reales aqui.</p>; }
+
+function FinancialBrainQaPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [summary, setSummary] = useState(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!dealId) return; fetch(`${base}/api/deals/${dealId}/brain`).then(r => r.json()).then(setSummary).catch(() => {}); }, [base, dealId]);
+  async function ask(event) {
+    event.preventDefault();
+    if (!question.trim()) return;
+    setBusy(true);
+    try { const response = await fetch(`${base}/api/deals/${dealId}/brain/ask`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({question})}); const data = await response.json(); setAnswer(data.answer); }
+    finally { setBusy(false); }
+  }
+  if (!dealId) return <NeedsDeal/>;
+  if (!summary) return <p className="institutionalHint">Cargando…</p>;
+  return <div>
+    <div className="institutionalTotalsRow">
+      <div><small>STATUS</small><b>{summary.status}</b></div>
+      <div><small>SUGGESTED NEXT STATUS</small><b>{summary.suggestedStatus}</b></div>
+    </div>
+    <div className="institutionalScenarios">
+      <h3>Q&amp;A determinístico</h3>
+      {Object.entries(summary.qa).map(([q, a]) => <div key={q} className="institutionalScenarioCard"><b>{q}</b><p style={{marginTop: 8, color: "#cbd8ec", fontSize: 11}}>{a}</p></div>)}
+    </div>
+    <form onSubmit={ask} className="institutionalActions" style={{marginTop: 16}}>
+      <input placeholder="Pregunta libre (ej: ¿por qué Canton?)" value={question} onChange={e => setQuestion(e.target.value)} style={{flex: 1, minWidth: 0, background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}/>
+      <button className="primary" disabled={busy}>{busy ? "..." : "PREGUNTAR"}</button>
+    </form>
+    {answer && <p className="institutionalNotice">{answer}</p>}
+  </div>;
+}
+
+function RolesCounterpartiesPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [roles, setRoles] = useState([]);
+  const [counterparties, setCounterparties] = useState([]);
+  const [providerDrafts, setProviderDrafts] = useState({});
+  const [cpForm, setCpForm] = useState({name: "", type: "Custodian"});
+  const load = useCallback(() => {
+    if (!dealId) return;
+    fetch(`${base}/api/deals/${dealId}/roles`).then(r => r.json()).then(d => setRoles(d.roles || []));
+    fetch(`${base}/api/deals/${dealId}/counterparties`).then(r => r.json()).then(d => setCounterparties(d.counterparties || []));
+  }, [base, dealId]);
+  useEffect(load, [load]);
+  async function assign(roleId) {
+    const provider = providerDrafts[roleId];
+    if (!provider) return;
+    await fetch(`${base}/api/deals/${dealId}/roles/${roleId}`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({provider})});
+    load();
+  }
+  async function addCp(event) {
+    event.preventDefault();
+    if (!cpForm.name.trim()) return;
+    await fetch(`${base}/api/deals/${dealId}/counterparties`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(cpForm)});
+    setCpForm({name: "", type: "Custodian"});
+    load();
+  }
+  if (!dealId) return <NeedsDeal/>;
+  return <div>
+    <h3>Institutional Role Mapper</h3>
+    <div className="institutionalChecklist">
+      {roles.map(role => <div key={role.id} className={`institutionalInvariantRow ${role.assigned ? "ok" : "fail"}`}>
+        {role.assigned ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}
+        <span style={{flex: 1}}>{role.name}{role.assigned ? `: ${role.provider}` : " — sin asignar (riesgo)"}</span>
+        {!role.assigned && <><input placeholder="Proveedor" value={providerDrafts[role.id] || ""} onChange={e => setProviderDrafts({...providerDrafts, [role.id]: e.target.value})} style={{width: 140, background: "#0a1122", border: "1px solid #202d47", borderRadius: 6, padding: "4px 8px", color: "#cbd8ec", fontSize: 10}}/><button onClick={() => assign(role.id)} style={{fontSize: 9, padding: "4px 8px"}}>ASSIGN</button></>}
+      </div>)}
+    </div>
+    <h3 style={{marginTop: 20}}>Entity &amp; Counterparty Intelligence <span className="institutionalBadge preset">SIMULATED</span></h3>
+    <form onSubmit={addCp} className="institutionalActions">
+      <input placeholder="Nombre de la contraparte" value={cpForm.name} onChange={e => setCpForm({...cpForm, name: e.target.value})} style={{flex: 1, minWidth: 0, background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}/>
+      <select value={cpForm.type} onChange={e => setCpForm({...cpForm, type: e.target.value})} style={{background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}>
+        {["Custodian", "Bank", "Broker-Dealer", "Fund Administrator", "Legal Counsel"].map(t => <option key={t}>{t}</option>)}
+      </select>
+      <button className="primary">SCREEN &amp; ADD</button>
+    </form>
+    <div className="institutionalScenarioGrid" style={{marginTop: 12}}>
+      {counterparties.map(cp => <div key={cp.id} className="institutionalScenarioCard">
+        <b>{cp.name}</b>
+        <p style={{fontSize: 10, color: "#7d8ba6", margin: "6px 0"}}>{cp.type} · {cp.jurisdiction}</p>
+        <div className="institutionalScenarioResult"><span>{cp.sanctionsScreening === "CLEAR" ? "CLEAR" : "FLAGGED"}</span><p>KYB {cp.kyb} · Risk score {cp.riskScore}/100</p></div>
+      </div>)}
+      {!counterparties.length && <p className="institutionalHint">Sin contrapartes registradas todavía.</p>}
+    </div>
+  </div>;
+}
+
+function InvestorsPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [investors, setInvestors] = useState([]);
+  const [transferForm, setTransferForm] = useState({investorId: "", toWallet: ""});
+  const [result, setResult] = useState(null);
+  const load = useCallback(() => { if (dealId) fetch(`${base}/api/deals/${dealId}/investors`).then(r => r.json()).then(d => setInvestors(d.investors || [])); }, [base, dealId]);
+  useEffect(load, [load]);
+  async function attempt(event) {
+    event.preventDefault();
+    if (!transferForm.investorId || !transferForm.toWallet) return;
+    const response = await fetch(`${base}/api/deals/${dealId}/investors/${transferForm.investorId}/transfer`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({toWallet: transferForm.toWallet})});
+    setResult(await response.json());
+  }
+  if (!dealId) return <NeedsDeal/>;
+  return <div>
+    <h3>Investor Management ({investors.length})</h3>
+    <div className="institutionalComparisonScroll">
+      <table className="institutionalComparisonTable">
+        <thead><tr><th>Name</th><th>KYC</th><th>Ownership</th><th>Lock-up</th><th>Distributions</th></tr></thead>
+        <tbody>{investors.map(inv => <tr key={inv.id}><td>{inv.name}</td><td>{inv.kyc}</td><td>{inv.ownershipPct}%</td><td>{inv.lockupExpiresMonth}mo</td><td>${inv.distributionsReceivedUsd.toLocaleString()}</td></tr>)}</tbody>
+      </table>
+    </div>
+    <h3 style={{marginTop: 20}}>Attempt Transfer</h3>
+    <form onSubmit={attempt} className="institutionalActions">
+      <select value={transferForm.investorId} onChange={e => setTransferForm({...transferForm, investorId: e.target.value})} style={{background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}>
+        <option value="">Investor…</option>
+        {investors.map(inv => <option key={inv.id} value={inv.id}>{inv.name}</option>)}
+      </select>
+      <input placeholder="Wallet destino (0x…)" value={transferForm.toWallet} onChange={e => setTransferForm({...transferForm, toWallet: e.target.value})} style={{flex: 1, minWidth: 0, background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}/>
+      <button className="primary">ATTEMPT TRANSFER</button>
+    </form>
+    {result && <div className="institutionalScenarioResult" style={{marginTop: 12}}><span>{result.result}</span><p>{result.reason}</p></div>}
+  </div>;
+}
+
+function ComplianceRiskPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [compliance, setCompliance] = useState(null);
+  const [risk, setRisk] = useState(null);
+  useEffect(() => {
+    if (!dealId) return;
+    fetch(`${base}/api/deals/${dealId}/compliance-score`).then(r => r.json()).then(setCompliance);
+    fetch(`${base}/api/deals/${dealId}/risk`).then(r => r.json()).then(setRisk);
+  }, [base, dealId]);
+  if (!dealId) return <NeedsDeal/>;
+  if (!compliance || !risk) return <p className="institutionalHint">Cargando…</p>;
+  return <div>
+    <h3>Compliance Readiness: {compliance.score}/100</h3>
+    <div className="institutionalChecklist">{compliance.checklist.map(item => <div key={item.id} className={`institutionalInvariantRow ${item.satisfied ? "ok" : "fail"}`}>{item.satisfied ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}<span>{item.label}</span></div>)}</div>
+    <h3 style={{marginTop: 20}}>Overall Deal Risk Score: {risk.overall}/100</h3>
+    {risk.categories.map(category => <div key={category.id} className="institutionalNetworkRow">
+      <b>{category.name}</b>
+      <div className="institutionalNetworkBar"><span style={{width: `${category.score}%`}}/></div>
+      <em>{category.score}/100</em>
+      <p>{category.reason}</p>
+    </div>)}
+  </div>;
+}
+
+function CapitalStackPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [data, setData] = useState(null);
+  useEffect(() => { if (dealId) fetch(`${base}/api/deals/${dealId}/capital-stack`).then(r => r.json()).then(setData); }, [base, dealId]);
+  if (!dealId) return <NeedsDeal/>;
+  if (!data) return <p className="institutionalHint">Cargando…</p>;
+  return <div>
+    <h3>Capital Stack ({data.tranches.length} tranche{data.tranches.length === 1 ? "" : "s"})</h3>
+    <div className="institutionalComparisonScroll">
+      <table className="institutionalComparisonTable">
+        <thead><tr><th>Priority</th><th>Tranche</th><th>Amount</th><th>Rate</th></tr></thead>
+        <tbody>{data.tranches.map(t => <tr key={t.id}><td>{t.priority}</td><td>{t.name}</td><td>${t.amountUsd.toLocaleString()}</td><td>{t.ratePct}%</td></tr>)}</tbody>
+      </table>
+    </div>
+    <h3 style={{marginTop: 20}}>Waterfall on ${data.waterfall.availableCashUsd.toLocaleString()} available</h3>
+    <div className="institutionalTotalsRow">
+      {data.waterfall.payouts.map(p => <div key={p.trancheId}><small>{p.name.toUpperCase()}</small><b>${p.paidUsd.toLocaleString()}</b></div>)}
+    </div>
+  </div>;
+}
+
+function ContractsSecurityPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [architecture, setArchitecture] = useState([]);
+  const [security, setSecurity] = useState(null);
+  useEffect(() => {
+    if (!dealId) return;
+    fetch(`${base}/api/deals/${dealId}/architecture`, {method: "POST"}).then(r => r.json()).then(d => setArchitecture(d.architecture || []));
+    fetch(`${base}/api/deals/${dealId}/security-score`).then(r => r.json()).then(setSecurity);
+  }, [base, dealId]);
+  if (!dealId) return <NeedsDeal/>;
+  return <div>
+    <h3>Contract Architecture ({architecture.length})</h3>
+    {architecture.map(c => <div key={c.id} className="institutionalContractBlock" style={{padding: "8px 0"}}><b style={{fontSize: 11}}>{c.name}</b><p style={{margin: "3px 0 0", color: "#7d8ba6", fontSize: 10.5}}>{c.why}</p></div>)}
+    <p className="institutionalHint">Ver codigo generado (Solidity/Soroban/Daml) en los nodos de adaptador de blockchain, debajo del Financial Brain.</p>
+    {security && <>
+      <h3 style={{marginTop: 20}}>Security Readiness: {security.score}/100 <small style={{color: "#7d8ba6", fontSize: 10}}>({security.roleCoverage} roles)</small></h3>
+      <div className="institutionalChecklist">{security.checklist.map(item => <div key={item.id} className={`institutionalInvariantRow ${item.satisfied ? "ok" : "fail"}`}>{item.satisfied ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}<span>{item.label}</span></div>)}</div>
+    </>}
+  </div>;
+}
+
+function SimulationLabPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState("");
+  async function run(duration) {
+    setBusy(duration);
+    try { const response = await fetch(`${base}/api/deals/${dealId}/simulate`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({duration})}); setResult(await response.json()); }
+    finally { setBusy(""); }
+  }
+  if (!dealId) return <NeedsDeal/>;
+  return <div>
+    <h3>Simulation Lab</h3>
+    <div className="institutionalActions">
+      <button className="primary" disabled={busy} onClick={() => run("1m")}>{busy === "1m" ? "…" : "RUN 1 MONTH"}</button>
+      <button className="primary" disabled={busy} onClick={() => run("12m")}>{busy === "12m" ? "…" : "RUN 12 MONTHS"}</button>
+      <button className="primary" disabled={busy} onClick={() => run("lifecycle")}>{busy === "lifecycle" ? "…" : "RUN FULL LIFECYCLE"}</button>
+      <button className="ghost" disabled={busy} onClick={() => run("stress")}>{busy === "stress" ? "…" : "STRESS TEST"}</button>
+    </div>
+    {result && <div className="institutionalSimulationResults" style={{marginTop: 16, paddingTop: 0, borderTop: 0}}>
+      {result.stressed && <p className="institutionalHint">Stress assumptions: NOI {result.stressAssumptions.noiShockPct}%, rate +{result.stressAssumptions.rateShockBps}bps</p>}
+      <div className="institutionalTotalsRow">
+        <div><small>PERIODS</small><b>{result.periods?.length ?? "—"}</b></div>
+        <div><small>DISTRIBUTED</small><b>${result.totals.distributedCashUsd.toLocaleString()}</b></div>
+        <div><small>DEBT SERVICE</small><b>${result.totals.debtServiceUsd.toLocaleString()}</b></div>
+      </div>
+      <div className="institutionalInvariants">
+        <h4>Timeline</h4>
+        {(result.events || []).map(event => <div key={event.period} className="institutionalInvariantRow ok"><span>{event.at}: {event.description}</span></div>)}
+      </div>
+      <div className="institutionalInvariants">
+        <h4>Financial Invariants</h4>
+        {result.invariants.map(item => <div key={item.id} className={`institutionalInvariantRow ${item.satisfied ? "ok" : "fail"}`}>{item.satisfied ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}<span>{item.description}</span></div>)}
+      </div>
+    </div>}
+  </div>;
+}
+
+function GovernanceTreasuryPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [stages, setStages] = useState([]);
+  const [treasury, setTreasury] = useState(null);
+  const [movementForm, setMovementForm] = useState({amountUsd: "", signatures: 1, purpose: "Distribution funding"});
+  const load = useCallback(() => {
+    if (!dealId) return;
+    fetch(`${base}/api/deals/${dealId}/governance`).then(r => r.json()).then(d => setStages(d.stages || []));
+    fetch(`${base}/api/deals/${dealId}/treasury`).then(r => r.json()).then(setTreasury);
+  }, [base, dealId]);
+  useEffect(load, [load]);
+  async function decide(stage, decision) {
+    await fetch(`${base}/api/deals/${dealId}/governance/${stage}`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({decision, actor: "demo-user"})});
+    load();
+  }
+  async function submitMovement(event) {
+    event.preventDefault();
+    const amountUsd = Number(movementForm.amountUsd);
+    if (!amountUsd) return;
+    await fetch(`${base}/api/deals/${dealId}/treasury/movement`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({...movementForm, amountUsd})});
+    setMovementForm({...movementForm, amountUsd: ""});
+    load();
+  }
+  if (!dealId) return <NeedsDeal/>;
+  return <div>
+    <h3>Approval &amp; Governance Workflow</h3>
+    <div className="institutionalScenarioGrid">
+      {stages.map(stage => <div key={stage.stage} className="institutionalScenarioCard">
+        <b>{stage.stage}</b>
+        <p style={{fontSize: 10, color: "#7d8ba6", margin: "6px 0"}}>{stage.decision}{stage.actor ? ` · ${stage.actor}` : ""}</p>
+        <div style={{display: "flex", gap: 6}}>
+          <button onClick={() => decide(stage.stage, "APPROVED")} style={{flex: 1, fontSize: 9}}>APPROVE</button>
+          <button onClick={() => decide(stage.stage, "REJECTED")} style={{flex: 1, fontSize: 9}}>REJECT</button>
+        </div>
+      </div>)}
+    </div>
+    <h3 style={{marginTop: 20}}>Multisig &amp; Treasury Simulator {treasury && <small style={{color: "#7d8ba6", fontSize: 10}}>({treasury.threshold}/{treasury.signers} required · balance ${treasury.balanceUsd.toLocaleString()})</small>}</h3>
+    <form onSubmit={submitMovement} className="institutionalActions">
+      <input type="number" placeholder="Amount USD" value={movementForm.amountUsd} onChange={e => setMovementForm({...movementForm, amountUsd: e.target.value})} style={{width: 130, background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}/>
+      <input type="number" min="0" placeholder="Signatures" value={movementForm.signatures} onChange={e => setMovementForm({...movementForm, signatures: Number(e.target.value)})} style={{width: 100, background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}/>
+      <button className="primary">SUBMIT MOVEMENT</button>
+    </form>
+    <div className="institutionalScenarios" style={{marginTop: 12}}>
+      {(treasury?.movements || []).slice(0, 6).map(m => <div key={m.id} className="institutionalScenarioResult" style={{marginBottom: 8}}><span>{m.status}</span><p>${m.amountUsd.toLocaleString()} — {m.reason || m.purpose}</p></div>)}
+    </div>
+  </div>;
+}
+
+function DeploymentMonitoringPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [testnet, setTestnet] = useState(null);
+  const [monitoring, setMonitoring] = useState(null);
+  const [busy, setBusy] = useState("");
+  const load = useCallback(() => {
+    if (!dealId) return;
+    fetch(`${base}/api/deals/${dealId}/testnet`).then(r => r.json()).then(setTestnet);
+    fetch(`${base}/api/deals/${dealId}/monitoring`).then(r => r.json()).then(setMonitoring);
+  }, [base, dealId]);
+  useEffect(load, [load]);
+  async function deploy(adapterId) {
+    setBusy(adapterId);
+    try { await fetch(`${base}/api/deals/${dealId}/testnet/deploy`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({adapterId})}); load(); }
+    catch {} finally { setBusy(""); }
+  }
+  if (!dealId) return <NeedsDeal/>;
+  return <div>
+    <h3>Testnet Deployment Center</h3>
+    <div className="institutionalDeployStatus"><span className="institutionalBadge locked"><Lock size={12}/> PRODUCTION LOCKED</span><span className="institutionalBadge preset">MODE: {testnet?.mode || "SIMULATION"}</span></div>
+    <div className="institutionalActions" style={{marginTop: 12}}>
+      {INSTITUTIONAL_ADAPTER_TOOLS.map(tool => <button key={tool.adapterId} className="ghost" disabled={busy} onClick={() => deploy(tool.adapterId)}>{busy === tool.adapterId ? "…" : `DEPLOY ${tool.shortName}`}</button>)}
+    </div>
+    <div className="institutionalScenarioGrid" style={{marginTop: 12}}>
+      {(testnet?.deployments || []).map(d => <div key={d.id} className="institutionalScenarioCard"><b>{d.language}</b><p style={{fontSize: 10, color: "#7d8ba6"}}>{d.network}</p><p style={{fontSize: 9.5, wordBreak: "break-all", color: "#5ce1ff"}}>{d.contractAddress}</p></div>)}
+    </div>
+    <h3 style={{marginTop: 20}}>Monitoring Center</h3>
+    <div className="institutionalInvariants">
+      {(monitoring?.alerts || []).slice(0, 12).map(alert => <div key={alert.id} className={`institutionalInvariantRow ${alert.severity === "CRITICAL" ? "fail" : "ok"}`}>{alert.severity === "CRITICAL" ? <AlertTriangle size={14}/> : <CheckCircle2 size={14}/>}<span>[{alert.severity}] {alert.message}</span></div>)}
+      {!monitoring?.alerts?.length && <p className="institutionalHint">Sin alertas todavia.</p>}
+    </div>
+  </div>;
+}
+
+function ReportsBusinessPanel({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [summary, setSummary] = useState(null);
+  const [revenue, setRevenue] = useState(null);
+  useEffect(() => {
+    fetch(`${base}/api/executive-summary`).then(r => r.json()).then(setSummary).catch(() => {});
+    if (dealId) fetch(`${base}/api/deals/${dealId}/revenue-model`).then(r => r.json()).then(setRevenue).catch(() => {});
+  }, [base, dealId]);
+  async function exportPackage(format) {
+    if (!dealId) return;
+    const response = await fetch(`${base}/api/deals/${dealId}/package?format=${format}`);
+    const text = format === "md" ? await response.text() : JSON.stringify(await response.json(), null, 2);
+    const blob = new Blob([text], {type: format === "md" ? "text/markdown" : "application/json"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url; link.download = `${dealId}-transaction-package.${format}`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+  return <div>
+    <h3>Executive Dashboard</h3>
+    {summary && <div className="institutionalTotalsRow">
+      <div><small>ACTIVE DEALS</small><b>{summary.activeDeals}</b></div>
+      <div><small>SIMULATED ASSETS</small><b>${summary.totalSimulatedAssetsUsd.toLocaleString()}</b></div>
+      <div><small>INVESTORS</small><b>{summary.investors}</b></div>
+      <div><small>DISTRIBUTIONS</small><b>${summary.distributionsUsd.toLocaleString()}</b></div>
+      <div><small>AVG RISK</small><b>{summary.avgRiskScore}/100</b></div>
+      <div><small>AVG COMPLIANCE</small><b>{summary.avgComplianceScore}/100</b></div>
+      <div><small>AVG SECURITY</small><b>{summary.avgSecurityScore}/100</b></div>
+      <div><small>PENDING APPROVALS</small><b>{summary.pendingApprovals}</b></div>
+    </div>}
+    {revenue && <>
+      <h3 style={{marginTop: 20}}>Revenue &amp; Business Model <span className="institutionalBadge preset">SIMULATED</span></h3>
+      <div className="institutionalTotalsRow">
+        <div><small>ONE-TIME</small><b>${revenue.oneTimeUsd.toLocaleString()}</b></div>
+        <div><small>ANNUAL</small><b>${revenue.annualUsd.toLocaleString()}</b></div>
+        <div><small>5-YEAR</small><b>${revenue.fiveYearUsd.toLocaleString()}</b></div>
+      </div>
+    </>}
+    <h3 style={{marginTop: 20}}>Institutional Report Generator</h3>
+    <div className="institutionalActions">
+      <button className="primary" disabled={!dealId} onClick={() => exportPackage("md")}><Download size={14}/> EXPORT MARKDOWN</button>
+      <button className="ghost" disabled={!dealId} onClick={() => exportPackage("json")}><Download size={14}/> EXPORT JSON</button>
+    </div>
+    {!dealId && <p className="institutionalHint">Carga un deal para exportar su Digital Transaction Package.</p>}
+  </div>;
+}
+
+function TenantsPanel({api}) {
+  const base = api.replace(/\/$/, "");
+  const [tenants, setTenants] = useState([]);
+  useEffect(() => { fetch(`${base}/api/tenants`).then(r => r.json()).then(d => setTenants(d.tenants || [])); }, [base]);
+  return <div>
+    <h3>Multi-Tenant Registry</h3>
+    <p className="institutionalHint">Manhattan Group es un tenant configurado, no el sistema mismo — cada organizacion tendria su propio branding, policies y templates.</p>
+    <div className="institutionalScenarioGrid" style={{marginTop: 12}}>
+      {tenants.map(tenant => <div key={tenant.id} className="institutionalScenarioCard" style={{"--toolAccent": tenant.accent}}><b>{tenant.name}</b><p style={{fontSize: 10, color: "#7d8ba6", marginTop: 6}}>{tenant.kind}</p></div>)}
+    </div>
+  </div>;
+}
+
+// Spec section 46: never rely on color alone — every status badge carries its plain-language
+// label alongside the color language (GREEN/AMBER/RED/BLUE/GRAY).
+const AGENT_STATUS_META = {
+  APPROVE: {label: "GREEN · APPROVE", color: "#5ce3ad"},
+  APPROVE_WITH_CONDITIONS: {label: "AMBER · APPROVE WITH CONDITIONS", color: "#f2bd69"},
+  REJECT: {label: "RED · REJECT", color: "#ff789b"},
+  BLOCK: {label: "RED · BLOCK", color: "#ff789b"},
+  RETURN_FOR_REWORK: {label: "AMBER · RETURN FOR REWORK", color: "#f2bd69"},
+  IDLE: {label: "GRAY · IDLE", color: "#6e7d98"}
+};
+
+// Shared formatter for any agent response, wherever it appears (single-agent quick action or a
+// NEXUS Session transcript) — collapsed summary + expandable risks/questions/actions instead of
+// one long wall of text.
+// The chat text (`team_message`) is what a colleague actually reads live — it's rendered large,
+// as speech. Everything the agent used to justify that position (formal summary, risks,
+// questions, required actions) is real data too, but it reads like a memo, not a conversation, so
+// it stays behind "Ver detalle técnico" instead of competing with the spoken line for attention.
+function AgentMessageBubble({entry, defaultExpanded = false, animate = false, simulationNotice = null}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const meta = AGENT_STATUS_META[entry.decision] || AGENT_STATUS_META.IDLE;
+  const initials = String(entry.alias || "??").split(" ").map(word => word[0]).join("").slice(0, 2).toUpperCase();
+  const spoken = entry.team_message || entry.analysis_summary || entry.summary || "";
+  const hasTechnicalDetail = Boolean(entry.analysis_summary) || entry.risks?.length > 0 || entry.questions?.length > 0 || entry.required_actions?.length > 0;
+  return <div className={`nexusBubble ${animate ? "nexusBubbleEnter" : ""}`} style={{"--bubbleColor": meta.color}}>
+    <div className="nexusBubbleAvatar">{initials}</div>
+    <div className="nexusBubbleBody">
+      <div className="nexusBubbleHeader">
+        <b>{entry.alias}</b>
+        {entry.reference && <em>({entry.reference})</em>}
+        <span className="institutionalBadge" style={{background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}55`}}>{meta.label}</span>
+        {typeof entry.confidence === "number" && <span className="nexusConfidencePill">{entry.confidence}/100</span>}
+      </div>
+      {simulationNotice && <p className="nexusSimulationNotice">{simulationNotice}</p>}
+      <p className="nexusBubbleSpeech">{spoken}</p>
+      {hasTechnicalDetail && <button className="nexusExpandToggle" onClick={() => setExpanded(value => !value)}>{expanded ? "Ocultar detalle técnico" : "Ver detalle técnico"}</button>}
+      {expanded && <div className="nexusTechnicalDetail">
+        {entry.analysis_summary && <p className="nexusBubbleText">{entry.analysis_summary}</p>}
+        {entry.risks?.length > 0 && <div className="nexusTagGroup"><small>RISKS</small><div>{entry.risks.map((risk, index) => <span key={index} className="nexusTag risk">{risk}</span>)}</div></div>}
+        {entry.questions?.length > 0 && <div className="nexusTagGroup"><small>QUESTIONS</small><div>{entry.questions.map((question, index) => <span key={index} className="nexusTag question">{question}</span>)}</div></div>}
+        {entry.required_actions?.length > 0 && <div className="nexusTagGroup"><small>ACTIONS</small><div>{entry.required_actions.map((action, index) => <span key={index} className={`nexusTag action ${action.blocking ? "blocking" : ""}`}>{action.description}</span>)}</div></div>}
+      </div>}
+      {entry.model && <p className="nexusBubbleMeta">model: {entry.model} · provider: {entry.provider || "fallback"}{entry.usedFallback ? " · fallback determinista" : ""}</p>}
+    </div>
+  </div>;
+}
+
+// The P0 single-agent / orchestrator-committee tools, relocated inside the NEXUS Session overlay
+// as "Quick Actions" instead of living directly in the hub tab.
+function NexusQuickActions({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const [agents, setAgents] = useState([]);
+  const [flows, setFlows] = useState([]);
+  const [dealAgents, setDealAgents] = useState({});
+  const [actions, setActions] = useState([]);
+  const [busyAgentId, setBusyAgentId] = useState("");
+  const [busyCommittee, setBusyCommittee] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
+  const [committeeResult, setCommitteeResult] = useState(null);
+  const [flow, setFlow] = useState("new_deal");
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(() => {
+    fetch(`${base}/api/agents`).then(r => r.json()).then(d => { setAgents(d.agents || []); setFlows(d.flows || []); });
+    if (!dealId) return;
+    fetch(`${base}/api/deals/${dealId}/agents`).then(r => r.json()).then(d => setDealAgents(d.agents || {}));
+    fetch(`${base}/api/deals/${dealId}/actions`).then(r => r.json()).then(d => setActions(d.actions || []));
+  }, [base, dealId]);
+  useEffect(load, [load]);
+
+  async function runOne(agentId) {
+    if (!dealId || busyAgentId) return;
+    setBusyAgentId(agentId); setNotice("");
+    try {
+      const response = await fetch(`${base}/api/deals/${dealId}/agents/${agentId}/run`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({})});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `API ${response.status}`);
+      setSelectedAgentId(agentId);
+      load();
+    } catch (error) { setNotice(error.message); }
+    finally { setBusyAgentId(""); }
+  }
+
+  async function convene() {
+    if (!dealId || busyCommittee) return;
+    setBusyCommittee(true); setCommitteeResult(null); setNotice("");
+    try {
+      const response = await fetch(`${base}/api/deals/${dealId}/committee`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({flow})});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `API ${response.status}`);
+      setCommitteeResult(data);
+      load();
+    } catch (error) { setNotice(error.message); }
+    finally { setBusyCommittee(false); }
+  }
+
+  async function markActionDone(actionId) {
+    await fetch(`${base}/api/deals/${dealId}/actions/${actionId}/complete`, {method: "POST"});
+    load();
+  }
+
+  const selectedState = selectedAgentId ? dealAgents[selectedAgentId] : null;
+  const selectedMeta = agents.find(agent => agent.id === selectedAgentId);
+
+  return <div>
+    <p className="institutionalHint">Corre un agente individual o convoca el comité orquestado (flujo fijo del orquestador). Para las 40 simulaciones con equipo y evidencia dedicados, usa la biblioteca de la izquierda.</p>
+    <div className="institutionalScenarioGrid">
+      {agents.map(agent => {
+        const state = dealAgents[agent.id];
+        const statusKey = state?.status || "IDLE";
+        const meta = AGENT_STATUS_META[statusKey] || AGENT_STATUS_META.IDLE;
+        return <div key={agent.id} className="institutionalScenarioCard" style={{cursor: "pointer", borderColor: selectedAgentId === agent.id ? "#bd58ff" : undefined}} onClick={() => setSelectedAgentId(agent.id)}>
+          <b>{agent.alias}</b>
+          <p style={{fontSize: 10, color: "#7d8ba6", margin: "4px 0"}}>{agent.role}</p>
+          <span className="institutionalBadge" style={{background: `${meta.color}22`, color: meta.color, border: `1px solid ${meta.color}55`}}>{meta.label}</span>
+          <button className="ghost" style={{marginTop: 8, width: "100%", fontSize: 9}} onClick={event => { event.stopPropagation(); runOne(agent.id); }} disabled={Boolean(busyAgentId)}>
+            {busyAgentId === agent.id ? "ANALIZANDO…" : "RUN AGENT"}
+          </button>
+        </div>;
+      })}
+    </div>
+
+    {selectedState && <AgentMessageBubble defaultExpanded entry={{...selectedState.lastResponse, alias: selectedMeta?.alias, reference: selectedMeta?.reference, decision: selectedState.status, confidence: selectedState.confidence, model: selectedState.model, provider: selectedState.provider, usedFallback: selectedState.usedFallback}} simulationNotice={selectedMeta?.simulationNotice}/>}
+
+    <h3 style={{marginTop: 20}}>Convene Committee</h3>
+    <div className="institutionalActions">
+      <select value={flow} onChange={event => setFlow(event.target.value)} style={{background: "#0a1122", border: "1px solid #202d47", borderRadius: 8, padding: "10px 12px", color: "#cbd8ec"}}>
+        {flows.map(item => <option key={item} value={item}>{item}</option>)}
+      </select>
+      <button className="primary" onClick={convene} disabled={busyCommittee}>{busyCommittee ? "COMITÉ EN SESIÓN (puede tardar minutos)…" : "CONVENE COMMITTEE"}</button>
+    </div>
+
+    {committeeResult && <div className="nexusTranscript" style={{marginTop: 12}}>
+      {committeeResult.roleByRoleDecisions.map((entry, index) => <AgentMessageBubble key={index} animate entry={{alias: entry.alias, reference: entry.reference, decision: entry.decision, confidence: entry.confidence, team_message: entry.team_message, analysis_summary: entry.summary}} simulationNotice={agents.find(agent => agent.id === entry.agentId)?.simulationNotice}/>)}
+      <div className="nexusSynthesis">
+        <h4>Síntesis</h4>
+        {committeeResult.agreements.map((item, index) => <div key={index} className="institutionalInvariantRow ok"><CheckCircle2 size={14}/><span>{item}</span></div>)}
+        {committeeResult.disagreements.map((item, index) => <div key={index} className="institutionalInvariantRow fail"><AlertTriangle size={14}/><span>{item}</span></div>)}
+        <p style={{fontSize: 11, marginTop: 8}}><b>ATLAS Executive Decision:</b> {committeeResult.atlasExecutiveDecision}</p>
+      </div>
+    </div>}
+
+    <h3 style={{marginTop: 20}}>Actions</h3>
+    <div className="institutionalScenarioGrid">
+      {!actions.length && <p className="institutionalHint">Sin acciones generadas todavía.</p>}
+      {actions.map(action => <div key={action.action_id} className="institutionalScenarioCard">
+        <b style={{fontSize: 11}}>{action.description}</b>
+        <p style={{fontSize: 9.5, color: "#7d8ba6", margin: "6px 0"}}>{action.type} · {action.priority} · creado por {action.created_by}</p>
+        {action.status === "OPEN" ? <button onClick={() => markActionDone(action.action_id)} style={{fontSize: 9}}>MARK COMPLETE</button> : <span className="institutionalBadge full">COMPLETED</span>}
+      </div>)}
+    </div>
+
+    {notice && <p className="institutionalNotice">{notice}</p>}
+  </div>;
+}
+
+// The immersive "session" the user asked for — a near-full-viewport overlay (the one deliberate
+// exception to the inline-tab rule everywhere else), a 40-scenario library grouped by category,
+// and a chat-style transcript per session run.
+// Small three-dot "thinking" indicator shown in place of an agent's bubble while its real call
+// is still in flight — this is what actually makes the session read as a live conversation
+// instead of a wall of text that appears all at once after the whole team finishes.
+function NexusTypingBubble({alias}) {
+  const initials = String(alias || "??").split(" ").map(word => word[0]).join("").slice(0, 2).toUpperCase();
+  return <div className="nexusBubble nexusBubbleEnter nexusTyping" style={{"--bubbleColor": "#6e7d98"}}>
+    <div className="nexusBubbleAvatar">{initials}</div>
+    <div className="nexusBubbleBody">
+      <div className="nexusBubbleHeader"><b>{alias}</b><em>está analizando…</em></div>
+      <div className="nexusTypingDots"><span/><span/><span/></div>
+    </div>
+  </div>;
+}
+
+function NexusSessionOverlay({api, dealId, onClose, initialAgentFilter = null, onLiveUpdate}) {
+  const base = api.replace(/\/$/, "");
+  const [presets, setPresets] = useState([]);
+  const [agentsRoster, setAgentsRoster] = useState([]);
+  const [expandedCategory, setExpandedCategory] = useState(null);
+  const [selectedPresetId, setSelectedPresetId] = useState(null);
+  const [agentFilter, setAgentFilter] = useState(initialAgentFilter);
+  const [live, setLive] = useState(null); // {evidence, transcript:[], synthesis, typingAgentId, complete}
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const transcriptEndRef = useRef(null);
+
+  useEffect(() => {
+    fetch(`${base}/api/scenario-presets`).then(r => r.json()).then(d => setPresets(d.presets || []));
+    fetch(`${base}/api/agents`).then(r => r.json()).then(d => setAgentsRoster(d.agents || []));
+  }, [base]);
+  useEffect(() => { const close = event => { if (event.key === "Escape") onClose?.(); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, [onClose]);
+  useEffect(() => { transcriptEndRef.current?.scrollIntoView({behavior: "smooth", block: "end"}); }, [live?.transcript?.length, live?.typingAgentId]);
+  // Surfaces this session's live state (who's typing, who already answered with what decision) to
+  // the 3D agent chamber rendered elsewhere on the page, so an agent's node visibly lights up
+  // there in real time while — and only while — this overlay is actually running a session.
+  useEffect(() => { onLiveUpdate?.(live); }, [live]);
+  useEffect(() => () => onLiveUpdate?.(null), []);
+
+  const categories = [...new Set(presets.map(preset => preset.category))];
+  const selectedPreset = presets.find(preset => preset.id === selectedPresetId);
+  const filteredPresets = agentFilter ? presets.filter(preset => preset.team.includes(agentFilter)) : presets;
+  const agentAlias = agentId => agentsRoster.find(agent => agent.id === agentId)?.alias || agentId;
+
+  async function selectPreset(preset) {
+    setSelectedPresetId(preset.id); setLive(null); setNotice(""); setShowQuickActions(false);
+    try {
+      const response = await fetch(`${base}/api/deals/${dealId}/nexus-sessions/${preset.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setLive({evidence: data.evidence, transcript: data.transcript, synthesis: data.synthesis, typingAgentId: null, complete: true});
+      }
+    } catch {}
+  }
+
+  // Reads the run as a live NDJSON stream (one event per agent turn) instead of waiting for the
+  // whole team to finish — each agent shows a "thinking" bubble the instant it starts, then a
+  // real animated message the instant its real response lands.
+  async function runSession() {
+    if (!selectedPreset || busy) return;
+    setBusy(true); setNotice("");
+    setLive({evidence: null, transcript: [], synthesis: null, typingAgentId: null, complete: false});
+    try {
+      const response = await fetch(`${base}/api/deals/${dealId}/nexus-sessions/${selectedPreset.id}/run-stream`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({})});
+      if (!response.ok || !response.body) throw new Error(`API ${response.status}`);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, {stream: true});
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+          if (event.type === "evidence") setLive(prev => ({...prev, evidence: event.evidence}));
+          else if (event.type === "agent_start") setLive(prev => ({...prev, typingAgentId: event.agentId}));
+          else if (event.type === "agent_result") setLive(prev => ({...prev, typingAgentId: null, transcript: [...prev.transcript, event.entry]}));
+          else if (event.type === "synthesis_update") setLive(prev => ({...prev, synthesis: event.synthesis}));
+          else if (event.type === "session_complete") setLive(prev => ({...prev, synthesis: event.session.synthesis, complete: true}));
+          else if (event.type === "error") setNotice(event.message);
+        }
+      }
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(false); }
+  }
+
+  // Rendered via a portal straight into <body>: several ancestors in the hub's own component
+  // tree use backdrop-filter/transform for their own effects, which makes them the containing
+  // block for any position:fixed descendant (per the CSS spec) — without a portal, this overlay
+  // would get trapped inside that ancestor's box instead of covering the real viewport, letting
+  // the sidebar show through. A portal escapes the tree entirely, guaranteeing it always sits on
+  // top of everything, including the left rail.
+  return createPortal(<div className="nexusOverlay" role="dialog" aria-modal="true" aria-label="NEXUS Institutional Simulation Lab" onClick={onClose}>
+    <section className="nexusWindow" onClick={event => event.stopPropagation()}>
+      <header className="nexusHeader">
+        <div className="nexusHeaderTitle"><Sparkles size={20}/><div><small>NEXUS INSTITUTIONAL SIMULATION LAB</small><h2>{presets.length} escenarios · equipo Manhattan (simulado) con IA real</h2></div></div>
+        <button onClick={onClose} aria-label="Close NEXUS session">×</button>
+      </header>
+      <div className="nexusBody">
+        <aside className="nexusLibraryRail">
+          <div className="nexusAgentFilters">
+            <button className={!agentFilter ? "active" : ""} onClick={() => setAgentFilter(null)}>TODOS</button>
+            {agentsRoster.map(agent => <button key={agent.id} className={agentFilter === agent.id ? "active" : ""} onClick={() => setAgentFilter(agent.id)}>{agent.alias.split(" ")[0]}</button>)}
+          </div>
+          {categories.map(category => {
+            const items = filteredPresets.filter(preset => preset.category === category);
+            if (!items.length) return null;
+            return <div key={category} className="nexusCategory">
+              <button className="nexusCategoryHead" onClick={() => setExpandedCategory(current => current === category ? null : category)}>
+                <span>{category}</span><small>{items.length}</small>
+              </button>
+              {expandedCategory === category && <div className="nexusCategoryList">
+                {items.map(preset => <button key={preset.id} className={`nexusScenarioItem ${selectedPresetId === preset.id ? "active" : ""}`} onClick={() => selectPreset(preset)}>
+                  <span className="nexusScenarioNumber">#{preset.number}</span>
+                  <span className="nexusScenarioTitle">{preset.title}</span>
+                </button>)}
+              </div>}
+            </div>;
+          })}
+          <button className="nexusQuickActionsToggle" onClick={() => { setShowQuickActions(true); setSelectedPresetId(null); }}>QUICK ACTIONS →</button>
+        </aside>
+        <main className="nexusMain">
+          {!selectedPreset && !showQuickActions && <div className="nexusIntro">
+            <h3>Selecciona una simulación</h3>
+            <p>40 situaciones reales que el equipo de Manhattan debe resolver — desde un nuevo deal de $150M hasta una crisis institucional completa. Cada sesión llama a IA real (costo real, ~20-70s por agente en el equipo).</p>
+          </div>}
+          {showQuickActions && <NexusQuickActions api={api} dealId={dealId}/>}
+          {selectedPreset && <div className="nexusScenarioDetail">
+            <div className="nexusScenarioDetailHead">
+              <small>#{selectedPreset.number} · {selectedPreset.category}</small>
+              <h3>{selectedPreset.title}</h3>
+              <p>{selectedPreset.situation}</p>
+              <p className="nexusWhatToProve"><b>Debe demostrar:</b> {selectedPreset.whatToProve}</p>
+              <div className="nexusTeamRow">{selectedPreset.team.map(agentId => {
+                const tallied = live?.synthesis?.tally?.find(entry => entry.agentId === agentId);
+                const meta = tallied ? AGENT_STATUS_META[tallied.decision] : null;
+                return <span key={agentId} className={`nexusTeamChip ${live?.typingAgentId === agentId ? "speaking" : ""}`} style={meta ? {borderColor: meta.color, color: meta.color, background: `${meta.color}22`} : undefined}>{agentAlias(agentId)}</span>;
+              })}</div>
+              <button className="primary" onClick={runSession} disabled={busy}>{busy ? "SESIÓN EN VIVO…" : live?.complete ? "RE-RUN SESSION" : "RUN SESSION"}</button>
+              {busy && <p className="nexusLiveProgress"><i/> {live?.transcript?.length || 0} de {selectedPreset.team.length} agentes respondieron{live?.typingAgentId ? ` · ${agentAlias(live.typingAgentId)} está analizando…` : ""}</p>}
+              {notice && <p className="institutionalNotice">{notice}</p>}
+            </div>
+            {live && <div className="nexusSessionResults">
+              {live.evidence && <div className="nexusEvidenceCard nexusBubbleEnter"><small>EVIDENCIA DETERMINÍSTICA (motor financiero, no IA)</small><pre>{JSON.stringify(live.evidence, null, 2).slice(0, 1400)}</pre></div>}
+              <div className="nexusTranscript">
+                {live.transcript.map((entry, index) => <AgentMessageBubble key={entry.agentId || index} entry={entry} animate simulationNotice={agentsRoster.find(agent => agent.id === entry.agentId)?.simulationNotice}/>)}
+                {live.typingAgentId && <NexusTypingBubble alias={agentAlias(live.typingAgentId)}/>}
+              </div>
+              {live.synthesis && <div className="nexusSynthesis nexusBubbleEnter">
+                <h4>{live.synthesis.settled ? "Síntesis" : `Síntesis en vivo · ${live.synthesis.respondedCount}/${live.synthesis.teamSize} ya hablaron`}</h4>
+                {live.synthesis.agreements.length ? live.synthesis.agreements.map((item, index) => <div key={index} className="institutionalInvariantRow ok"><CheckCircle2 size={14}/><span>{item}</span></div>) : live.synthesis.disagreements.length ? <p className="institutionalHint">{live.synthesis.settled ? "Sin consenso unánime — el equipo se dividió." : "El equipo todavía no coincide — sigue en desacuerdo mientras hablan los que faltan."}</p> : <p className="institutionalHint">Esperando la primera postura…</p>}
+                {live.synthesis.disagreements.map((item, index) => <div key={index} className="institutionalInvariantRow fail"><AlertTriangle size={14}/><span>{item}</span></div>)}
+                {live.synthesis.settled && <p style={{fontSize: 11, marginTop: 8}}>{live.synthesis.nextActions.length} acciones generadas para esta sesión.</p>}
+                {live.complete && <a className="primary nexusReportDownload" href={`${base}/api/deals/${dealId}/report.pdf`} target="_blank" rel="noopener noreferrer"><FileText size={14}/> DESCARGAR REPORTE PDF</a>}
+              </div>}
+              <div ref={transcriptEndRef}/>
+            </div>}
+          </div>}
+        </main>
+      </div>
+    </section>
+  </div>, document.body);
+}
+
+const NEXUS_DECISION_STATUS = {
+  APPROVE: "ready", APPROVE_WITH_CONDITIONS: "ready",
+  REJECT: "blocked", BLOCK: "blocked", RETURN_FOR_REWORK: "blocked"
+};
+
+// The dedicated 3D container the user asked for: not a hub tab, not an overlay you have to
+// discover a small button for — a permanent chamber directly on the institutional page where each
+// of the 8 Manhattan JSON agents is its own node. Double-clicking a node runs that one agent for
+// real (IA real, single call) right here, with no fullscreen overlay in the way, so the node's own
+// glow actually stays visible while it thinks — a fullscreen session overlay would otherwise cover
+// the exact chamber it's supposed to animate. The full 40-scenario library still opens via its own
+// button below, sharing NexusContext with the hub tab teaser.
+function NexusAgentOrbit({api, dealId}) {
+  const base = api.replace(/\/$/, "");
+  const nexus = useContext(NexusContext);
+  const [agents, setAgents] = useState([]);
+  const [quickRun, setQuickRun] = useState(null); // {agentId, busy, result, error}
+  useEffect(() => { fetch(`${base}/api/agents`).then(r => r.json()).then(d => setAgents(d.agents || [])).catch(() => {}); }, [base]);
+
+  async function runQuickAgent(agentId) {
+    if (!dealId || quickRun?.busy) return;
+    setQuickRun({agentId, busy: true, result: null, error: null});
+    try {
+      const response = await fetch(`${base}/api/deals/${dealId}/agents/${agentId}/run`, {
+        method: "POST", headers: {"content-type": "application/json"},
+        body: JSON.stringify({task: "Da tu reacción breve y natural al estado actual del deal, como si acabaras de sentarte con el equipo a revisarlo — no un reporte formal."})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `API ${response.status}`);
+      setQuickRun({agentId, busy: false, result: data, error: null});
+    } catch (error) { setQuickRun({agentId, busy: false, result: null, error: error.message}); }
+  }
+
+  const activeAgentId = quickRun?.busy ? quickRun.agentId : (nexus?.live?.typingAgentId || null);
+  const nodes = agents.map(agent => {
+    const decision = quickRun?.agentId === agent.id ? quickRun.result?.decision : null;
+    const busy = activeAgentId === agent.id;
+    return {
+      id: agent.id,
+      name: agent.alias,
+      network: agent.reference || "MANHATTAN TEAM",
+      nodeType: "agent",
+      status: busy ? "analizando" : NEXUS_DECISION_STATUS[decision] || "standby",
+      uiBusy: busy,
+      tagLabel: busy ? "ANALIZANDO…" : decision ? decision.replaceAll("_", " ") : "STANDBY",
+      description: agent.simulationNotice || `${agent.reference || agent.alias} · simulación profesional, IA real, no la persona real.`
+    };
+  });
+
+  return <section className={"panel brain3dPanel nexusBrain3dPanel " + (activeAgentId ? "speaking" : "")}>
+    <div className="brain3dHeader">
+      <div><small>03.6 / FINANCIAL BRAIN · COMMAND CHAMBER</small><h2>El equipo Manhattan, en vivo.</h2><p>Ocho especialistas simulados (IA real) — cada JSON de agente es este nodo. Doble click lo pone a analizar el deal ahora mismo; se ilumina aquí mientras responde de verdad. Para las 40 simulaciones completas con equipo, usa OPEN NEXUS SESSION abajo.</p></div>
+      <span className="brain3dLive"><i/>{activeAgentId ? `${agents.find(a => a.id === activeAgentId)?.alias || activeAgentId} · RESPONDIENDO` : "8 AGENTES · STANDBY"}</span>
+    </div>
+    <Brain3DViewport bots={nodes} selectedBotId={activeAgentId} onSelect={runQuickAgent}/>
+    {!dealId && <p className="institutionalHint" style={{marginTop: 12}}>Crea un deal arriba para poder poner a analizar a un agente con doble click.</p>}
+    {quickRun && <div className="nexusOrbitQuickResult">
+      {quickRun.busy && <NexusTypingBubble alias={agents.find(a => a.id === quickRun.agentId)?.alias || quickRun.agentId}/>}
+      {quickRun.result && <AgentMessageBubble animate entry={quickRun.result} simulationNotice={agents.find(a => a.id === quickRun.agentId)?.simulationNotice}/>}
+      {quickRun.error && <p className="institutionalNotice">{quickRun.error}</p>}
+    </div>}
+    <div className="nexusOrbitFooter"><button className="primary" onClick={() => nexus?.openSession()}><Sparkles size={14}/> OPEN NEXUS SESSION · 40 escenarios</button></div>
+  </section>;
+}
+
+function GlossaryTerm({id, glossary}) {
+  const [open, setOpen] = useState(false);
+  const term = glossary[id];
+  if (!term) return null;
+  return <span className="institutionalGlossaryTerm" onClick={() => setOpen(o => !o)}>
+    <HelpCircle size={12}/>
+    {open && <span className="institutionalGlossaryPopover"><b>{term.label}</b><p>{term.definition}</p></span>}
+  </span>;
+}
+
+const INSTITUTIONAL_SCENARIO_LABELS = {
+  "unauthorized-transfer": "Unauthorized Transfer",
+  "lockup-violation": "Lock-up Violation",
+  "treasury-compromise": "Treasury Compromise",
+  "distribution-error": "Distribution Error"
+};
+
+function InstitutionalControlPanel({api, dealId, onDealCreated}) {
+  const base = api.replace(/\/$/, "");
+  const [dealTypes, setDealTypes] = useState([]);
+  const [glossary, setGlossary] = useState({});
+  const [selectedDealType, setSelectedDealType] = useState("real-estate-spv");
+  const [deal, setDeal] = useState(null);
+  const [busy, setBusy] = useState("");
+  const [notice, setNotice] = useState("");
+  const [simulation, setSimulation] = useState(null);
+  const [scenarios, setScenarios] = useState({});
+  const [securityScore, setSecurityScore] = useState(null);
+  const [networkFitData, setNetworkFitData] = useState(null);
+  const [comparison, setComparison] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${base}/api/deal-types`).then(r => r.json()).catch(() => ({dealTypes: []})),
+      fetch(`${base}/api/glossary`).then(r => r.json()).catch(() => ({terms: []}))
+    ]).then(([dt, gl]) => {
+      setDealTypes(dt.dealTypes || []);
+      setGlossary(Object.fromEntries((gl.terms || []).map(term => [term.id, term])));
+    });
+  }, [base]);
+
+  async function loadExtras(currentDeal) {
+    const [sec, net, cmp] = await Promise.all([
+      fetch(`${base}/api/deals/${currentDeal.id}/security-score`).then(r => r.json()).catch(() => null),
+      fetch(`${base}/api/deals/${currentDeal.id}/network-fit`).then(r => r.json()).catch(() => null),
+      fetch(`${base}/api/deals/${currentDeal.id}/comparison`).then(r => r.json()).catch(() => null)
+    ]);
+    setSecurityScore(sec); setNetworkFitData(net); setComparison(cmp?.comparison || null);
+  }
+
+  async function loadPreset(dealTypeId) {
+    setBusy("preset"); setNotice("");
+    try {
+      const response = await fetch(`${base}/api/deals?preset=${dealTypeId}`, {method: "POST"});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || `API ${response.status}`);
+      setDeal(data); setSelectedDealType(dealTypeId); setSimulation(null); setScenarios({});
+      onDealCreated?.(data.id);
+      await loadExtras(data);
+      setNotice(`${data.name} cargado.`);
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(""); }
+  }
+
+  async function runSimulation() {
+    if (!deal) return;
+    setBusy("simulate"); setNotice("");
+    try {
+      const response = await fetch(`${base}/api/deals/${deal.id}/simulate`, {method: "POST"});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || `API ${response.status}`);
+      setSimulation(data);
+      setSecurityScore(await fetch(`${base}/api/deals/${deal.id}/security-score`).then(r => r.json()));
+      setNotice("Simulación base ejecutada.");
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(""); }
+  }
+
+  async function runScenarioAction(scenarioId) {
+    if (!deal) return;
+    setBusy(`scenario-${scenarioId}`); setNotice("");
+    try {
+      const response = await fetch(`${base}/api/deals/${deal.id}/simulate/scenario`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({scenarioId})});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || `API ${response.status}`);
+      setScenarios(prev => ({...prev, [scenarioId]: data}));
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(""); }
+  }
+
+  async function exportPackage() {
+    if (!deal) return;
+    setBusy("export"); setNotice("");
+    try {
+      const response = await fetch(`${base}/api/deals/${deal.id}/package?format=md`);
+      const text = await response.text();
+      const blob = new Blob([text], {type: "text/markdown"});
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url; link.download = `${deal.id}-transaction-package.md`;
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setNotice("Digital Transaction Package exportado.");
+    } catch (error) { setNotice(error.message); }
+    finally { setBusy(""); }
+  }
+
+  return <section className="panel institutionalPanel">
+    <div className="panelHead"><div><small>04 / DEAL BUILDER · FINANCIAL SPECIFICATION ENGINE</small><h2>Define la operación una sola vez.</h2></div>{deal && <span className="panelAction">{deal.name}</span>}</div>
+
+    <div className="institutionalDealTypeGrid">
+      {dealTypes.map(dt => <button key={dt.id} className={`institutionalDealTypeCard ${selectedDealType === dt.id ? "active" : ""}`} onClick={() => loadPreset(dt.id)} disabled={busy === "preset"}>
+        <b>{dt.name}</b><small>{dt.category}</small><p>{dt.description}</p>
+        <span className={dt.fullyModeled ? "institutionalBadge full" : "institutionalBadge preset"}>{dt.fullyModeled ? "FULLY MODELED" : "SIMULATED PRESET"}</span>
+      </button>)}
+    </div>
+
+    {!deal && <p className="institutionalHint">Selecciona un tipo de operación para cargar el ejemplo y generar su Financial Specification.</p>}
+
+    {deal && <>
+      <div className="institutionalSpecPreview">
+        <h3>Financial Specification <GlossaryTerm id="spv" glossary={glossary}/></h3>
+        <div className="institutionalSpecGrid">
+          <div><small>ASSET</small><b>${Number(deal.asset.valueUsd).toLocaleString()}</b><em>{deal.asset.name}</em></div>
+          <div><small>VEHICLE</small><b>{deal.vehicle}</b></div>
+          <div><small>INVESTORS</small><b>{deal.investors.count}</b><em>{deal.investors.eligibility}</em></div>
+          <div><small>LOCK-UP <GlossaryTerm id="lockup" glossary={glossary}/></small><b>{deal.lockupMonths} months</b></div>
+          <div><small>DISTRIBUTION <GlossaryTerm id="waterfall" glossary={glossary}/></small><b>{deal.distribution.frequency}</b></div>
+          <div><small>CUSTODY <GlossaryTerm id="custody" glossary={glossary}/></small><b>{deal.custody.model} ({deal.custody.multisigThreshold}/{deal.custody.multisigSigners}) <GlossaryTerm id="multisig" glossary={glossary}/></b></div>
+        </div>
+      </div>
+
+      <div className="institutionalActions">
+        <button className="primary" onClick={runSimulation} disabled={busy === "simulate"}>{busy === "simulate" ? "SIMULATING…" : "RUN 12-MONTH SIMULATION"}</button>
+        <button className="ghost" onClick={exportPackage} disabled={busy === "export" || !simulation}><Download size={14}/> EXPORT TRANSACTION PACKAGE</button>
+      </div>
+
+      {simulation && <div className="institutionalSimulationResults">
+        <h3>Digital Twin — {simulation.fullyModeled ? "Base Case" : "Simulated Preset"}</h3>
+        {!simulation.fullyModeled && <p className="institutionalHint">{simulation.note}</p>}
+        <div className="institutionalTotalsRow">
+          <div><small>NOI / CASHFLOW</small><b>${simulation.totals.noiUsd.toLocaleString()}</b></div>
+          <div><small>FEES</small><b>${simulation.totals.managementFeeUsd.toLocaleString()}</b></div>
+          <div><small>RESERVE <GlossaryTerm id="reserve" glossary={glossary}/></small><b>${simulation.totals.reserveContributionUsd.toLocaleString()}</b></div>
+          <div><small>DEBT SERVICE <GlossaryTerm id="debtService" glossary={glossary}/></small><b>${simulation.totals.debtServiceUsd.toLocaleString()}</b></div>
+          <div><small>DISTRIBUTED</small><b>${simulation.totals.distributedCashUsd.toLocaleString()}</b></div>
+        </div>
+        <div className="institutionalInvariants">
+          <h4>Financial Invariants</h4>
+          {simulation.invariants.map(item => <div key={item.id} className={`institutionalInvariantRow ${item.satisfied ? "ok" : "fail"}`}>{item.satisfied ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}<span>{item.description}</span></div>)}
+        </div>
+      </div>}
+
+      <div className="institutionalScenarios">
+        <h3>Adversarial Scenarios</h3>
+        <div className="institutionalScenarioGrid">
+          {Object.keys(INSTITUTIONAL_SCENARIO_LABELS).map(id => { const result = scenarios[id]; return <div key={id} className="institutionalScenarioCard">
+            <b>{INSTITUTIONAL_SCENARIO_LABELS[id]}</b>
+            <button onClick={() => runScenarioAction(id)} disabled={busy === `scenario-${id}` || !deal}>{busy === `scenario-${id}` ? "RUNNING…" : "RUN SCENARIO"}</button>
+            {result && <div className="institutionalScenarioResult"><span>{result.result}</span><p>{result.reason}</p></div>}
+          </div>; })}
+        </div>
+      </div>
+
+      {securityScore && <div className="institutionalSecurity">
+        <h3>Security Readiness: {securityScore.score}/100</h3>
+        <div className="institutionalChecklist">
+          {securityScore.checklist.map(item => <div key={item.id} className={`institutionalInvariantRow ${item.satisfied ? "ok" : "fail"}`}>{item.satisfied ? <CheckCircle2 size={14}/> : <XCircle size={14}/>}<span>{item.label}</span></div>)}
+          <div className="institutionalInvariantRow fail"><AlertTriangle size={14}/><span>External Audit — {securityScore.externalAudit}</span></div>
+        </div>
+        <div className="institutionalDeployStatus">
+          <span className="institutionalBadge locked"><Lock size={12}/> PRODUCTION DEPLOYMENT LOCKED</span>
+          <span className="institutionalBadge preset">TESTNET DEPLOYMENT AVAILABLE (SIMULATED)</span>
+        </div>
+      </div>}
+
+      {networkFitData && <div className="institutionalNetworkFit">
+        <h3>Network Intelligence</h3>
+        {networkFitData.results.map(result => <div key={result.networkId} className="institutionalNetworkRow">
+          <b>{result.name}</b>
+          <div className="institutionalNetworkBar"><span style={{width: `${result.matchPct}%`}}/></div>
+          <em>{result.matchPct}% match</em>
+          <p>{result.strengths.join(" · ")}</p>
+        </div>)}
+      </div>}
+
+      {comparison && <div className="institutionalComparison">
+        <h3>Compare Implementations</h3>
+        <div className="institutionalComparisonScroll"><table className="institutionalComparisonTable">
+          <thead><tr><th>Requirement</th><th>EVM</th><th>Stellar</th><th>Canton</th></tr></thead>
+          <tbody>{comparison.map(row => <tr key={row.requirement}><td>{row.requirement}</td><td>{row.evm}</td><td>{row.stellar}</td><td>{row.canton}</td></tr>)}</tbody>
+        </table></div>
+      </div>}
+    </>}
+
+    {notice && <p className="institutionalNotice">{notice}</p>}
+  </section>;
+}
+
+function InstitutionalEcosystemPanel({tools = [], api, dealId, onOpen}) {
+  const base = api.replace(/\/$/, "");
+  const [activeId, setActiveId] = useState(tools[0]?.id || "");
+  const active = tools.find(tool => tool.id === activeId) || tools[0];
+  const [snippet, setSnippet] = useState("");
+  useEffect(() => {
+    if (!active || !dealId) { setSnippet(""); return; }
+    fetch(`${base}/api/deals/${dealId}/contracts/${active.adapterId}`).then(r => r.json()).then(data => setSnippet(data.contracts?.[0]?.code || "")).catch(() => setSnippet(""));
+  }, [active, dealId, base]);
+  if (!active) return null;
+  const ActiveIcon = active.Icon;
+  return <section className="panel institutionalEcosystemPanel" id="institutional-ecosystem">
+    <div className="ecosystemHeader"><div><small>05 / CHAIN ADAPTERS · EVM · STELLAR · CANTON</small><h2>La misma especificación, tres implementaciones.</h2><p>No traducimos línea por línea entre lenguajes: traducimos la Financial Specification a tres implementaciones distintas.</p></div><span><i/>{tools.length} ADAPTERS</span></div>
+    <div className="ecosystemLayout">
+      <div className="ecosystemToolGrid">{tools.map(tool => { const ToolIcon = tool.Icon; return <button key={tool.id} className={`ecosystemToolCard ${active.id === tool.id ? "active" : ""}`} onClick={() => setActiveId(tool.id)} style={{"--toolAccent": tool.accent}}><span className="ecosystemToolIcon"><ToolIcon size={17}/></span><span><small>{tool.category}</small><b>{tool.shortName}</b><em>{tool.network}</em></span></button>; })}</div>
+      <article className="ecosystemPreview" style={{"--toolAccent": active.accent}}>
+        <div className="ecosystemPreviewTop"><div><span className="ecosystemPreviewIcon"><ActiveIcon size={18}/></span><span><small>{active.category} · {active.network}</small><b>{active.name}</b></span></div><span className={dealId ? "previewLive" : "previewProtected"}><i/>{dealId ? "CODE PREVIEW" : "NO DEAL LOADED"}</span></div>
+        <div className="ecosystemFrameShell institutionalCodeShell">
+          {dealId ? <pre className="institutionalCodePreview">{snippet || "Cargando…"}</pre> : <div className="ecosystemProtected"><FileCode size={34}/><b>SIN DEAL ACTIVO</b><p>Carga un tipo de operación en el Deal Builder para generar código real.</p></div>}
+          <button className="ecosystemPreviewShield" onClick={() => onOpen?.(active.id)} aria-label={`Abrir ${active.name}`}/>
+        </div>
+        <div className="ecosystemPreviewFoot"><p>{active.description}</p><div><button onClick={() => onOpen?.(active.id)}><Maximize2 size={13}/> OPEN FULL VIEW</button></div></div>
+      </article>
+    </div>
+  </section>;
+}
+
+function InstitutionalAdapterPanel({tool, api, dealId, onClose}) {
+  useEffect(() => { const close = event => { if (event.key === "Escape") onClose?.(); }; window.addEventListener("keydown", close); return () => window.removeEventListener("keydown", close); }, [onClose]);
+  const [contracts, setContracts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!tool || !dealId) { setContracts([]); return; }
+    setLoading(true);
+    const base = api.replace(/\/$/, "");
+    fetch(`${base}/api/deals/${dealId}/contracts/${tool.adapterId}`).then(r => r.json()).then(data => setContracts(data.contracts || [])).catch(() => setContracts([])).finally(() => setLoading(false));
+  }, [tool, dealId, api]);
+  if (!tool) return null;
+  const ToolIcon = tool.Icon;
+  return <div className="financeToolOverlay" role="dialog" aria-modal="true" aria-label={`${tool.name} generated code`} onClick={onClose}>
+    <section className="financeToolWindow institutionalAdapterWindow" onClick={event => event.stopPropagation()} style={{"--toolAccent": tool.accent}}>
+      <header><div><span><ToolIcon size={18}/></span><div><small>CHAIN ADAPTER · {tool.category}</small><h2>{tool.name}</h2><p>{tool.network} · {tool.description}</p></div></div><div><button onClick={onClose} aria-label="Close adapter view">×</button></div></header>
+      <div className="institutionalAdapterBody">
+        {!dealId && <div className="financeToolProtected"><span><ToolIcon size={44}/></span><small>NO DEAL LOADED</small><h3>Construye una operación primero</h3><p>Carga un tipo de operación en el Deal Builder para generar el código {tool.language} correspondiente.</p></div>}
+        {dealId && loading && <p className="institutionalHint">Generando código…</p>}
+        {dealId && !loading && contracts.map(contract => <div key={contract.id} className="institutionalContractBlock">
+          <div className="institutionalContractHeader"><b>{contract.filename}</b><small>{contract.name}</small></div>
+          <pre className="institutionalCodePreview">{contract.code}</pre>
+        </div>)}
+      </div>
+      <footer><span><i/> CODE GENERATION ONLY</span><span>No compiler/toolchain or testnet transaction is invoked in this build</span></footer>
+    </section>
+  </div>;
 }
 
 function ServicesControlPanel({api, agents = [], summary, selectedAgentId, onSelect}) {
@@ -1044,6 +2404,8 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect, on
       "tool-solana-launchpad": "solana", "tool-telegram-suite": "pulse", "tool-defi-social-club": "hub",
       "tool-community-forge": "cycle", "tool-nexus-defi": "bolt", "tool-solana-liquidity": "solana",
       "tool-arb-scanner": "radar", "tool-multichain-command": "hub",
+      "MG-A1-ATLAS": "target", "MG-A2-ORBIT": "cycle", "MG-A3-PRISM": "shield", "MG-A4-FORGE": "bolt",
+      "MG-A5-QUANTUM": "percent", "MG-A6-VOYAGER": "trend", "MG-A7-CAPITAL": "bank", "MG-A8-NEXUS": "hub",
     };
     const arrowHead = (ctx, x, y, angle, size, color) => {
       ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.fillStyle = color;
@@ -1206,7 +2568,7 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect, on
       node.userData.bot = bot;
       node.userData.phase = index * .63; node.userData.anchor = position.clone();
       const color = statusColor(bot), identityColor = bot.accent || palette[index % palette.length]; const artifact = createArtifact(index, identityColor, color, bot); node.add(artifact); node.add(makeNameLabel(bot, color));
-      const pnl = botProfit24h(bot),pnlLabel=makePnlLabel(pnl, bot.nodeType === "tool" ? "PLATFORM LINK" : "");node.add(pnlLabel);node.userData.lastPnl=pnl;
+      const pnl = botProfit24h(bot),pnlLabel=makePnlLabel(pnl, bot.nodeType === "tool" ? "PLATFORM LINK" : bot.nodeType === "agent" ? (bot.tagLabel || "SIMULATED AGENT") : "");node.add(pnlLabel);node.userData.lastPnl=pnl;
       const routePoints = [new THREE.Vector3(0, .12, 0), new THREE.Vector3(position.x * .42, position.y * .7 + .12, position.z * .42), position.clone().setY(position.y - .08)];
       const route = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routePoints), new THREE.LineBasicMaterial({color, transparent: true, opacity: .18, blending: THREE.AdditiveBlending, depthWrite: false})); routeGroup.add(route);
       const pulse = new THREE.Sprite(new THREE.SpriteMaterial({map: softParticleTexture, color, transparent: true, opacity: .68, blending: THREE.AdditiveBlending, depthWrite: false})); pulse.scale.set(.11, .11, 1); routeGroup.add(pulse);
@@ -1363,7 +2725,8 @@ function Brain3DViewport({bots = [], central, selectedBotId = null, onSelect, on
       const focusRecord=nodeRecords.find(record=>record.botId===selectedRef.current);
       nodeRecords.forEach(record => {const {botId,node,artifact,route,routePoints,pulse,speed}=record;
         const liveBot=botsRef.current.find(bot=>bot.id===botId)||node.userData.bot;node.userData.bot=liveBot;
-        const livePnl=botProfit24h(liveBot);if(liveBot.nodeType!=="tool"&&Math.abs(livePnl-node.userData.lastPnl)>.004){node.remove(record.pnlLabel);record.pnlLabel.material.map?.dispose();record.pnlLabel.material.dispose();record.pnlLabel=makePnlLabel(livePnl);node.add(record.pnlLabel);node.userData.lastPnl=livePnl;}
+        const livePnl=botProfit24h(liveBot);if(liveBot.nodeType!=="tool"&&liveBot.nodeType!=="agent"&&Math.abs(livePnl-node.userData.lastPnl)>.004){node.remove(record.pnlLabel);record.pnlLabel.material.map?.dispose();record.pnlLabel.material.dispose();record.pnlLabel=makePnlLabel(livePnl);node.add(record.pnlLabel);node.userData.lastPnl=livePnl;}
+        if(liveBot.nodeType==="agent"&&liveBot.tagLabel!==node.userData.lastTagLabel){node.remove(record.pnlLabel);record.pnlLabel.material.map?.dispose();record.pnlLabel.material.dispose();record.pnlLabel=makePnlLabel(0,liveBot.tagLabel||"STANDBY");node.add(record.pnlLabel);node.userData.lastTagLabel=liveBot.tagLabel;}
         const selected = (selectedRef.current&&botId===selectedRef.current)||(hoverRef.current?.id&&botId===hoverRef.current.id);
         const liveColor=statusColor(liveBot);artifact.userData.frame.material.color.set(liveColor);artifact.userData.frameGlow.material.color.set(liveColor);route.material.color.set(liveColor);pulse.material.color.set(liveColor);route.material.opacity=selected ? .72 : .18;
         node.position.y = node.userData.anchor.y + Math.sin(elapsed * 1.05 + node.userData.phase) * .045;
