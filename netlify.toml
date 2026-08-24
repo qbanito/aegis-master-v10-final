@@ -1,6 +1,6 @@
 [build]
   base = "."
-  command = "npm install --omit=dev && node scripts/build-master.mjs"
+  command = "npm ci && node scripts/build-master.mjs"
   publish = "apps/master-ui/dist"
 
 [[redirects]]
